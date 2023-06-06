@@ -6,7 +6,7 @@ The options and patterns discussed here are bounded by a set of background archi
 Standards need to be driven by actual implementations across production targeting business platforms, not only theory. This ensures that the practical implementation, performance and maintenance of the standards are well grounded.
 
 2. Minimum (Wholesale) business flow scope 
-Standards need to cover, at a minimum, the patterns of interop to enable intraday XvP for Repo, FX Swaps, Equity/Bond Settlement. This is therefore focused on the regulated wholesale capital markets segment, it does not intend to cover public network interop or bridges, it is assumed that for regulatory purposes the assets do not leave the originating network/chain.
+Standards need to cover, at a minimum, the patterns of interop that enables intraday XvP for Repos, FX Swaps and Equity/Bond Settlements. This is therefore focused on the regulated wholesale capital markets segment, it does not intend to cover public network interop or bridges. It is assumed that for regulatory purposes the assets do not leave the originating network/chain.
 
 3. Minimum protocol scope 
 Standards need to cover, at a minimum, interop patterns across R3 Corda and EVM (HL BESU) driven by the majority of business platforms coming to market and testing via the TestNet. [Corda 4/5 to Corda 4/5, Corda 4/5 to EVM, EVM to EVM]
