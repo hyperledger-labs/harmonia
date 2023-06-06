@@ -12,7 +12,7 @@ Standards need to cover, at a minimum, the patterns of interop that enables intr
 Standards need to cover, at a minimum, interop patterns across R3 Corda and EVM (e.g. HL BESU) driven by the majority of business platforms coming to market and testing via the TestNet. [Corda 4/5 to Corda 4/5, Corda 4/5 to EVM, EVM to EVM]
 
 4. Aligned to relevant standards body 
-Standards need to be seeded to the relevant standards body where it can be credibly supported. This standard is cross protocol (ie not EEA) and across capital markets business lines. [Note: One for the community to steer, options provided by working group].
+Standards need to be seeded to the relevant standards body where it can be credibly supported. This standard is cross protocol (i.e. not EVM or Corda specific) and across capital markets business lines. [Note: One for the community to steer, options provided by working group].
 
 5. Maintains community incentive alignment  
 Standards & reference implementations drive aligned incentives for both those developing/maintaining the standards but also in terms of not locking in a piece of 3rd party software / tech required that can be monetised by one party only.
