@@ -18,7 +18,7 @@ Standards need to be seeded to the relevant standards body where it can be credi
 Standards & reference implementations drive aligned incentives for both those developing/maintaining the standards as well as not locking in a piece of 3rd party software / tech required that can be monetised by one party only.
 
 6. Reference implementations accelerate adoption  
-Standards require reference implementations to accelerate the adoption within their protocols, these reference implementations should be open source 
+Standards require reference implementations to accelerate the adoption within their protocols, these reference implementations should be open source.
 
 7. Patterns anchored around Wallet/Asset holders not bridges in the first instance   
 New DLT business platforms are natively designed to operate without message brokers and their standard patterns will revolve around the banks (wallet/asset holders) deploying the required interop orchestration (based on reference implementations)
