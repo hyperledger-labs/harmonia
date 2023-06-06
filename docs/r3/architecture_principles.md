@@ -9,7 +9,7 @@ Standards need to be driven by actual implementations across production targetin
 Standards need to cover, at a minimum, the patterns of interop that enables intraday XvP for Repos, FX Swaps and Equity/Bond Settlements. This is therefore focused on the regulated wholesale capital markets segment, it does not intend to cover public network interop or bridges. It is assumed that for regulatory purposes the assets do not leave the originating network/chain.
 
 3. Minimum protocol scope 
-Standards need to cover, at a minimum, interop patterns across R3 Corda and EVM (HL BESU) driven by the majority of business platforms coming to market and testing via the TestNet. [Corda 4/5 to Corda 4/5, Corda 4/5 to EVM, EVM to EVM]
+Standards need to cover, at a minimum, interop patterns across R3 Corda and EVM (e.g. HL BESU) driven by the majority of business platforms coming to market and testing via the TestNet. [Corda 4/5 to Corda 4/5, Corda 4/5 to EVM, EVM to EVM]
 
 4. Aligned to relevant standards body 
 Standards need to be seeded to the relevant standards body where it can be credibly supported. This standard is cross protocol (ie not EEA) and across capital markets business lines. [Note: One for the community to steer, options provided by working group].
