@@ -3,7 +3,7 @@
 The options and patterns discussed here are bounded by a set of background architectural assumptions and aspirations. We are concerned not only with the immediate functional realisability of interop use cases, but also with fostering an interop ecosystem that will remain viable in the longer term as it evolves and expands.
 
 1. Anchored in Production implementation  
-Standards need to be driven by actual implementations across production targeting business platforms not theory, ensuring that the practically implementation, performance and maintenance of these are well grounded.
+Standards need to be driven by actual implementations across production targeting business platforms, not only theory. This ensures that the practical implementation, performance and maintenance of the standards are well grounded.
 
 2. Minimum (Wholesale) business flow scope 
 Standards need to cover, at a minimum, the patterns of interop to enable intraday XvP for Repo, FX Swaps, Equity/Bond Settlement. This is therefore focused on the regulated wholesale capital markets segment, it does not intend to cover public network interop or bridges, it is assumed that for regulatory purposes the assets do not leave the originating network/chain.
