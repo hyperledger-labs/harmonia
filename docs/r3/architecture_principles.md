@@ -15,7 +15,7 @@ Standards need to cover, at a minimum, interop patterns across R3 Corda and EVM 
 Standards need to be seeded to the relevant standards body where it can be credibly supported. This standard is cross protocol (i.e. not EVM or Corda specific) and across capital markets business lines. [Note: One for the community to steer, options provided by working group].
 
 5. Maintains community incentive alignment  
-Standards & reference implementations drive aligned incentives for both those developing/maintaining the standards but also in terms of not locking in a piece of 3rd party software / tech required that can be monetised by one party only.
+Standards & reference implementations drive aligned incentives for both those developing/maintaining the standards as well as not locking in a piece of 3rd party software / tech required that can be monetised by one party only.
 
 6. Reference implementations accelerate adoption  
 Standards require reference implementations to accelerate the adoption within their protocols, these reference implementations should be open source 
