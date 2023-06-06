@@ -21,5 +21,5 @@ Standards & reference implementations drive aligned incentives for both those de
 Standards require reference implementations to accelerate the adoption within their protocols, these reference implementations should be open source.
 
 7. Patterns anchored around Wallet/Asset holders not bridges in the first instance   
-New DLT business platforms are natively designed to operate without message brokers and their standard patterns will revolve around the banks (wallet/asset holders) deploying the required interop orchestration (based on reference implementations)
+New DLT business platforms are natively designed to operate without message brokers and their standard patterns will revolve around the banks (wallet/asset holders) deploying the required interop orchestration (based on reference implementations).
 
