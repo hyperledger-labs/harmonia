@@ -10,15 +10,15 @@ Regulated networks will achieve greatest success when they can interconnect to f
 
 1. Accessible Foundations: the key building blocks for this ecosystem - digital cash and digital assets - will form a single global digital liquidity pool. Whether in the form of natively issued assets or new digital wrappers for existing inventory, these all act as the foundation for enabling capital markets collateral efficiencies.
 
-&bnbsp;&bnbsp;&bnbsp;They need to fulfil the promise that they can be used in many business platforms across many lifecycle stages from primary issuance or creation of the digital wrappers through each of the capital market lifecycle processes they are part of.
+&nbsp;&nbsp;&nbsp;They need to fulfil the promise that they can be used in many business platforms across many lifecycle stages from primary issuance or creation of the digital wrappers through each of the capital market lifecycle processes they are part of.
 
-&bnbsp;&bnbsp;&bnbsp;One of the base elements will be some degree of common methods across tokens / coins to enable interoperability, and perhaps in the future, mobility.
+&nbsp;&nbsp;&nbsp;One of the base elements will be some degree of common methods across tokens / coins to enable interoperability, and perhaps in the future, mobility.
 
 2. Interoperable by Design: the foundational digital liquidity layer and digital business platform layer must be interoperable "out of the box". The various assets in the liquidity pool need to be interoperable to enable collateral vs. collateral, collateral vs. cash, cash vs. cash swaps – the primary transaction types used in Capital Markets.
 
-&bnbsp;&bnbsp;&bnbsp;This interoperability model enables ecosystem actors to each focus on their core proposition but still take part in the wider value chain. For this to happen there needs to be legal and technical interoperability by design.
+&nbsp;&nbsp;&nbsp;This interoperability model enables ecosystem actors to each focus on their core proposition but still take part in the wider value chain. For this to happen there needs to be legal and technical interoperability by design.
 
-&bnbsp;&bnbsp;&bnbsp;This should also be true where there are multiple technical platforms supporting the foundation assets and providing the lifecycle services. Different networks are using different DLT platforms to support their specific needs. Hence, cross platform interoperability is key.
+&nbsp;&nbsp;&nbsp;This should also be true where there are multiple technical platforms supporting the foundation assets and providing the lifecycle services. Different networks are using different DLT platforms to support their specific needs. Hence, cross platform interoperability is key.
 
 3. Standards adoption: There needs to be a standard and cost-effective mechanism for business platforms and foundation services to work together. Banks and other participants expect common standards for the processes they need to interact with, and ultimately the standardisation of components they need to install.
 
