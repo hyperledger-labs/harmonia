@@ -31,4 +31,13 @@ In simple terms if Counterparty A wants to transfer an asset on one chain to Cou
 3. Notary A checks both holds are in place and are correct and then executes both holds
 4. If Notary A decides that anything is wrong in the process, then Notary A releases both holds which cancels the holds, allowing the assets to be used for other transactions
 
+### Proof based Atomic transactions 
+Using the process above, there is an obvious dependency on the Notary to effect the atomic settlement which introduces risk into the system.
 
+One of the ways of mitigating this risk is to change the process slightly.  The change is that each chain has some logic on it that simply verifies a proof that an event occurred on the other chain.  That logic (could be embedded in a smart contract) is the designated notary on the transaction and can therefore ensure settlement happens on one chain if and only if settlement can be guaranteed on the other chain.
+
+These proofs are covered in more detail [here]("./cross_chain_proofs.md").
+
+Once settlement has occurred on one chain, a proof of settlement can be sent back to the other chain which completed the settlement process on the other chain.    
+
+The beauty of this construct is that there is no requirement to have a trusted intermediary that could block settlement occurring on one or both chains.  Any entity can generate and transfer proofs between the two chains.
