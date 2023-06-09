@@ -2,7 +2,7 @@
 
 The options and patterns discussed here are bounded by a set of background architectural assumptions and aspirations. We are concerned not only with the immediate functional realisability of interop use cases, but also with fostering an interop ecosystem that will remain viable in the longer term as it evolves and expands.
 
-We identify five principles:
+We identify five architectural principles:
 
 1. **Respect finality**. No network should be required to repudiate a transaction finalised on that network because of the failure of a cross-network workflow.
 2. **Avoid nondeterminism**. The success or failure of a cross-network workflow should depend entirely on the fully-orderable sequence of actions carried out within that workflow, and not on observable nondeterminism caused by temporal constraints (time locks).
@@ -10,7 +10,23 @@ We identify five principles:
 4. **Leverage trust to simplify proof**. Where trust relationships can be established, use them to limit the need for external agents to access and utilise network-local and application-specific knowledge.
 5. **Minimise modelling of one network inside another**. As far as possible, one network's smart contract logic should not require or implement a detailed model of another's data structures and consensus mechanisms.
 
-These principles are discussed in detail below.
+We define some basic terms below, then discuss each of these principles in detail.
+
+## Networks and cross-network workflows
+
+At a very high level, In the context of distributed ledger technologies, a “network” combines the following functions:
+
+* **Identity and messaging**: A DLT network connects a set of identities, establishing an identity model through which they are able to able to consistently refer to one another, and providing mechanisms for communication between identity-holders.
+* **Ledger and consensus**. A DLT network maintains a universe of shared valid facts, in the form of a ledger, providing mechanisms through which consensus can be reached across the network about what these facts are.
+
+See [Appendix 1, Identity, Messaging and Consensus on Corda and EVM networks](identity_messaging_and_consensus.md), for a discussion of how these concepts map into these specific cases.
+
+In this document we are concerned with _cross-network worflows_: sequences of operations crossing network boundaries, for which there are no such common network-provided models or mechanisms. This means that:
+
+* Mutually-recognised identities and lines of communication between them need to be explicitly configured: there is no global identity manager.
+* The acceptance, by consensus among peers, of a fact on one network does not mean that this fact can immediately be treated as an accepted fact on the other network.
+
+The evidence that a fact has been accepted as valid on one network may not always be intelligible, or able to be comprehensively validated, on the other.
 
 ## 1. Respect finality
 
@@ -20,9 +36,9 @@ This means that any "pending" state awaiting cross-network consensus must typica
 
 Once an asset has been transferred in one transaction the recipient is usually immediately free to spend it elsewhere, and it might not then be recoverable by a second transaction intended to "roll back" some cross-network workflow.
 
-If we tracked subsequent spends we could potentially reclaim them, but this would spread uncertainty and complexity throughout the network. Instead, we should distinguish between "held" states in which an asset is temporarily reserved for a cross-network workflow and can only be moved in accordance with that workflow's rules, and "free" states in which the cross-network workflow has definitively concluded and the asset or balance can be freely moved by the resulting owner without risk of repudiation.
+If we tracked subsequent spends we could potentially reclaim them, but this would spread uncertainty and complexity throughout the network. Instead, we should distinguish between "hold" states in which an asset is temporarily reserved for a cross-network workflow and can only be moved in accordance with that workflow's rules, and "free" states in which the cross-network workflow has definitively concluded and the asset or balance can be freely moved by the resulting owner without risk of repudiation.
 
-The risk then arises that a cross-network workflow might stall due to non-cooperation or unavailability of one party, leaving an asset or balance in a "held" state from which its original owner or rightful recipient cannot recover it. It is tempting to try to resolve this possibility with a time-based automatic release mechanism, but our second principle cautions against this approach.
+The risk then arises that a cross-network workflow might stall due to non-cooperation or unavailability of one party, leaving an asset or balance in a "hold" state from which its original owner or rightful recipient cannot recover it. It is tempting to try to resolve this possibility with a time-based automatic release mechanism, but our second principle cautions against this approach.
 
 ## 2. Avoid nondeterminism
 
