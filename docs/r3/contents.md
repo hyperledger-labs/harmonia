@@ -8,6 +8,4 @@ Table of Contents:
 * [Bounded Visibility](bounded_visibility.md)
 * [Portable Proofs](portable_proofs.md)
 * [Vicarious trust](vicarious_trust.md)
-* [Witnesses](witnesses.md)
-* [Pluggable Verification](pluggable_verification.md)
-* [Layered Interop](layered_interop.md)
+* [Remote Finality Guarantors](remote_finality_guarantors.md)
