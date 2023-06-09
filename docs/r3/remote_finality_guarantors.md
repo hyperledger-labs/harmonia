@@ -4,7 +4,7 @@ Remote finality guarantors may be needed in the following situation:
 
 * A hold state on a network requires proof of action on another to be released
 * Proof of action must include evidence that the action was fully finalised on the remote network
-* The only feasible source of information about finality is an online query made against an active node (or quorum of active nodes) on the remote network
+* The only feasible source of information about finality is an _observation_: an online query made against an active node (or quorum of active nodes) on the remote network
 
 For the reasons discussed [previously](vicarious_trust.md), we cannot rely on observations made by either the sending or receiving party on the local network, since the receiver has an incentive to fabricate false positive observations, and should still be able to obtain and use a proof of action in the event that the sender becomes unavailable or uncooperative.
 
@@ -36,7 +36,7 @@ If Alice@Corda now notarises the draft transaction, they will obtain the notary'
 
 The complete proof of action on the Corda side consists of:
 
-1. Proof that a transaction with a given hash _will perform_ the required action. This is obtained through vicarious trust: Bob@Corda validates the draft transaction and passes the transactino hash on to Bob@EVM, who proceeds on the basis of trust in Bob@Corda.
+1. Proof that a transaction with a given hash _will perform_ the required action. This is obtained through vicarious trust: Bob@Corda validates the draft transaction and passes the transaction hash on to Bob@EVM, who proceeds on the basis of trust in Bob@Corda.
 2. Proof that a transaction with the given hash _was finalised_. This is obtained through a combination of vicarious trust (Bob@Corda has supplied the public key of the notary whose signature means that the draft transaction has been finalised) and offline-verifiable cryptographic proof (the EVM contract checks that the provided transaction hash has been signed with this public key as a condition of completing the transfer transaction).
 
 The complete proof of action on the EVM side consists of:
