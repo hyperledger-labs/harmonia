@@ -65,3 +65,5 @@ In this case, the guarantor has an expanded role: it must not only observe final
 The lock contract is set up so that it can be released either by Alice@Corda's signature, or by a guarantor's signature on a description / block hash pair matching a pre-agreed transaction description. As part of validating the draft transaction, Bob@Corda must satisfy themselves that the pre-agreed transaction description matches the action that Bob@EVM must actually take to meet Alice's conditions.
 
 The guarantor in this case is a _transaction validating guarantor_ in addition to being a _remote finality guarantor_. As before, its only role is to step in if Alice@Corda cannot or will not sign the asset over themselves.
+
+Note that a transaction validating guarantor, and the pattern described above in which the sender ordinarily validates the remote transaction and signs off on the transfer, may be useful even if remote finality attestation is not required, as it will significantly reduce the amount and complexity of evidence that needs to be provided to a Corda transaction and verified in the Corda contract.
