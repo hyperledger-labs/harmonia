@@ -11,10 +11,8 @@ If we go too far to the right, we risk interlinking two systems and the interope
 
 So the real question is, how do we get to a solution that can scale, but doesn't have a single point of failure?
 
-In what follows, it is helpful to think of the problem from the perspective of a party _who is not a member of the network in question_ who wants to know if an event they occur about has happened. That is: given a data structure purporting to be a block from the remote chain, 1) does it perform the action I care about and 2) if so, has the block actually been confirmed as part of the settled history of the chain?
-
-## Trust and authority in distributed system interoperability ##
-
+In what follows, it is helpful to think of the problem from the perspective of a party _who is not a member of the network in question_ who wants to know if an event they care about has happened. That is: given a data structure purporting to be a block from the remote chain, 1) does it perform the action I care about and 2) if so, has the block actually been confirmed as part of the settled history of the chain?
+    
 In any distributed (e.g. like Bitcoin, Ethereum and Corda) system, there are authorities that verify that transactions are valid. In a public blockchain network that relies on a proof of work consensus mechanism, there are parties that propose the next block of transactions, however each node has the authority to verify and execute the block of transactions on their local copy of the blockchain. In such a system very little trust is required between nodes, however this comes at the expense of latency and only achieving probabilistic finality of blocks, at best.
 
 In a permissioned network using a proof of authority consensus mechanism like QBFT, a chosen set of authorities/validators get to propose the next block of transactions, however it is still up to each node to verify and execute the block of transactions on their local copy of the blockchain. In such a system more trust is given to the authorities/validators, however each node can still verify each block and transaction, and there is a drastic reduction in latency and immediate finality of blocks can be achieved. Importantly, the validators are also expected to ensure the correctness of each block.
