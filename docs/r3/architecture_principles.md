@@ -14,7 +14,7 @@ We define some basic terms below, then discuss each of these principles in detai
 
 ## Networks and cross-network workflows
 
-At a very high level, In the context of distributed ledger technologies, a “network” combines the following functions:
+At a very high level, in the context of distributed ledger technologies, a “network” combines the following functions:
 
 * **Identity and messaging**: A DLT network connects a set of identities, establishing an identity model through which they are able to able to consistently refer to one another, and providing mechanisms for communication between identity-holders.
 * **Ledger and consensus**. A DLT network maintains a universe of shared valid facts, in the form of a ledger, providing mechanisms through which consensus can be reached across the network about what these facts are.
@@ -30,11 +30,11 @@ The evidence that a fact has been accepted as valid on one network may not alway
 
 ## 1. Respect finality
 
-A key guarantee of many distributed ledger technologies is that a network's consensus on a transaction is final. Except in very exceotional cases (such as a network-wide fork of the ledger's transaction history), transactions cannot repudiated once finalised.
+A key guarantee of many distributed ledger technologies is that a network's consensus on a transaction is final. Except in very exceptional cases (such as a network-wide fork of the ledger's transaction history), transactions cannot repudiated once finalised.
 
-This means that any "pending" state awaiting cross-network consensus must typically be implemented as a _locally final_ transaction outcome which cannot be revoked, but only countered with a subsequent transaction.
+This means that any "hold" state awaiting cross-network consensus must typically be implemented as a _locally final_ transaction outcome which cannot be revoked, but only countered with a subsequent transaction.
 
-Once an asset has been transferred in one transaction the recipient is usually immediately free to spend it elsewhere, and it might not then be recoverable by a second transaction intended to "roll back" some cross-network workflow.
+This is because once an asset has been transferred in one transaction the recipient is usually immediately free to spend it elsewhere, and it might not then be recoverable by a second transaction intended to "roll back" some cross-network workflow.
 
 If we tracked subsequent spends we could potentially reclaim them, but this would spread uncertainty and complexity throughout the network. Instead, we should distinguish between "hold" states in which an asset is temporarily reserved for a cross-network workflow and can only be moved in accordance with that workflow's rules, and "free" states in which the cross-network workflow has definitively concluded and the asset or balance can be freely moved by the resulting owner without risk of repudiation.
 

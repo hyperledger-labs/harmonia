@@ -6,6 +6,8 @@ Remote finality guarantors may be needed in the following situation:
 * Proof of action must include evidence that the action was fully finalised on the remote network
 * The only feasible source of information about finality is an _observation_: an online query made against an active node (or quorum of active nodes) on the remote network
 
+> **NOTE**: This is often the case when the remote network utilises Proof of Work or some variants of Proof of State such that the knowledge of what constitutes finality for a block depends on a full understanding of the rules of the network and the state of the chain. By contrast, this is not an issue in many private EVM deployments, especially those using Proof of Authority, as the set of block validators is widely known (and can hence be included in the parameters of a lock) and changes slowly.
+
 For the reasons discussed [previously](vicarious_trust.md), we cannot rely on observations made by either the sending or receiving party on the local network, since the receiver has an incentive to fabricate false positive observations, and should still be able to obtain and use a proof of action in the event that the sender becomes unavailable or uncooperative.
 
 A neutral 3rd-party, trusted by both sides, can break the deadlock by acting as a guarantor.
@@ -32,7 +34,7 @@ Alice@Corda constructs a _draft transaction_ which would place the asset on the 
 
 Bob@Corda verifies that the draft transaction will do what is agreed and that the lock conditions will be able to be satisfied by the agreed action of Bob@EVM. It then provides Bob@EVM with the hash of the draft transaction and the public key of the notary that will finalise it, and Bob@EVM sets up the lock on the other network using these values.
 
-If Alice@Corda now notarises the draft transaction, they will obtain the notary's signature on the transaction hash, which they can pass to Alice@EVM to authorise the transfer of the asset on the EVM network to themselves. This in turn will publicly broadcast the EVM transfer transaction, so that Bob@Corda can obtain the proof of action needed to unlock the asset on the Corda network.
+If Alice@Corda now notarises the draft transaction, she will obtain the notary's signature on the transaction hash, which she can pass to Alice@EVM to authorise the transfer of the asset on the EVM network to herself. This in turn will publicly broadcast the EVM transfer transaction, so that Bob@Corda can obtain the proof of action needed to unlock the asset on the Corda network.
 
 The complete proof of action on the Corda side consists of:
 
