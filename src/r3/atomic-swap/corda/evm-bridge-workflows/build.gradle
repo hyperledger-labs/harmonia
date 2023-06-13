@@ -1,0 +1,47 @@
+group 'com.r3.corda.cno'
+apply plugin: 'net.corda.plugins.cordapp'
+apply plugin: 'kotlin'
+
+repositories {
+    mavenCentral()
+}
+
+// The module is shipped to Corda Node as Cordapp, although it doesn't have any flows.
+cordapp {
+    targetPlatformVersion corda_platform_version
+    minimumPlatformVersion corda_platform_version
+
+    workflow {
+        name "EVM Bridge Contracts Library"
+        vendor "Corda Open Source"
+        licence "Apache License, Version 2.0"
+        versionId 1
+    }
+    sealing.enabled false
+    signing.enabled false
+}
+
+dependencies {
+
+    cordaCompile "$corda_core_release_group:corda-core:$corda_core_release_version"
+
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    // Web3j
+    cordapp("org.web3j:core:$web3jVersion")
+    cordapp("org.web3j:utils:$web3jVersion")
+    cordapp("org.web3j:crypto:$web3jVersion")
+    cordapp("org.web3j:rlp:$web3jVersion")
+
+    cordapp project(':evm-bridge-contracts')
+
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testCompile "junit:junit:$junit_version"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.mockito:mockito-inline:$mockitoVersion"
+
+    testImplementation "$corda_release_group:corda-node:$corda_release_version"
+    testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
+    testImplementation "$corda_release_group:corda-core-test-utils:$corda_release_version"
+}
+
