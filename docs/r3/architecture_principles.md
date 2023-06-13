@@ -48,7 +48,7 @@ In practice, this rules out timelock-based solutions where a message from one sy
 
 Although both sides can measure current network latency and try to ensure that they have plenty of time to act within the established time window, the fact remains that a possible outcome of any timelock-based system is that a message is lost or delayed to the point where the time window has expired, one side has acted (with local finality, i.e. the action cannot now be repudiated), and the other can no longer take the reciprocating action. Under some regulatory frameworks the possibility of this outcome is forbidden.
 
-## 3. Avoid unilateral bottlenecks
+## 3. Eliminate unilateral bottlenecks
 
 Wherever possible, the ability to advance the state of a cross-network workflow should not be restricted to only one "side" in the transaction. For example, either the sender or the receiver in an asset exchange should be able to initiate a "revert" causing assets to be recovered from  "held" states and returned to their initial owners.
 
