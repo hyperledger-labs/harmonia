@@ -7,7 +7,7 @@ It is intended as an example of a protocol that adopts the [architecture princip
 
 ## Business Overview
 
-In what follows, we assume the model introduced in the [architecture documentation](beyondcandc.md). In particular, we assume the existence of two networks which, in this example, we will assume are a Digital Asset network on Corda and a digital cash network on Hyperledger Besu. Two participants, at some external venue, have agreed to a deal whereby one party will sell a digital asset to the other, in exchange for digital cash, and our job is to make this happen.
+In what follows, we assume the model introduced in the [architecture documentation](beyondcandc.md). In particular, we assume the existence of two networks which, in this example, we will assume are a Digital Asset network on Corda and a digital cash network on Hyperledger Besu. Two participants have agreed to a deal whereby one party will sell a digital asset to the other, in exchange for digital cash, and they have exchanged any information necessary to settle the trade, and our job is to make this happen.
 
 It is customary at this point to introduce names for these participants. However, our experience is that it proves almost impossible for the human brain to keep track of which role each of 'Alice' and 'Bob' are performing once one reaches the level of detail required in a design overview.  And so, in what follows, we try to be more explicit.
 
