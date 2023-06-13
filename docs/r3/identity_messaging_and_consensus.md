@@ -1,6 +1,6 @@
 # Appendix 1: Identity, Messaging and Consensus in Corda and EVM Networks
 
-In Corda there is a one-to-one relationship between nodes in the network and permissioned identities maintained by the network manager. The CorDapp run by a node will run flows which exchange messages with other nodes/identities via the Corda platform's peer-to-peer messaging protocol. A "peer" in a Corda network is a node, addressable via RPC messages sent to the internet-addressable gateway of a Corda cluster.
+In Corda 4.x there is a one-to-one relationship between nodes in the network and permissioned identities maintained by the network manager. The CorDapp run by a node will run flows which exchange messages with other nodes/identities via the Corda platform's peer-to-peer messaging protocol. A "peer" in a Corda network is a node, addressable via RPC messages sent to the internet-addressable gateway of a Corda cluster.
 
 Consensus in the Corda UTXO ledger is reached between identities with the additional mediation of Notary nodes which track the consumed states of transactions and interdict double-spends. A UTXO transaction is finalised when a Notary has signed it, and is distributed to those identities which are party to the transaction as part of the finalisation process.
 

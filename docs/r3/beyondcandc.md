@@ -31,17 +31,19 @@ We begin by outlining a centralised solution involving a trusted intermediary. A
 
 A well-known centralised mechanism for reliable synchronisation of state changes is a two-phase commit orchestrated by an independent distributed transaction manager. We distinguish here between on-network transactions, which affect state in a single network and are finalised on that network, and cross-network transactions.
 
-Each network has the ability to carry out an on-network transaction placing an asset in a "prepared" state from which a subsequent on-network transaction can either return it to its prior state (a "roll back"), or move it forward into its intended final state (a "commit").
+Each network has the ability to carry out an on-network transaction placing an asset in a "prepared" state from which a subsequent on-network transaction can either return it to its prior state (a "revert"), or move it forward into its intended final state (a "commit").
 
 In the first phase, the manager sends commands to each network instructing them to move the assets to be exchanged into the "prepared" state. It receives from each network a "vote" indicating whether this command has completed successfully. This phase completes when all votes have been gathered.
 
-In the second phase, if all preparation commands have succeeded, the manager then instructs each network to commit; otherwise it commands them to roll back. The cross-network transaction is complete when all of these instructions have been carried out.
+In the second phase, if all preparation commands have succeeded, the manager then instructs each network to commit; otherwise it commands them to revert. The cross-network transaction is complete when all of these instructions have been carried out.
 
 This approach has the following characteristics:
 
 * **Centralised (or centrally delegated) authority**: the distributed transaction manager has the authority to command each network to perform “prepare”, “commit” and “roll back” transactions over the assets in question. It may be granted that authority on a per-transaction basis by each network issuing permission tokens it redeems in carrying out these actions.
 * **Centralised state and trust**: the transaction manager keeps track of the state of the two-phase commit, and is trusted by both sides to advance that state in accordance with the protocol.
-* **Trusted agents or centralised verification**: either each participant in the cross-network transaction must trust that that the other will accurately report the success or failure of commands issued by the transaction manager, or the transaction manager must be able to obtain and verify proofs from both sides that the actions it has requested have been carried out.
+* **Trusted agents or centralised verification**: either
+  - each participant in the cross-network transaction must trust that that the other will accurately report the success or failure of commands issued by the transaction manager, or
+  - the transaction manager must be able to obtain and verify proofs from both sides that the actions it has requested have been carried out.
 
 A decentralised solution might begin by removing the centralised intermediary and making one network responsible for managing the state of the swap protocol, for example through a contract on an EVM blockchain. The contract itself, supported by the EVM network’s validation and consensus rules, would provide guarantees that the state of the protocol evolves correctly. The challenge in this case would be enabling that contract to collect and verify "votes" from each side.
 

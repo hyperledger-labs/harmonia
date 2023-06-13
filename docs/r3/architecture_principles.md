@@ -6,7 +6,7 @@ We identify five architectural principles:
 
 1. **Respect finality**. No network should be required to repudiate a transaction finalised on that network because of the failure of a cross-network workflow.
 2. **Avoid nondeterminism**. The success or failure of a cross-network workflow should depend entirely on the fully-orderable sequence of actions carried out within that workflow, and not on observable nondeterminism caused by temporal constraints (time locks).
-3. **Avoid unilateral bottlenecks**. The design of a cross-network workflow should avoid situations where one party alone can advance the state of the workflow, such that it might stall if that party became unavailable or maliciously sought to delay or halt progress.
+3. **Eliminate unilateral bottlenecks**. The design of a cross-network workflow should avoid situations where one party alone can advance the state of the workflow, such that it might stall if that party became unavailable or maliciously sought to delay or halt progress.
 4. **Leverage trust to simplify proof**. Where trust relationships can be established, use them to limit the need for external agents to access and utilise network-local and application-specific knowledge.
 5. **Minimise modelling of one network inside another**. As far as possible, one network's smart contract logic should not require or implement a detailed model of another's data structures and consensus mechanisms.
 
@@ -23,7 +23,7 @@ See [Appendix 1, Identity, Messaging and Consensus on Corda and EVM networks](id
 
 In this document we are concerned with _cross-network worflows_: sequences of operations crossing network boundaries, for which there are no such common network-provided models or mechanisms. This means that:
 
-* Mutually-recognised identities and lines of communication between them need to be explicitly configured: there is no global identity manager.
+* Mutually-recognised identities and lines of communication between them need to be explicitly configured: there is no centralised and global arbiter of identity, and management of such links must be carried out by the linked entities themselves.
 * The acceptance, by consensus among peers, of a fact on one network does not mean that this fact can immediately be treated as an accepted fact on the other network.
 
 The evidence that a fact has been accepted as valid on one network may not always be intelligible, or able to be comprehensively validated, on the other.
@@ -46,7 +46,7 @@ The outcome of a cross-network workflow should never depend on observable nondet
 
 In practice, this rules out timelock-based solutions where a message from one system transmitting proof that an action has been taken on that system might be in a race with a timestamp authority on the receiving system determining whether the time window for the reciprocating action is still open.
 
-Although both sides can measure current network latency and try to ensure that they have plenty of time to act within the established time window, the fact remains that a possible outcome of any timelock-based system is that a message is lost or delayed to the point where the time window has expired, one side has acted (with local finality, i.e. the action cannot now be repudiated), and the other can no longer take the reciprocating action.
+Although both sides can measure current network latency and try to ensure that they have plenty of time to act within the established time window, the fact remains that a possible outcome of any timelock-based system is that a message is lost or delayed to the point where the time window has expired, one side has acted (with local finality, i.e. the action cannot now be repudiated), and the other can no longer take the reciprocating action. Under some regulatory frameworks the possibility of this outcome is forbidden.
 
 ## 3. Avoid unilateral bottlenecks
 
