@@ -1,0 +1,10 @@
+# Ignore everything
+*
+!contracts
+
+# But not these files...
+!.gitignore
+!deploy.js
+!hardhat.config.js
+!package.json
+!contracts/*
