@@ -8,8 +8,6 @@ Suppose that the USD network in our cross-chain swap example is a Corda network.
 
 Because the interests of Alice@USD are aligned with those of Alice@GBP, there is an incentive for Alice@USD to give a false positive report so that Alice@GBP will unfairly receive the benefit of the swap, without Bob@USD receiving their side of the exchange.
 
-*TODO: DIAGRAM*
-
 If we instead rely on Bob@USD, who will also see the transaction which prepares the asset transfer from Alice@USD to Bob@USD, then we know that Bob@USD has no incentive to give a false negative report, since Bob@USD cannot receive the asset unless the transfer has genuinely been prepared.
 
 Visibility may also be curtailed by events such as a node leaving a network, so that it is no longer available to consult, or ledger transactions moving out of a time-limited observation window and needing to be recalled from long-term storage.
