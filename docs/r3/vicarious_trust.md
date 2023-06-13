@@ -4,8 +4,6 @@ Recall that in our cross-chain swap scenario, the network identities ALice@USD a
 
 Vicarious trust means that Bob@USD can instruct Bob@GBP to act on its behalf by preparing the transfer of an asset to Alice@GBP, creating a "hold" state from which the asset can only be released on presentation of proof that Alice@USD has transferred a reciprocating asset to Bob@USD.
 
-*TODO: DIAGRAM showing who P, Q etc are*
-
 In defining the asset lock on the GBP network which the proof from the USD network must unlock, Bob@GBP relies on Bob@USD’s knowledge of the USD network, and accepts on trust that a signature with a given key K on a given hash H is proof (as Bob@USD knows it to be) that the required action has taken place.
 
 Vicarious trust means that the application on the GBP network does not need to be able to inspect, decode and validate transactions recorded in the USD network. This supports our architectural goal (see [principle 5](architecture_principles.md)) that network-local knowledge about the structure and meaning of transaction data, and the identities of validators/notaries, should not leak across network boundaries.

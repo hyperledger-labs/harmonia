@@ -1,5 +1,4 @@
 # Beyond "command and control"
-
 "Command and control"-style interoperation, where system A instructs system B to do something, or makes decisions based on observable properties of system B, is largely a solved problem at the high level. There is always work to do in defining message standards and communications protocols, but the basic co-ordination mechanisms are well-understood:
 
 * **RPC (synchronous)**: A sends a request to B, which B executes immediately, returning a response indicating the outcome of the request.
@@ -20,8 +19,6 @@ To help us think more concretely about these questions, we now consider an examp
 Our motivating example here is a cross-network swap, in which Alice on a network managing tokens with a dollar value (Alice@USD) transfers funds to Bob@USD, in exchange for Bob's counterpart on a network managing tokens with a sterling value (Bob@GBP) transferring an asset to Alice's counterpart on that network (Alice@GBP).
 
 We make an assumption that Alice@USD and Alice@GBP have a common interest (for example, both represent token wallets held by the same commercial entity), as do Bob@USD and Bob@GBP. Although the common naming may suggest they are the "same" identity, there is no global identity model containing an entity to which they both refer.
-
-*TODO: Diagram showing swap parties, asset movements and trust relationships*
 
 The goal is to ensure that the asset transfer from Alice@USD to Bob@USD, and the transfer from Bob@GBP to Alice@USD, either succeed or fail together.
 
