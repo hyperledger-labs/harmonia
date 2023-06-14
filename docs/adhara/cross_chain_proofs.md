@@ -48,9 +48,11 @@ Each QBFT block header is signed by (at least) a subset of validators of a netwo
 
 In addition, the Patricia Merkle Tree root would need to be recalculated, using the event in question, and then verify that this root matches the transaction receipt root in the previously verified block header. Recalculating the Patricia Merkle Tree root only requires a subset (only sibling and parent nodes of the transaction receipt containing the event in question) of the Tree, very similar to how a Merkle Tree proof would be verified.
 
+[Here is a working example of how to verify a block header based proof](../../src/adhara/proof-verification/)
+
 ## Limitation of security guarantees in distributed system interoperability ##
 
 TODO
 
 ## References ##
-EEA interop working group submission
+EEA Crosschain Interoperability Technical Speciofication Draft [https://entethalliance.github.io/crosschain-interoperability/draft_crosschain_techspec.html](https://entethalliance.github.io/crosschain-interoperability/draft_crosschain_techspec.html) 
