@@ -6,7 +6,7 @@ This project is licensed under the Apache License 2.0. See the `LICENSE` file fo
 
 ## Development Status
 
-This project is currently under development and being finalized. Some of its components are in the process of refinement and preparation for community access.
+The atomic swap reference code is currently under development but nearing completion. Some of its components are in the process of refinement and preparation for community access.
 
 ### Component Overview and Status
 
