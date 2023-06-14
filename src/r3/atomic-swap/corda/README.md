@@ -66,7 +66,7 @@ if you have manually prepared the EVM test environment.
 
 #### Deploy
 
-Plain and Dockerized deploymet is under development
+Plain and Dockerized deployment is under development
 
 ### Testing
 
