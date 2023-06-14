@@ -20,7 +20,7 @@ Our motivating example here is a cross-network swap, in which Alice on a network
 
 We make an assumption that Alice@USD and Alice@GBP have a common interest (for example, both represent token wallets held by the same commercial entity), as do Bob@USD and Bob@GBP. Although the common naming may suggest they are the "same" identity, there is no global identity model containing an entity to which they both refer.
 
-The goal is to ensure that the asset transfer from Alice@USD to Bob@USD, and the transfer from Bob@GBP to Alice@USD, either succeed or fail together.
+The goal is to ensure that the asset transfer from Alice@USD to Bob@USD, and the transfer from Bob@GBP to Alice@GBP, either succeed or fail together.
 
 We begin by outlining a centralised solution involving a trusted intermediary. Although this is not the type of solution we are aiming at, it brings all of the problems we have to solve together in one place. Any solution without a trusted intermediary will have to provide the same guarantees via different mechanisms.
 
