@@ -93,6 +93,6 @@ In the spirit of the Hyperledger Labs philosophy, the files initially contribute
 * A summary of high-level interoperability business principles, endorsed by a working group of industry practitioners, is [here](adhara/interop_principles.md).
 * A detailed discussion of the specific cross-chain proofs we have found to be important in Corda/EVM interactions is available [here](adhara/cross_chain_proofs.md).
 * An example of a design for an end-to-end DvP protocol between a Corda and private EVM network is available [here](r3/example_design_for_atomic_swap.md).
-* Work-in-progress code that implements the above design is also available in this repo. Start with the [README](../src/r3/atomic-swap/README.md).  
+* Work-in-progress code that implements the above design is also available in this repo. Start with the [README](../src/r3/atomic-swap/corda/README.md).  
 
 
