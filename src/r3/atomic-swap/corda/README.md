@@ -22,9 +22,9 @@ The following is a list of components included in this project. All of these are
 
 5. **Event Subscription Service**: This component is responsible for subscribing to and handling events. It is currently under active development and nearing completion. Some features are experimental and will be moved to a separate external module in future iterations.
 
-#### Coming Soon
-
 6. **Patricia Merkle Trie Component**: This upcoming component will support EVM events and transaction validation, production of events and transaction proofs, and verification of proofs.
+
+#### Coming Soon
 
 7. **Full Atomic Swap Flows**: Full atomic swap flows for executing Corda-EVM DvP and PvP scenarios are in the pipeline and will be implemented in the near future.
 
