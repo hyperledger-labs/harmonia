@@ -18,7 +18,7 @@ The Aspiration of Harmonia is to provide those guardrails in order to be able to
 ![Aspiration](Aspiration.png)
 
 ## Interfaces 
-There are in fact only 4 interfaces to consider.  By focusing on these 4 interfaces the ecosystem of banks and platforms have a real opportunity to establish a simple and standard way for different components to communicate with eachother.  The 4 interfaces are:
+There are in fact only 4 interfaces to consider.  By focusing on these 4 interfaces the ecosystem of banks and platforms have a real opportunity to establish a simple and standard way for different components to communicate with each other.  The 4 interfaces are:
 
  - The HSM interface (already largely standardised to use PKCS#11)
  - The Bank Side API
