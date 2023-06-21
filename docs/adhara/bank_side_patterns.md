@@ -8,7 +8,7 @@ At a simplistic level, banks will be running gateways to different platforms.  T
 ![Bank side generic pattern](BankSideGenericPattern.png)
 
 ## Risk as platforms scale 
-The risk to banks as the platforms scale is that they need to manage a plethora of gateways, interfaces, data formats and interop mechanisms.  By establishing some standard patterns, we can provide guardrails to platorm providers to ensure that the connections to their platforms and the interop mechanisms are well understood by the banks and easy to deploy,
+The risk to banks as the platforms scale is that they need to manage a plethora of gateways, interfaces, data formats and interop mechanisms.  By establishing some standard patterns, we can provide guardrails to platform providers to ensure that the connections to their platforms and the interop mechanisms are well understood by the banks and easy to deploy.
 
 ![Risks as platforms scale](RisksAsPlatformsScale.png)
 
