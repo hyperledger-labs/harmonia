@@ -1,0 +1,7 @@
+# General macOS and Windows files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+Thumbs.db
+Thumbs.db:encryptable
