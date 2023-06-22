@@ -74,8 +74,8 @@ abstract class Node
          * @return Node created from the RLP encoded byte array.
          */
         fun createFromRLP(encoded: ByteArray): Node {
-            return if(encoded.size == 32) {
-                HashNode.create(encoded)
+            return if (encoded.size == 32) {
+                HashNode(encoded)
             } else {
                 val outerList = RlpDecoder.decode(encoded) as RlpList
                 createFromRLP(outerList)

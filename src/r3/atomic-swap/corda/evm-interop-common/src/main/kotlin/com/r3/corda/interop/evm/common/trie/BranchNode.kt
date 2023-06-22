@@ -62,41 +62,8 @@ class BranchNode private constructor(
     }
 
     companion object {
-        @JvmStatic
+
         private val emptyNode = EmptyNode()
-
-        /**
-         * Factory function to create a BranchNode with no value and empty branches.
-         *
-         * @return The created BranchNode.
-         */
-        fun create(): BranchNode {
-            return BranchNode(Array(16) { emptyNode }, ByteArray(0))
-        }
-
-        /**
-         * Factory function to create a BranchNode with the provided value and empty branches.
-         *
-         * @param value The value to use for the BranchNode.
-         * @return The created BranchNode.
-         */
-        fun createWithValue(value: ByteArray): BranchNode {
-            return BranchNode(Array(16) { emptyNode }, value)
-        }
-
-        /**
-         * Factory function to create a BranchNode with a single branch and the provided value.
-         *
-         * @param nibbleKey The index at which to set the branch.
-         * @param node The node to set at the index.
-         * @param value The value to use for the BranchNode. Defaults to an empty byte array.
-         * @return The created BranchNode.
-         */
-        fun createWithBranch(nibbleKey: Byte, node: Node, value: ByteArray = ByteArray(0)): BranchNode {
-            val branch = BranchNode(Array(16) { emptyNode }, value)
-            branch.setBranch(nibbleKey, node)
-            return branch
-        }
 
         /**
          * Factory function to create a BranchNode with multiple branches and the optionally

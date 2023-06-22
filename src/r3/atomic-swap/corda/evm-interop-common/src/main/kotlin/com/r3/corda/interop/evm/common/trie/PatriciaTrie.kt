@@ -55,7 +55,7 @@ class PatriciaTrie {
      * @return Merkle proof as KeyValueStore.
      */
     fun generateMerkleProof(key: ByteArray) : KeyValueStore {
-        return generateMerkleProof(root, key.toNibbles(), SimpleKeyValueStore())
+        return generateMerkleProof(root, NibbleArray.fromBytes(key), SimpleKeyValueStore())
     }
 
     /**
@@ -66,9 +66,9 @@ class PatriciaTrie {
      * @param store A simple Key-Value that will collect the trie proofs
      * @return Merkle proof as KeyValueStore.
      */
-    private fun generateMerkleProof(startNode: Node, nibblesKey: ByteArray, store: SimpleKeyValueStore) : KeyValueStore {
+    private fun generateMerkleProof(startNode: Node, nibblesKey: NibbleArray, store: SimpleKeyValueStore) : KeyValueStore {
         var node = startNode
-        var nodeKey = NibbleArray(nibblesKey)
+        var nodeKey = nibblesKey
 
         while (true) {
             when (node) {
@@ -189,9 +189,9 @@ class PatriciaTrie {
             }
 
             val branchNode = when (matchingLength) {
-                nodePathNibbles.size -> BranchNode.createWithValue(node.value)
-                nibblesKey.size -> BranchNode.createWithValue(value)
-                else -> BranchNode.create()
+                nodePathNibbles.size -> BranchNode.createWithBranches(value = node.value)
+                nibblesKey.size -> BranchNode.createWithBranches(value = value)
+                else -> BranchNode.createWithBranches()
             }
 
             val extOrBranchNode = if (matchingLength > 0) {
@@ -239,8 +239,8 @@ class PatriciaTrie {
                 val branchNibble = nodePathNibbles[matchingLength]
                 val extRemainingNibbles = nodePathNibbles.dropFirst(matchingLength + 1)
 
-                val branchNode = BranchNode.createWithBranch(
-                    branchNibble,
+                val branchNode = BranchNode.createWithBranches(
+                    branchNibble to
                     if (extRemainingNibbles.isEmpty()) {
                         node.innerNode
                     } else {

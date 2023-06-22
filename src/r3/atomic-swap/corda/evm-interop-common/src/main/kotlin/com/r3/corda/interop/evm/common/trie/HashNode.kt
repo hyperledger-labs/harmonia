@@ -19,17 +19,11 @@ package com.r3.corda.interop.evm.common.trie
 /**
  * A representation of a node in a Patricia Trie that is used to store a hash and an inner node.
  * This class provides methods to create a new HashNode and retrieve its encoded representation.
+ *
+ * @param hash The hash of the node
+ * @param innerNode The inner node associated with this HashNode. Defaults to an EmptyNode if not provided.
  */
-class HashNode private constructor(
-    /**
-     * The hash of the node.
-     */
-    override val hash: ByteArray,
-    /**
-     * The inner node associated with this HashNode. Defaults to an EmptyNode if not provided.
-     */
-    private var innerNode: Node
-) : Node() {
+class HashNode(override val hash: ByteArray, private val innerNode: Node = EmptyNode()) : Node() {
     /**
      * Returns the encoded representation of the HashNode. If the inner node is an EmptyNode,
      * it returns the hash of the node, otherwise it returns the encoded representation of the inner node.
@@ -40,18 +34,4 @@ class HashNode private constructor(
             return innerNode.encoded
         }
 
-    /**
-     * Companion object for the HashNode class.
-     */
-    companion object {
-        /**
-         * Creates a new HashNode with the specified hash and inner node.
-         * @param hash The hash of the new HashNode.
-         * @param innerNode The inner node of the new HashNode. Defaults to an EmptyNode if not provided.
-         * @return The newly created HashNode.
-         */
-        fun create(hash: ByteArray, innerNode: Node = EmptyNode()) : HashNode {
-            return HashNode(hash, innerNode)
-        }
-    }
 }

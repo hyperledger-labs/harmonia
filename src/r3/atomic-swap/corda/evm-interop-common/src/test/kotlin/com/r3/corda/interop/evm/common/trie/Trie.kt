@@ -51,7 +51,7 @@ class TrieTests {
 
     @Test
     fun testEmptyBranchNodeHashCalculation() {
-        val branch = BranchNode.create()
+        val branch = BranchNode.createWithBranches()
         val expectedHash = "0xbe0f4440e293a47160b9b148d49212d0616ec5b0a70c99de9bf36515d52e0901"
 
         assertEquals(expectedHash, Numeric.toHexString(branch.hash))
