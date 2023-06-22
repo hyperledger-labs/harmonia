@@ -35,7 +35,7 @@ class TrieTests {
 
     @Test
     fun testEmptyLeafNodeHashCalculation() {
-        val leaf = LeafNode.createFromBytes(byteArrayOf(), byteArrayOf())
+        val leaf = leafNodeFromKey().withValue()
         val expectedHash = "0xf9be828fd675253c2e3ecdff4379debab459f376b7554fac193747c676f10f0a"
 
         assertEquals(expectedHash, Numeric.toHexString(leaf.hash))
@@ -43,7 +43,7 @@ class TrieTests {
 
     @Test
     fun testDummyLeafNodeHashCalculation() {
-        val leaf = LeafNode.createFromBytes(byteArrayOf(1, 2, 3, 4), "leaf".toByteArray())
+        val leaf = leafNodeFromKey(1, 2, 3, 4).withValue("leaf")
         val expectedHash = "0x2fc0c91eb10b756afb03c8ceafc121c9c2f4eb47b6ef974ba808f8b46067a6d0"
 
         assertEquals(expectedHash, Numeric.toHexString(leaf.hash))
@@ -59,7 +59,7 @@ class TrieTests {
 
     @Test
     fun testEmptyExtensionNodeHashCalculation() {
-        val branch = ExtensionNode.createFromNibbles(byteArrayOf(), EmptyNode())
+        val branch = extensionNodeFromKey().empty()
         val expectedHash = "0x9650f4d88ca5e8628148a9c9ced5c6063f7419b93a0bf854258890ddea8f233d"
 
         assertEquals(expectedHash, Numeric.toHexString(branch.hash))
@@ -92,71 +92,55 @@ class TrieTests {
     @Test
     fun testTrieWithTwoLeafNodesSecondShorter() {
         val trie = PatriciaTrie()
-        trie.put(byteArrayOf(1, 2, 3, 4), "hello".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3), "world".toByteArray())
+            trie.put(byteArrayOf(1, 2, 3, 4), "hello".toByteArray())
+            trie.put(byteArrayOf(1, 2, 3), "world".toByteArray())
 
-        val node = ExtensionNode.createFromNibbles(
-            nibblesKey = byteArrayOf(0, 1, 0, 2, 0, 3),
-            node = BranchNode.createWithBranch(
-                nibbleKey = 0,
-                node = LeafNode.createFromNibbles(byteArrayOf(4), "hello".toByteArray()),
-                value = "world".toByteArray()
-            )
-        )
+        val node = extensionNode(0, 1, 0, 2, 0, 3).toBranches(
+            0 to leafNode(4).withValue("hello")
+        ).withValue("world")
 
         assertArrayEquals(node.hash, trie.root.hash)
     }
 
     @Test
     fun testTrieWithTwoLeafNodesSecondLonger() {
-        val trie = PatriciaTrie()
-        trie.put(byteArrayOf(1, 2, 3, 4), "hello".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3, 4, 5, 6), "world".toByteArray())
+        val trie = trie()
+            .put(1, 2, 3, 4).withValue("hello")
+            .put(1, 2, 3, 4, 5, 6).withValue("world")
+            .build()
 
-        val node = ExtensionNode.createFromNibbles(
-            nibblesKey = byteArrayOf(0, 1, 0, 2, 0, 3, 0, 4),
-            node = BranchNode.createWithBranch(
-                nibbleKey = 0,
-                node = LeafNode.createFromNibbles(byteArrayOf(5, 0, 6), "world".toByteArray()),
-                value = "hello".toByteArray()
-            )
-        )
+        val node = extensionNode(0, 1, 0, 2, 0, 3, 0, 4).toBranches(
+            0 to leafNode(5, 0, 6).withValue("world")
+        ).withValue("hello")
 
         assertArrayEquals(node.hash, trie.root.hash)
     }
 
     @Test
     fun testTrieWithTwoLeafNodesSameLength() {
-        val trie = PatriciaTrie()
-        trie.put(byteArrayOf(1, 2, 3, 4), "hello".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3, 4), "world".toByteArray())
+        val trie = trie()
+            .put(1, 2, 3, 4).withValue("hello")
+            .put(1, 2, 3, 4).withValue("world")
+            .build()
 
-        val leaf = LeafNode.createFromNibbles(
-            nibblesKey = byteArrayOf(0, 1, 0, 2, 0, 3, 0, 4),
-            value = "world".toByteArray()
-        )
+        val leaf = leafNode(0, 1, 0, 2, 0, 3, 0, 4).withValue("world")
 
         assertArrayEquals(leaf.hash, trie.root.hash)
     }
 
     @Test
     fun testTrieWithPrefixMatchingLeafNodesThirdMatchingLengthLong() {
-        val trie = PatriciaTrie()
-        trie.put(byteArrayOf(1, 2, 3, 4), "hello1".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3, 5), "hello2".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3), "world".toByteArray())
+        val trie = trie()
+            .put(1, 2, 3, 4).withValue("hello1")
+            .put(1, 2, 3, 5).withValue("hello2")
+            .put(1, 2, 3).withValue("world")
+            .build()
 
-        val node = ExtensionNode.createFromNibbles(
-            nibblesKey = byteArrayOf(0, 1, 0, 2, 0, 3),
-            node = BranchNode.createWithBranch(
-                nibbleKey = 0,
-                node = BranchNode.createWithBranches(
-                    Pair(4, LeafNode.createFromNibbles(byteArrayOf(), "hello1".toByteArray())),
-                    Pair(5, LeafNode.createFromNibbles(byteArrayOf(), "hello2".toByteArray()))
-                ),
-                value = "world".toByteArray()
-            )
-        )
+        val node = extensionNode(0, 1, 0, 2, 0, 3).toBranches(
+            0 to branchNode(
+                4 to leafNode().withValue("hello1"),
+                5 to leafNode().withValue("hello2")).empty())
+            .withValue("world")
 
         assertArrayEquals(node.hash, trie.root.hash)
     }
@@ -168,58 +152,32 @@ class TrieTests {
         trie.put(byteArrayOf(1, 2, 3, 5), "hello2".toByteArray())
         trie.put(byteArrayOf(1, 2, 5), "world".toByteArray())
 
-        val node = ExtensionNode.createFromNibbles(
-            nibblesKey = byteArrayOf(0, 1, 0, 2, 0),
-            node = BranchNode.createWithBranches(
-                Pair(3, ExtensionNode.createFromNibbles(
-                        nibblesKey = byteArrayOf(0),
-                        node = BranchNode.createWithBranches(
-                            Pair(4, LeafNode.createFromNibbles(byteArrayOf(), "hello1".toByteArray())),
-                            Pair(5, LeafNode.createFromNibbles(byteArrayOf(), "hello2".toByteArray()))
-                        )
-                    )
-                ),
-                Pair(5, LeafNode.createFromNibbles(
-                        nibblesKey = byteArrayOf(),
-                        value = "world".toByteArray()
-                    )
-                )
-            )
-        )
+        val node = extensionNode(0, 1, 0, 2, 0).toBranches(
+            3 to extensionNode(0).toBranches(
+                4 to leafNode().withValue("hello1"),
+                5 to leafNode().withValue("hello2")
+            ).empty(),
+            5 to leafNode().withValue("world")).empty()
+
 
         assertArrayEquals(node.hash, trie.root.hash)
     }
 
     @Test
     fun testTrieWithPartiallyMatchingLeafNodesThirdNoMatch() {
-        val trie = PatriciaTrie()
-        trie.put(byteArrayOf(1, 2, 3, 4), "hello1".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3, 5), "hello2".toByteArray())
-        trie.put(byteArrayOf(16, 2, 5), "world".toByteArray())
+        val trie = trie()
+            .put(1, 2, 3, 4).withValue("hello1")
+            .put(1, 2, 3, 5).withValue("hello2")
+            .put(16, 2, 5).withValue("world")
+            .build()
 
-        val node = BranchNode.createWithBranches(
-            Pair(0, ExtensionNode.createFromNibbles(
-                    nibblesKey = byteArrayOf(1, 0, 2, 0, 3, 0),
-                    node = BranchNode.createWithBranches(
-                        Pair(4, LeafNode.createFromNibbles(
-                                nibblesKey = byteArrayOf(),
-                                value = "hello1".toByteArray()
-                            )
-                        ),
-                        Pair(5, LeafNode.createFromNibbles(
-                                nibblesKey = byteArrayOf(),
-                                value = "hello2".toByteArray()
-                            )
-                        )
-                    )
-                )
-            ),
-            Pair(1, LeafNode.createFromNibbles(
-                    nibblesKey = byteArrayOf(0, 0, 2, 0, 5),
-                    value = "world".toByteArray()
-                )
-            )
-        )
+        val node = branchNode(
+            0 to extensionNode(1, 0, 2, 0, 3, 0).toBranches(
+                4 to leafNode().withValue("hello1"),
+                5 to leafNode().withValue("hello2")
+            ).empty(),
+            1 to leafNode(0, 0, 2, 0, 5).withValue("world")
+        ).empty()
 
         assertArrayEquals(node.hash, trie.root.hash)
     }
@@ -231,22 +189,10 @@ class TrieTests {
         trie.put(byteArrayOf(1, 2, 3, 80), "hello2".toByteArray())
         trie.put(byteArrayOf(1, 2, 3), "world".toByteArray())
 
-        val node = ExtensionNode.createFromNibbles(
-            nibblesKey = byteArrayOf(0, 1, 0, 2, 0, 3),
-            node = BranchNode.createWithBranches(
-                Pair(0, LeafNode.createFromNibbles(
-                        nibblesKey = byteArrayOf(4),
-                        value = "hello1".toByteArray()
-                    )
-                ),
-                Pair(5, LeafNode.createFromNibbles(
-                        nibblesKey = byteArrayOf(0),
-                        value = "hello2".toByteArray()
-                    )
-                ),
-                value = "world".toByteArray()
-            )
-        )
+        val node = extensionNode(0, 1, 0, 2, 0, 3).toBranches(
+            0 to leafNode(4).withValue("hello1"),
+            5 to leafNode(0).withValue("hello2"))
+            .withValue("world")
 
         assertArrayEquals(node.hash, trie.root.hash)
     }

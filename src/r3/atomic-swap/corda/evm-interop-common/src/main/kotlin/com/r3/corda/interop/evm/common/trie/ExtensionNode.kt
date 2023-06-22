@@ -30,8 +30,8 @@ import org.web3j.rlp.RlpString
  * @property path The path of the ExtensionNode, stored as a nibbles array.
  * @property innerNode The inner Node that the ExtensionNode points to.
  */
-class ExtensionNode private constructor(
-    val path: ByteArray,
+class ExtensionNode(
+    val path: PatriciaTriePath,
     var innerNode: Node
 ) : Node() {
 
@@ -43,7 +43,7 @@ class ExtensionNode private constructor(
             val encodedInnerNode = innerNode.encoded
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(prefixedNibbles(path).fromPrefixedNibblesToBytes()),
+                    RlpString.create(path.toBytes()),
                     if (encodedInnerNode.size >= 32) {
                         RlpString.create(innerNode.hash)
                     } else {
@@ -53,27 +53,7 @@ class ExtensionNode private constructor(
             )
         }
 
-    /**
-     * Add prefix to the nibbles array depending on its size.
-     *
-     * @param nibbles The nibbles array to be prefixed.
-     * @return The prefixed nibbles array.
-     */
-    private fun prefixedNibbles(nibbles: ByteArray): ByteArray {
-        return (if (nibbles.size % 2 > 0) byteArrayOf(1) else byteArrayOf(0, 0)).plus(nibbles)
-    }
-
     companion object {
-        /**
-         * Factory function to create an ExtensionNode from bytes.
-         *
-         * @param key The key to be used for the path of the ExtensionNode.
-         * @param node The Node to be used as the inner node of the ExtensionNode.
-         * @return The created ExtensionNode.
-         */
-        fun createFromBytes(key: ByteArray, node: Node): ExtensionNode {
-            return ExtensionNode(key.toNibbles(), node)
-        }
 
         /**
          * Factory function to create an ExtensionNode from nibbles.
@@ -82,8 +62,8 @@ class ExtensionNode private constructor(
          * @param node The Node to be used as the inner node of the ExtensionNode.
          * @return The created ExtensionNode.
          */
-        fun createFromNibbles(nibblesKey: ByteArray, node: Node): ExtensionNode {
-            return ExtensionNode(nibblesKey, node)
-        }
+        fun fromNibbles(nibblesKey: NibbleArray, node: Node): ExtensionNode =
+                ExtensionNode(PatriciaTriePath.forExtension(nibblesKey), node)
+
     }
 }

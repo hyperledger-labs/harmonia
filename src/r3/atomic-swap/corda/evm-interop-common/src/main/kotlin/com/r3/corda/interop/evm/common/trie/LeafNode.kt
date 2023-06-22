@@ -29,8 +29,8 @@ import org.web3j.rlp.RlpString
  * @property path The path of the node, represented as a nibble array.
  * @property value The value of the node, represented as a byte array.
  */
-class LeafNode private constructor(
-    val path: ByteArray, // NOTE: this is stored as a nibbles array
+class LeafNode(
+    val path: PatriciaTriePath,
     val value: ByteArray
 ) : Node() {
 
@@ -41,21 +41,11 @@ class LeafNode private constructor(
         get() {
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(prefixedNibbles(path).fromPrefixedNibblesToBytes()),
+                    RlpString.create(path.toBytes()),
                     RlpString.create(value)
                 )
             )
         }
-
-    /**
-     * Prefixes the provided nibble array.
-     *
-     * @param nibbles The nibble array to prefix.
-     * @return The prefixed nibble array.
-     */
-    private fun prefixedNibbles(nibbles: ByteArray): ByteArray {
-        return (if (nibbles.size % 2 > 0) byteArrayOf(3) else byteArrayOf(2, 0)).plus(nibbles)
-    }
 
     companion object {
         /**
@@ -66,7 +56,7 @@ class LeafNode private constructor(
          * @return The created LeafNode.
          */
         fun createFromBytes(key: ByteArray, value: ByteArray): LeafNode {
-            return LeafNode(key.toNibbles(), value)
+            return fromNibbles(NibbleArray.fromBytes(key), value)
         }
 
         /**
@@ -76,8 +66,8 @@ class LeafNode private constructor(
          * @param value The value to use for the node.
          * @return The created LeafNode.
          */
-        fun createFromNibbles(nibblesKey: ByteArray, value: ByteArray): LeafNode {
-            return LeafNode(nibblesKey, value)
+        fun fromNibbles(nibblesKey: NibbleArray, value: ByteArray): LeafNode {
+            return LeafNode(PatriciaTriePath.forLeaf(nibblesKey), value)
         }
     }
 }

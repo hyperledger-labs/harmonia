@@ -35,7 +35,7 @@ class PatriciaTrie {
      * @param value Value as ByteArray.
      */
     fun put(key: ByteArray, value: ByteArray) {
-        root = internalPut(root, key.toNibbles(), value)
+        root = internalPut(root, NibbleArray.fromBytes(key), value)
     }
 
     /**
@@ -45,7 +45,7 @@ class PatriciaTrie {
      * @return Value associated with the key as ByteArray.
      */
     fun get(key: ByteArray): ByteArray {
-        return internalGet(key.toNibbles())
+        return internalGet(NibbleArray.fromBytes(key))
     }
 
     /**
@@ -68,13 +68,13 @@ class PatriciaTrie {
      */
     private fun generateMerkleProof(startNode: Node, nibblesKey: ByteArray, store: SimpleKeyValueStore) : KeyValueStore {
         var node = startNode
-        var nodeKey = nibblesKey
+        var nodeKey = NibbleArray(nibblesKey)
 
         while (true) {
             when (node) {
                 is EmptyNode -> throw IllegalArgumentException("Key is not part of the trie")
                 is LeafNode -> {
-                    if (node.path.contentEquals(nodeKey)) {
+                    if (node.path.pathNibbles == nodeKey) {
                         store.put(node.hash, node.encoded)
                         return store
                     } else {
@@ -89,14 +89,14 @@ class PatriciaTrie {
                         return store
                     }
 
-                    val nextNibble = nodeKey[0]
-                    nodeKey = nodeKey.sliceArray(1 until nodeKey.size)
+                    val nextNibble = nodeKey.head
+                    nodeKey = nodeKey.tail
                     node = node.branches[nextNibble.toInt()]
                 }
                 is ExtensionNode -> {
-                    if (nodeKey.startsWith(node.path)) {
+                    if (nodeKey.startsWith(node.path.pathNibbles)) {
                         store.put(node.hash, node.encoded)
-                        nodeKey = nodeKey.sliceArray(node.path.size until nodeKey.size)
+                        nodeKey = nodeKey.dropFirst(node.path.pathNibbles.size)
                         node = node.innerNode
                     } else {
                         throw IllegalArgumentException("Key is not part of the trie")
@@ -127,7 +127,7 @@ class PatriciaTrie {
             proof: KeyValueStore
         ): Boolean {
             var nodeHash = rootHash
-            var nodeKey = key.toNibbles()
+            var nodeKey = NibbleArray.fromBytes(key)
 
             while (true) {
                 val encodedNode = proof.get(nodeHash) ?: throw IllegalArgumentException("Proof is invalid")
@@ -136,7 +136,7 @@ class PatriciaTrie {
                 nodeHash = when (node) {
                     is EmptyNode -> throw IllegalArgumentException("Key is not part of the trie")
                     is LeafNode -> {
-                        if (node.path.contentEquals(nodeKey)) {
+                        if (node.path.pathNibbles == nodeKey) {
                             return node.value.contentEquals(expectedValue)
                         } else {
                             throw IllegalArgumentException("Key is not part of the trie")
@@ -147,13 +147,13 @@ class PatriciaTrie {
                             return node.value.contentEquals(expectedValue)
                         }
 
-                        val nextNibble = nodeKey[0]
-                        nodeKey = nodeKey.sliceArray(1 until nodeKey.size)
+                        val nextNibble = nodeKey.head
+                        nodeKey = nodeKey.tail
                         node.branches[nextNibble.toInt()].hash
                     }
                     is ExtensionNode -> {
-                        if (nodeKey.startsWith(node.path)) {
-                            nodeKey = nodeKey.sliceArray(node.path.size until nodeKey.size)
+                        if (nodeKey.startsWith(node.path.pathNibbles)) {
+                            nodeKey = nodeKey.dropFirst(node.path.pathNibbles.size)
                             node.innerNode.hash
                         } else {
                             throw IllegalArgumentException("Key is not part of the trie")
@@ -175,47 +175,42 @@ class PatriciaTrie {
      * @param value The value to put.
      * @return The node where the key-value pair was put.
      */
-    private fun internalPut(node: Node, nibblesKey: ByteArray, value: ByteArray): Node {
+    private fun internalPut(node: Node, nibblesKey: NibbleArray, value: ByteArray): Node {
         if (node is EmptyNode) {
-            return LeafNode.createFromNibbles(nibblesKey, value)
+            return LeafNode.fromNibbles(nibblesKey, value)
         }
 
         if (node is LeafNode) {
-            val matchingLength = node.path.prefixMatchingLength(nibblesKey)
+            val nodePathNibbles = node.path.pathNibbles
+            val matchingLength = nodePathNibbles.prefixMatchingLength(nibblesKey)
 
-            if (matchingLength == node.path.size && matchingLength == nibblesKey.size) {
-                return LeafNode.createFromNibbles(nibblesKey, value)
+            if (matchingLength == nodePathNibbles.size && matchingLength == nibblesKey.size) {
+                return LeafNode.fromNibbles(nibblesKey, value)
             }
 
             val branchNode = when (matchingLength) {
-                node.path.size -> BranchNode.createWithValue(node.value)
+                nodePathNibbles.size -> BranchNode.createWithValue(node.value)
                 nibblesKey.size -> BranchNode.createWithValue(value)
                 else -> BranchNode.create()
             }
 
             val extOrBranchNode = if (matchingLength > 0) {
-                ExtensionNode.createFromNibbles(node.path.copyOfRange(0, matchingLength), branchNode)
+                ExtensionNode.fromNibbles(nodePathNibbles.takeFirst(matchingLength), branchNode)
             } else {
                 branchNode
             }
 
-            if (matchingLength < node.path.size) {
+            if (matchingLength < nodePathNibbles.size) {
                 branchNode.setBranch(
-                    node.path[matchingLength],
-                    LeafNode.createFromNibbles(
-                        node.path.copyOfRange(matchingLength + 1, node.path.size),
-                        node.value
-                    )
+                    nodePathNibbles[matchingLength],
+                    LeafNode.fromNibbles(nodePathNibbles.dropFirst(matchingLength + 1), node.value)
                 )
             }
 
             if (matchingLength < nibblesKey.size) {
                 branchNode.setBranch(
                     nibblesKey[matchingLength],
-                    LeafNode.createFromNibbles(
-                        nibblesKey.copyOfRange(matchingLength + 1, nibblesKey.size),
-                        value
-                    )
+                    LeafNode.fromNibbles(nibblesKey.dropFirst(matchingLength + 1), value)
                 )
             }
 
@@ -223,11 +218,11 @@ class PatriciaTrie {
         }
 
         if (node is BranchNode) {
-            if (nibblesKey.isNotEmpty()) {
-                val branch = nibblesKey[0].toInt()
+            if (!nibblesKey.isEmpty()) {
+                val branch = nibblesKey.head.toInt()
                 node.branches[branch] = internalPut(
                     node.branches[branch],
-                    nibblesKey.copyOfRange(1, nibblesKey.size),
+                    nibblesKey.tail,
                     value
                 )
             } else {
@@ -237,39 +232,40 @@ class PatriciaTrie {
         }
 
         if (node is ExtensionNode) {
-            val matchingLength = node.path.prefixMatchingLength(nibblesKey)
-            if (matchingLength < node.path.size) {
-                val extNibbles = node.path.copyOfRange(0, matchingLength)
-                val branchNibble = node.path[matchingLength]
-                val extRemainingNibbles = node.path.copyOfRange(matchingLength + 1, node.path.size)
+            val nodePathNibbles = node.path.pathNibbles
+            val matchingLength = nodePathNibbles.prefixMatchingLength(nibblesKey)
+            if (matchingLength < nodePathNibbles.size) {
+                val extNibbles = nodePathNibbles.takeFirst(matchingLength)
+                val branchNibble = nodePathNibbles[matchingLength]
+                val extRemainingNibbles = nodePathNibbles.dropFirst(matchingLength + 1)
 
                 val branchNode = BranchNode.createWithBranch(
                     branchNibble,
                     if (extRemainingNibbles.isEmpty()) {
                         node.innerNode
                     } else {
-                        ExtensionNode.createFromNibbles(extRemainingNibbles, node.innerNode)
+                        ExtensionNode.fromNibbles(extRemainingNibbles, node.innerNode)
                     }
                 )
 
                 if (matchingLength < nibblesKey.size) {
                     val nodeBranchNibble = nibblesKey[matchingLength]
-                    val nodeLeafNibbles = nibblesKey.copyOfRange(matchingLength + 1, nibblesKey.size)
-                    val remainingLeaf = LeafNode.createFromNibbles(nodeLeafNibbles, value)
+                    val nodeLeafNibbles = nibblesKey.dropFirst(matchingLength + 1)
+                    val remainingLeaf = LeafNode.fromNibbles(nodeLeafNibbles, value)
                     branchNode.setBranch(nodeBranchNibble, remainingLeaf)
                 } else if (matchingLength == nibblesKey.size) {
                     branchNode.value = value
                 } else throw IllegalArgumentException("Something went wrong")
 
 
-                return if (extNibbles.isNotEmpty()) {
-                    ExtensionNode.createFromNibbles(extNibbles, branchNode)
+                return if (!extNibbles.isEmpty()) {
+                    ExtensionNode.fromNibbles(extNibbles, branchNode)
                 } else {
                     branchNode
                 }
             }
 
-            node.innerNode = internalPut(node.innerNode, nibblesKey.copyOfRange(matchingLength, nibblesKey.size), value)
+            node.innerNode = internalPut(node.innerNode, nibblesKey.dropFirst(matchingLength), value)
             return node
         }
 
@@ -282,7 +278,7 @@ class PatriciaTrie {
      * @param nibblesKey The key for which to get the value.
      * @return The value associated with the key, or an empty ByteArray if the key does not exist.
      */
-    private fun internalGet(nibblesKey: ByteArray): ByteArray {
+    private fun internalGet(nibblesKey: NibbleArray): ByteArray {
         var node = root
         var key = nibblesKey
 
@@ -290,8 +286,9 @@ class PatriciaTrie {
             if (node is EmptyNode) return ByteArray(0) // TODO: key not found ?
 
             if (node is LeafNode) {
-                val matchingLength = node.path.prefixMatchingLength(key)
-                if (matchingLength != node.path.size || matchingLength != key.size) {
+                val nodePathNibbles = node.path.pathNibbles
+                val matchingLength = nodePathNibbles.prefixMatchingLength(key)
+                if (matchingLength != nodePathNibbles.size || matchingLength != key.size) {
                     return ByteArray(0) // key not found
                 }
                 return node.value
@@ -302,33 +299,25 @@ class PatriciaTrie {
                     return node.value // TODO: should check if the node has a value?
                 }
 
-                node = node.branches[key[0].toInt()]
-                key = key.copyOfRange(1, key.size)
+                node = node.branches[key.head.toInt()]
+                key = key.tail
                 continue
             }
 
             if (node is ExtensionNode) {
-                val matchingLength = node.path.prefixMatchingLength(key)
-                if (matchingLength < node.path.size) {
+                val nodePathNibbles = node.path.pathNibbles
+                val matchingLength = nodePathNibbles.prefixMatchingLength(key)
+                if (matchingLength < nodePathNibbles.size) {
                     return ByteArray(0) // TODO: key not found
                 }
 
                 node = node.innerNode
-                key = key.copyOfRange(matchingLength, key.size)
+                key = key.dropFirst(matchingLength)
                 continue
             }
 
             throw IllegalArgumentException("Invalid node type")
         }
-    }
-
-    /**
-     * Returns the length of the common prefix of two ByteArrays.
-     *
-     * @return The length of the common prefix.
-     */
-    private fun ByteArray.prefixMatchingLength(other: ByteArray): Int {
-        return this.zip(other).takeWhile { (n1, n2) -> n1 == n2 }.count()
     }
 }
 
