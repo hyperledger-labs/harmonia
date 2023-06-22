@@ -79,7 +79,7 @@ class TrieTests {
         val trie = PatriciaTrie()
         val key = byteArrayOf(1, 2, 3, 4)
         val value = "leaf".toByteArray()
-        val leaf = LeafNode.createFromBytes(key, value)
+        val leaf = LeafNode.fromBytes(key, value)
         val expectedHash = "0x2fc0c91eb10b756afb03c8ceafc121c9c2f4eb47b6ef974ba808f8b46067a6d0"
 
         trie.put(key, value)

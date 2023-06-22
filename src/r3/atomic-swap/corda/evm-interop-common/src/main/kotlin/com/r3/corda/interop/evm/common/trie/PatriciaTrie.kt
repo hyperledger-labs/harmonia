@@ -74,7 +74,7 @@ class PatriciaTrie {
             when (node) {
                 is EmptyNode -> throw IllegalArgumentException("Key is not part of the trie")
                 is LeafNode -> {
-                    if (node.path.pathNibbles == nodeKey) {
+                    if (node.path == nodeKey) {
                         store.put(node.hash, node.encoded)
                         return store
                     } else {
@@ -94,9 +94,9 @@ class PatriciaTrie {
                     node = node.branches[nextNibble.toInt()]
                 }
                 is ExtensionNode -> {
-                    if (nodeKey.startsWith(node.path.pathNibbles)) {
+                    if (nodeKey.startsWith(node.path)) {
                         store.put(node.hash, node.encoded)
-                        nodeKey = nodeKey.dropFirst(node.path.pathNibbles.size)
+                        nodeKey = nodeKey.dropFirst(node.path.size)
                         node = node.innerNode
                     } else {
                         throw IllegalArgumentException("Key is not part of the trie")
@@ -136,7 +136,7 @@ class PatriciaTrie {
                 nodeHash = when (node) {
                     is EmptyNode -> throw IllegalArgumentException("Key is not part of the trie")
                     is LeafNode -> {
-                        if (node.path.pathNibbles == nodeKey) {
+                        if (node.path == nodeKey) {
                             return node.value.contentEquals(expectedValue)
                         } else {
                             throw IllegalArgumentException("Key is not part of the trie")
@@ -152,8 +152,8 @@ class PatriciaTrie {
                         node.branches[nextNibble.toInt()].hash
                     }
                     is ExtensionNode -> {
-                        if (nodeKey.startsWith(node.path.pathNibbles)) {
-                            nodeKey = nodeKey.dropFirst(node.path.pathNibbles.size)
+                        if (nodeKey.startsWith(node.path)) {
+                            nodeKey = nodeKey.dropFirst(node.path.size)
                             node.innerNode.hash
                         } else {
                             throw IllegalArgumentException("Key is not part of the trie")
@@ -177,15 +177,15 @@ class PatriciaTrie {
      */
     private fun internalPut(node: Node, nibblesKey: NibbleArray, value: ByteArray): Node {
         if (node is EmptyNode) {
-            return LeafNode.fromNibbles(nibblesKey, value)
+            return LeafNode(nibblesKey, value)
         }
 
         if (node is LeafNode) {
-            val nodePathNibbles = node.path.pathNibbles
+            val nodePathNibbles = node.path
             val matchingLength = nodePathNibbles.prefixMatchingLength(nibblesKey)
 
             if (matchingLength == nodePathNibbles.size && matchingLength == nibblesKey.size) {
-                return LeafNode.fromNibbles(nibblesKey, value)
+                return LeafNode(nibblesKey, value)
             }
 
             val branchNode = when (matchingLength) {
@@ -195,7 +195,7 @@ class PatriciaTrie {
             }
 
             val extOrBranchNode = if (matchingLength > 0) {
-                ExtensionNode.fromNibbles(nodePathNibbles.takeFirst(matchingLength), branchNode)
+                ExtensionNode(nodePathNibbles.takeFirst(matchingLength), branchNode)
             } else {
                 branchNode
             }
@@ -203,14 +203,14 @@ class PatriciaTrie {
             if (matchingLength < nodePathNibbles.size) {
                 branchNode.setBranch(
                     nodePathNibbles[matchingLength],
-                    LeafNode.fromNibbles(nodePathNibbles.dropFirst(matchingLength + 1), node.value)
+                    LeafNode(nodePathNibbles.dropFirst(matchingLength + 1), node.value)
                 )
             }
 
             if (matchingLength < nibblesKey.size) {
                 branchNode.setBranch(
                     nibblesKey[matchingLength],
-                    LeafNode.fromNibbles(nibblesKey.dropFirst(matchingLength + 1), value)
+                    LeafNode(nibblesKey.dropFirst(matchingLength + 1), value)
                 )
             }
 
@@ -232,7 +232,7 @@ class PatriciaTrie {
         }
 
         if (node is ExtensionNode) {
-            val nodePathNibbles = node.path.pathNibbles
+            val nodePathNibbles = node.path
             val matchingLength = nodePathNibbles.prefixMatchingLength(nibblesKey)
             if (matchingLength < nodePathNibbles.size) {
                 val extNibbles = nodePathNibbles.takeFirst(matchingLength)
@@ -241,17 +241,17 @@ class PatriciaTrie {
 
                 val branchNode = BranchNode.createWithBranches(
                     branchNibble to
-                    if (extRemainingNibbles.isEmpty()) {
-                        node.innerNode
-                    } else {
-                        ExtensionNode.fromNibbles(extRemainingNibbles, node.innerNode)
-                    }
+                            if (extRemainingNibbles.isEmpty()) {
+                                node.innerNode
+                            } else {
+                                ExtensionNode(extRemainingNibbles, node.innerNode)
+                            }
                 )
 
                 if (matchingLength < nibblesKey.size) {
                     val nodeBranchNibble = nibblesKey[matchingLength]
                     val nodeLeafNibbles = nibblesKey.dropFirst(matchingLength + 1)
-                    val remainingLeaf = LeafNode.fromNibbles(nodeLeafNibbles, value)
+                    val remainingLeaf = LeafNode(nodeLeafNibbles, value)
                     branchNode.setBranch(nodeBranchNibble, remainingLeaf)
                 } else if (matchingLength == nibblesKey.size) {
                     branchNode.value = value
@@ -259,7 +259,7 @@ class PatriciaTrie {
 
 
                 return if (!extNibbles.isEmpty()) {
-                    ExtensionNode.fromNibbles(extNibbles, branchNode)
+                    ExtensionNode(extNibbles, branchNode)
                 } else {
                     branchNode
                 }
@@ -286,7 +286,7 @@ class PatriciaTrie {
             if (node is EmptyNode) return ByteArray(0) // TODO: key not found ?
 
             if (node is LeafNode) {
-                val nodePathNibbles = node.path.pathNibbles
+                val nodePathNibbles = node.path
                 val matchingLength = nodePathNibbles.prefixMatchingLength(key)
                 if (matchingLength != nodePathNibbles.size || matchingLength != key.size) {
                     return ByteArray(0) // key not found
@@ -305,7 +305,7 @@ class PatriciaTrie {
             }
 
             if (node is ExtensionNode) {
-                val nodePathNibbles = node.path.pathNibbles
+                val nodePathNibbles = node.path
                 val matchingLength = nodePathNibbles.prefixMatchingLength(key)
                 if (matchingLength < nodePathNibbles.size) {
                     return ByteArray(0) // TODO: key not found

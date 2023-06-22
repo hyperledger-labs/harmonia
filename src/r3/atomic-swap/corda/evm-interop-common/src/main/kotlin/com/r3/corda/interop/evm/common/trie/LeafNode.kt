@@ -30,7 +30,7 @@ import org.web3j.rlp.RlpString
  * @property value The value of the node, represented as a byte array.
  */
 class LeafNode(
-    val path: PatriciaTriePath,
+    val path: NibbleArray,
     val value: ByteArray
 ) : Node() {
 
@@ -41,7 +41,7 @@ class LeafNode(
         get() {
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(path.toBytes()),
+                    RlpString.create(PatriciaTriePathType.LEAF.prefixNibbles(path).toBytes()),
                     RlpString.create(value)
                 )
             )
@@ -55,19 +55,9 @@ class LeafNode(
          * @param value The value to use for the node.
          * @return The created LeafNode.
          */
-        fun createFromBytes(key: ByteArray, value: ByteArray): LeafNode {
-            return fromNibbles(NibbleArray.fromBytes(key), value)
+        fun fromBytes(key: ByteArray, value: ByteArray): LeafNode {
+            return LeafNode(NibbleArray.fromBytes(key), value)
         }
 
-        /**
-         * Factory function to create a LeafNode given a nibble key and a value.
-         *
-         * @param nibblesKey The nibble key to use for the node path.
-         * @param value The value to use for the node.
-         * @return The created LeafNode.
-         */
-        fun fromNibbles(nibblesKey: NibbleArray, value: ByteArray): LeafNode {
-            return LeafNode(PatriciaTriePath.forLeaf(nibblesKey), value)
-        }
     }
 }

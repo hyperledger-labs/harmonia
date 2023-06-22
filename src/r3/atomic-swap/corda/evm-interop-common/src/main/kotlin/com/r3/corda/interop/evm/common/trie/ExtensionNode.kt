@@ -31,7 +31,7 @@ import org.web3j.rlp.RlpString
  * @property innerNode The inner Node that the ExtensionNode points to.
  */
 class ExtensionNode(
-    val path: PatriciaTriePath,
+    val path: NibbleArray,
     var innerNode: Node
 ) : Node() {
 
@@ -43,7 +43,7 @@ class ExtensionNode(
             val encodedInnerNode = innerNode.encoded
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(path.toBytes()),
+                    RlpString.create(PatriciaTriePathType.EXTENSION.prefixNibbles(path).toBytes()),
                     if (encodedInnerNode.size >= 32) {
                         RlpString.create(innerNode.hash)
                     } else {
@@ -53,17 +53,4 @@ class ExtensionNode(
             )
         }
 
-    companion object {
-
-        /**
-         * Factory function to create an ExtensionNode from nibbles.
-         *
-         * @param nibblesKey The key to be used for the path of the ExtensionNode, in the form of a nibbles array.
-         * @param node The Node to be used as the inner node of the ExtensionNode.
-         * @return The created ExtensionNode.
-         */
-        fun fromNibbles(nibblesKey: NibbleArray, node: Node): ExtensionNode =
-                ExtensionNode(PatriciaTriePath.forExtension(nibblesKey), node)
-
-    }
 }

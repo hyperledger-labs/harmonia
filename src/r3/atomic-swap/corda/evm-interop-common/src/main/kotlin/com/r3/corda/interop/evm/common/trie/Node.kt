@@ -99,11 +99,11 @@ abstract class Node
                     when (valueOrNode) {
                         is RlpString -> {
                             when(path.type) {
-                                PatriciaTriePathType.LEAF -> LeafNode(path, valueOrNode.bytes)
-                                else -> ExtensionNode(path, createFromRLP(valueOrNode.bytes))
+                                PatriciaTriePathType.LEAF -> LeafNode(path.pathNibbles, valueOrNode.bytes)
+                                else -> ExtensionNode(path.pathNibbles, createFromRLP(valueOrNode.bytes))
                             }
                         }
-                        is RlpList -> ExtensionNode(path, createFromRLP(valueOrNode))
+                        is RlpList -> ExtensionNode(path.pathNibbles, createFromRLP(valueOrNode))
                         else -> throw IllegalArgumentException("Invalid RLP encoding")
                     }
                 }
