@@ -34,8 +34,8 @@ class PatriciaTriePathTests {
     }
 
     private fun assertRoundTripsCorrectly(type: PatriciaTriePathType, vararg nibbles: Byte) {
-        val path = PatriciaTriePath(type, NibbleArray(nibbles))
+        val pathNibbles = NibbleArray(nibbles)
 
-        assertEquals(path, PatriciaTriePath.fromBytes(path.type.prefixNibbles(path.pathNibbles).toBytes()))
+        assertEquals(type to pathNibbles, PatriciaTriePath.fromBytes(type.prefixNibbles(pathNibbles).toBytes()))
     }
 }

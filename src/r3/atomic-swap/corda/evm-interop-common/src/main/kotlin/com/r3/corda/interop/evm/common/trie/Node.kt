@@ -92,18 +92,18 @@ abstract class Node
 
             return when (rlpList.values.size) {
                 2 -> {
-                    val path = PatriciaTriePath.fromBytes((rlpList.values[0] as RlpString).bytes)
+                    val (pathType, pathNibbles) = PatriciaTriePath.fromBytes((rlpList.values[0] as RlpString).bytes)
 
                     val valueOrNode = rlpList.values[1]
 
                     when (valueOrNode) {
                         is RlpString -> {
-                            when(path.type) {
-                                PatriciaTriePathType.LEAF -> LeafNode(path.pathNibbles, valueOrNode.bytes)
-                                else -> ExtensionNode(path.pathNibbles, createFromRLP(valueOrNode.bytes))
+                            when(pathType) {
+                                PatriciaTriePathType.LEAF -> LeafNode(pathNibbles, valueOrNode.bytes)
+                                else -> ExtensionNode(pathNibbles, createFromRLP(valueOrNode.bytes))
                             }
                         }
-                        is RlpList -> ExtensionNode(path.pathNibbles, createFromRLP(valueOrNode))
+                        is RlpList -> ExtensionNode(pathNibbles, createFromRLP(valueOrNode))
                         else -> throw IllegalArgumentException("Invalid RLP encoding")
                     }
                 }
