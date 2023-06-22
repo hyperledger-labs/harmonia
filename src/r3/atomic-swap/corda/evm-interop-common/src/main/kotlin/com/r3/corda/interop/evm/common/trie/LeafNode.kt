@@ -41,7 +41,7 @@ class LeafNode(
         get() {
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(PatriciaTriePathType.LEAF.prefixNibbles(path).toBytes()),
+                    RlpString.create(PatriciaTriePathType.LEAF.applyPrefix(path).toBytes()),
                     RlpString.create(value)
                 )
             )

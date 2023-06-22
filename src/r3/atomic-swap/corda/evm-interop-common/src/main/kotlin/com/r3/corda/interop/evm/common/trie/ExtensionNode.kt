@@ -43,7 +43,7 @@ class ExtensionNode(
             val encodedInnerNode = innerNode.encoded
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(PatriciaTriePathType.EXTENSION.prefixNibbles(path).toBytes()),
+                    RlpString.create(PatriciaTriePathType.EXTENSION.applyPrefix(path).toBytes()),
                     if (encodedInnerNode.size >= 32) {
                         RlpString.create(innerNode.hash)
                     } else {
