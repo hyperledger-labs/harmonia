@@ -7,41 +7,35 @@ class PatriciaTriePathTests {
 
     @Test
     fun oddNumberedLeafPathRoundTripsCorrectly() {
-        val unit = PatriciaTriePath(
+        assertRoundTripsCorrectly(
             PatriciaTriePathType.LEAF,
-            NibbleArray.ofNibbles(0x1, 0xC, 0x5)
-        )
-
-        assertEquals(unit, PatriciaTriePath.fromBytes(unit.toBytes()))
+            0x1, 0xC, 0x5)
     }
 
     @Test
     fun evenNumberedLeafPathRoundTripsCorrectly() {
-        val unit = PatriciaTriePath(
+        assertRoundTripsCorrectly(
             PatriciaTriePathType.LEAF,
-            NibbleArray.ofNibbles(0x1, 0xC, 0x5, 0x6)
-        )
-
-        assertEquals(unit, PatriciaTriePath.fromBytes(unit.toBytes()))
+            0x1, 0xC, 0x5, 0x6)
     }
 
     @Test
     fun oddNumberedExtensionPathRoundTripsCorrectly() {
-        val unit = PatriciaTriePath(
+        assertRoundTripsCorrectly(
             PatriciaTriePathType.EXTENSION,
-            NibbleArray.ofNibbles(0x1, 0xC, 0x5)
-        )
-
-        assertEquals(unit, PatriciaTriePath.fromBytes(unit.toBytes()))
+            0x1, 0xC, 0x5)
     }
 
     @Test
     fun evenNumberedExtensionPathRoundTripsCorrectly() {
-        val unit = PatriciaTriePath(
+        assertRoundTripsCorrectly(
             PatriciaTriePathType.EXTENSION,
-            NibbleArray.ofNibbles(0x1, 0xC, 0x5, 0x6)
-        )
+            0x1, 0xC, 0x5, 0x6)
+    }
 
-        assertEquals(unit, PatriciaTriePath.fromBytes(unit.toBytes()))
+    private fun assertRoundTripsCorrectly(type: PatriciaTriePathType, vararg nibbles: Byte) {
+        val path = PatriciaTriePath(type, NibbleArray(nibbles))
+
+        assertEquals(path, PatriciaTriePath.fromBytes(path.type.prefixNibbles(path.pathNibbles).toBytes()))
     }
 }

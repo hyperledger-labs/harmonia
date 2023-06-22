@@ -53,8 +53,6 @@ data class NibbleArray(val values: ByteArray) {
 
             return NibbleArray(result)
         }
-
-        fun ofNibbles(vararg values: Byte): NibbleArray = NibbleArray(values)
     }
 
     fun toBytes(): ByteArray {
@@ -131,15 +129,7 @@ data class PatriciaTriePath(val type: PatriciaTriePathType, val pathNibbles: Nib
                 allNibbles.dropFirst(prefix.size)
             )
         }
-
-        fun forLeaf(pathNibbles: NibbleArray): PatriciaTriePath =
-            PatriciaTriePath(PatriciaTriePathType.LEAF, pathNibbles)
-
-        fun forExtension(pathNibbles: NibbleArray): PatriciaTriePath =
-            PatriciaTriePath(PatriciaTriePathType.EXTENSION, pathNibbles)
     }
-
-    fun toBytes(): ByteArray = type.prefixNibbles(pathNibbles).toBytes()
 
 }
 
