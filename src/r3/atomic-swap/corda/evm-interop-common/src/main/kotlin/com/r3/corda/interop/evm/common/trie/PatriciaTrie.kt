@@ -66,7 +66,7 @@ class PatriciaTrie {
      * @param store A simple Key-Value that will collect the trie proofs
      * @return Merkle proof as KeyValueStore.
      */
-    private fun generateMerkleProof(startNode: Node, nibblesKey: NibbleArray, store: SimpleKeyValueStore) : KeyValueStore {
+    private fun generateMerkleProof(startNode: Node, nibblesKey: NibbleArray, store: WriteableKeyValueStore) : KeyValueStore {
         var node = startNode
         var nodeKey = nibblesKey
 
