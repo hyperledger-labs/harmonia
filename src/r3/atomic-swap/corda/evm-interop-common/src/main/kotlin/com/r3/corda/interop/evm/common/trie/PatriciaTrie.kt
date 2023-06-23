@@ -220,7 +220,7 @@ class PatriciaTrie {
         }
 
         if (node is BranchNode) {
-            if (!nibblesKey.isEmpty()) {
+            if (nibblesKey.isNotEmpty()) {
                 val branch = nibblesKey.head.toInt()
                 node.branches[branch] = internalPut(
                     node.branches[branch],
@@ -260,7 +260,7 @@ class PatriciaTrie {
                 } else throw IllegalArgumentException("Something went wrong")
 
 
-                return if (!extNibbles.isEmpty()) {
+                return if (extNibbles.isNotEmpty()) {
                     Node.extension(extNibbles, branchNode)
                 } else {
                     branchNode

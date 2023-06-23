@@ -61,9 +61,19 @@ data class NibbleArray(val values: ByteArray) {
 
     fun isEmpty(): Boolean = values.isEmpty()
 
-    fun startsWith(other: NibbleArray): Boolean = startsWith(other.values)
+    fun isNotEmpty(): Boolean = values.isNotEmpty()
 
-    fun startsWith(other: ByteArray): Boolean = values.startsWith(other)
+    fun startsWith(other: NibbleArray): Boolean {
+        if (other.size > size) {
+            return false
+        }
+        for (i in other.values.indices) {
+            if (values[i] != other[i]) {
+                return false
+            }
+        }
+        return true
+    }
 
     fun prefixMatchingLength(other: NibbleArray): Int {
         var ptr = 0
@@ -98,28 +108,4 @@ private fun ByteArray.copyInto(other: ByteArray, startIndex: Int) {
     forEach {
         other[ptr++] = it
     }
-}
-
-/**
- * Checks if the ByteArray starts with the specified ByteArray.
- *
- * The function iterates over the elements in the original ByteArray and
- * the other ByteArray simultaneously. If the original ByteArray is shorter
- * than the other ByteArray, or if any element in the original ByteArray
- * doesn't match the corresponding element in the other ByteArray, the
- * function returns false. If all elements match, the function returns true.
- *
- * @param other the ByteArray to check at the start of this ByteArray
- * @return true if this ByteArray starts with the specified ByteArray, false otherwise
- */
-private fun ByteArray.startsWith(other: ByteArray): Boolean {
-    if (other.size > this.size) {
-        return false
-    }
-    for (i in other.indices) {
-        if (this[i] != other[i]) {
-            return false
-        }
-    }
-    return true
 }
