@@ -32,7 +32,7 @@ data class NibbleArray(val values: ByteArray) {
             else result[resultIndex] or nibble
         }
 
-        return result;
+        return result
     }
 
     fun prepend(prefix: NibbleArray): NibbleArray {

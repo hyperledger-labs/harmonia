@@ -60,9 +60,6 @@ sealed class Node {
         fun branch(): BranchNode = branch(emptyArray)
         fun branch(value: ByteArray) = branch(Array<Node>(16) { EmptyNode }, value)
 
-        fun branch(branches: Array<Node>): BranchNode = BranchNode(branches, emptyArray)
-        fun branch(branches: Array<Node>, value: ByteArray): BranchNode = BranchNode(branches, value)
-
         fun branch(sparseBranches: List<Pair<Int, Node>>): BranchNode = branch(sparseBranches, emptyArray)
         fun branch(sparseBranches: List<Pair<Int, Node>>, value: ByteArray): BranchNode {
             val branches = Array<Node>(16) { empty }
@@ -72,10 +69,9 @@ sealed class Node {
             return branch(branches, value)
         }
 
-        fun extension(path: NibbleArray, value: Node): ExtensionNode = ExtensionNode(path, value)
+        private fun branch(branches: Array<Node>, value: ByteArray): BranchNode = BranchNode(branches, value)
 
-        fun hash(hash: ByteArray): HashNode = hash(hash, empty)
-        fun hash(hash: ByteArray, innerNode: Node): HashNode = HashNode(hash, innerNode)
+        fun extension(path: NibbleArray, value: Node): ExtensionNode = ExtensionNode(path, value)
 
         /**
          * Create a Node from a RLP encoded byte array.
@@ -83,7 +79,7 @@ sealed class Node {
          * @return Node created from the RLP encoded byte array.
          */
         fun createFromRLP(encoded: ByteArray): Node =
-            if (encoded.size == 32) hash(encoded) else createFromRLP(RlpDecoder.decode(encoded) as RlpList)
+            if (encoded.size == 32) HashNode(encoded, empty) else createFromRLP(RlpDecoder.decode(encoded) as RlpList)
 
         /**
          * Create a Node from a RLP list.
