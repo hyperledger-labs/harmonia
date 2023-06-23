@@ -42,11 +42,9 @@ sealed class Node {
      * @return String representation of the Node.
      */
     override fun toString(): String {
-        return "NodeType: ${javaClass.simpleName} Hash: ${Numeric.toHexString(hash)} Encoded: ${
-            Numeric.toHexString(
-                encoded
-            )
-        }"
+        return "NodeType: ${javaClass.simpleName} " +
+                "Hash: ${Numeric.toHexString(hash)} " +
+                "Encoded: ${Numeric.toHexString(encoded)}"
     }
 
     companion object {
