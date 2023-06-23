@@ -27,7 +27,7 @@ class TrieTests {
 
     @Test
     fun testEmptyNodeHashCalculation() {
-        val emptyNode = EmptyNode()
+        val emptyNode = Node.EmptyNode
         val expectedHash = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
 
         assertEquals(expectedHash, Numeric.toHexString(emptyNode.hash))
@@ -51,7 +51,7 @@ class TrieTests {
 
     @Test
     fun testEmptyBranchNodeHashCalculation() {
-        val branch = BranchNode.createWithBranches()
+        val branch = branchNode().empty()
         val expectedHash = "0xbe0f4440e293a47160b9b148d49212d0616ec5b0a70c99de9bf36515d52e0901"
 
         assertEquals(expectedHash, Numeric.toHexString(branch.hash))
@@ -67,33 +67,38 @@ class TrieTests {
 
     @Test
     fun testEmptyTrieRootNode() {
-        val trie = PatriciaTrie()
+        val trie = trie { }
         val expectedHash = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
 
-        assert(trie.root is EmptyNode)
+        assert(trie.root is Node.EmptyNode)
         assertEquals(expectedHash, Numeric.toHexString(trie.root.hash))
     }
 
     @Test
     fun testTrieWithSingleLeafNode() {
-        val trie = PatriciaTrie()
+        val trie = trie {
+            "leaf".at(1, 2, 3, 4)
+        }
+
         val key = byteArrayOf(1, 2, 3, 4)
         val value = "leaf".toByteArray()
-        val leaf = LeafNode.fromBytes(key, value)
-        val expectedHash = "0x2fc0c91eb10b756afb03c8ceafc121c9c2f4eb47b6ef974ba808f8b46067a6d0"
 
         trie.put(key, value)
 
-        assertTrue(trie.root is LeafNode)
+        val leaf = Node.leaf(key, value)
+        val expectedHash = "0x2fc0c91eb10b756afb03c8ceafc121c9c2f4eb47b6ef974ba808f8b46067a6d0"
+
+        assertTrue(trie.root is Node.LeafNode)
         assertArrayEquals(leaf.hash, trie.root.hash)
         assertEquals(expectedHash, Numeric.toHexString(trie.root.hash))
     }
 
     @Test
     fun testTrieWithTwoLeafNodesSecondShorter() {
-        val trie = PatriciaTrie()
-            trie.put(byteArrayOf(1, 2, 3, 4), "hello".toByteArray())
-            trie.put(byteArrayOf(1, 2, 3), "world".toByteArray())
+        val trie = trie {
+            "hello".at(1, 2, 3, 4)
+            "world".at(1, 2, 3)
+        }
 
         val node = extensionNode(0, 1, 0, 2, 0, 3).toBranches(
             0 to leafNode(4).withValue("hello")
@@ -104,10 +109,10 @@ class TrieTests {
 
     @Test
     fun testTrieWithTwoLeafNodesSecondLonger() {
-        val trie = trie()
-            .put(1, 2, 3, 4).withValue("hello")
-            .put(1, 2, 3, 4, 5, 6).withValue("world")
-            .build()
+        val trie = trie {
+            "hello".at(1, 2, 3, 4)
+            "world".at(1 ,2 ,3 ,4 ,5 ,6)
+        }
 
         val node = extensionNode(0, 1, 0, 2, 0, 3, 0, 4).toBranches(
             0 to leafNode(5, 0, 6).withValue("world")
@@ -118,10 +123,10 @@ class TrieTests {
 
     @Test
     fun testTrieWithTwoLeafNodesSameLength() {
-        val trie = trie()
-            .put(1, 2, 3, 4).withValue("hello")
-            .put(1, 2, 3, 4).withValue("world")
-            .build()
+        val trie = trie {
+            "hello".at(1, 2, 3, 4)
+            "world".at(1, 2, 3, 4)
+        }
 
         val leaf = leafNode(0, 1, 0, 2, 0, 3, 0, 4).withValue("world")
 
@@ -130,11 +135,11 @@ class TrieTests {
 
     @Test
     fun testTrieWithPrefixMatchingLeafNodesThirdMatchingLengthLong() {
-        val trie = trie()
-            .put(1, 2, 3, 4).withValue("hello1")
-            .put(1, 2, 3, 5).withValue("hello2")
-            .put(1, 2, 3).withValue("world")
-            .build()
+        val trie = trie {
+            "hello1".at(1, 2, 3, 4)
+            "hello2".at(1, 2, 3, 5)
+            "world".at(1, 2, 3)
+        }
 
         val node = extensionNode(0, 1, 0, 2, 0, 3).toBranches(
             0 to branchNode(
@@ -147,10 +152,11 @@ class TrieTests {
 
     @Test
     fun testTrieWithPrefixMatchingLeafNodesThirdShorterPartiallyMatching() {
-        val trie = PatriciaTrie()
-        trie.put(byteArrayOf(1, 2, 3, 4), "hello1".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3, 5), "hello2".toByteArray())
-        trie.put(byteArrayOf(1, 2, 5), "world".toByteArray())
+        val trie = trie {
+            "hello1".at(1, 2, 3, 4)
+            "hello2".at(1, 2, 3, 5)
+            "world".at(1, 2, 5)
+        }
 
         val node = extensionNode(0, 1, 0, 2, 0).toBranches(
             3 to extensionNode(0).toBranches(
@@ -165,11 +171,11 @@ class TrieTests {
 
     @Test
     fun testTrieWithPartiallyMatchingLeafNodesThirdNoMatch() {
-        val trie = trie()
-            .put(1, 2, 3, 4).withValue("hello1")
-            .put(1, 2, 3, 5).withValue("hello2")
-            .put(16, 2, 5).withValue("world")
-            .build()
+        val trie = trie {
+            "hello1".at(1, 2, 3, 4)
+            "hello2".at(1, 2, 3, 5)
+            "world".at(16, 2, 5)
+        }
 
         val node = branchNode(
             0 to extensionNode(1, 0, 2, 0, 3, 0).toBranches(
@@ -184,10 +190,11 @@ class TrieTests {
 
     @Test
     fun testPatriciaTrieWithStaticTransactionData() {
-        val trie = PatriciaTrie()
-        trie.put(byteArrayOf(1, 2, 3, 4), "hello1".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3, 80), "hello2".toByteArray())
-        trie.put(byteArrayOf(1, 2, 3), "world".toByteArray())
+        val trie = trie {
+            "hello1".at(1, 2, 3, 4)
+            "hello2".at(1, 2, 3, 80)
+            "world".at(1, 2, 3)
+        }
 
         val node = extensionNode(0, 1, 0, 2, 0, 3).toBranches(
             0 to leafNode(4).withValue("hello1"),

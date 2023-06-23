@@ -16,6 +16,8 @@
 
 package com.r3.corda.interop.evm.common.trie
 
+import com.r3.corda.interop.evm.common.trie.Node.*
+
 /**
  * The Patricia Trie is a space-optimized version of a binary trie.
  * It's an ordered tree data structure used to store a dynamic set or associative array
@@ -26,7 +28,7 @@ class PatriciaTrie {
     /**
      * The root node of the Patricia Trie.
      */
-    var root: Node = EmptyNode()
+    var root: Node = Node.empty
 
     /**
      * Puts a key-value pair in the Patricia Trie.
@@ -177,7 +179,7 @@ class PatriciaTrie {
      */
     private fun internalPut(node: Node, nibblesKey: NibbleArray, value: ByteArray): Node {
         if (node is EmptyNode) {
-            return LeafNode(nibblesKey, value)
+            return Node.leaf(nibblesKey, value)
         }
 
         if (node is LeafNode) {
@@ -185,17 +187,17 @@ class PatriciaTrie {
             val matchingLength = nodePathNibbles.prefixMatchingLength(nibblesKey)
 
             if (matchingLength == nodePathNibbles.size && matchingLength == nibblesKey.size) {
-                return LeafNode(nibblesKey, value)
+                return Node.leaf(nibblesKey, value)
             }
 
             val branchNode = when (matchingLength) {
-                nodePathNibbles.size -> BranchNode.createWithBranches(value = node.value)
-                nibblesKey.size -> BranchNode.createWithBranches(value = value)
-                else -> BranchNode.createWithBranches()
+                nodePathNibbles.size -> Node.branch(node.value)
+                nibblesKey.size -> Node.branch(value)
+                else -> Node.branch()
             }
 
             val extOrBranchNode = if (matchingLength > 0) {
-                ExtensionNode(nodePathNibbles.takeFirst(matchingLength), branchNode)
+                Node.extension(nodePathNibbles.takeFirst(matchingLength), branchNode)
             } else {
                 branchNode
             }
@@ -203,14 +205,14 @@ class PatriciaTrie {
             if (matchingLength < nodePathNibbles.size) {
                 branchNode.setBranch(
                     nodePathNibbles[matchingLength],
-                    LeafNode(nodePathNibbles.dropFirst(matchingLength + 1), node.value)
+                    Node.leaf(nodePathNibbles.dropFirst(matchingLength + 1), node.value)
                 )
             }
 
             if (matchingLength < nibblesKey.size) {
                 branchNode.setBranch(
                     nibblesKey[matchingLength],
-                    LeafNode(nibblesKey.dropFirst(matchingLength + 1), value)
+                    Node.leaf(nibblesKey.dropFirst(matchingLength + 1), value)
                 )
             }
 
@@ -239,19 +241,19 @@ class PatriciaTrie {
                 val branchNibble = nodePathNibbles[matchingLength]
                 val extRemainingNibbles = nodePathNibbles.dropFirst(matchingLength + 1)
 
-                val branchNode = BranchNode.createWithBranches(
-                    branchNibble to
+                val branchNode = Node.branch(listOf(
+                    branchNibble.toInt() to
                             if (extRemainingNibbles.isEmpty()) {
                                 node.innerNode
                             } else {
-                                ExtensionNode(extRemainingNibbles, node.innerNode)
+                                Node.extension(extRemainingNibbles, node.innerNode)
                             }
-                )
+                ))
 
                 if (matchingLength < nibblesKey.size) {
                     val nodeBranchNibble = nibblesKey[matchingLength]
                     val nodeLeafNibbles = nibblesKey.dropFirst(matchingLength + 1)
-                    val remainingLeaf = LeafNode(nodeLeafNibbles, value)
+                    val remainingLeaf = Node.leaf(nodeLeafNibbles, value)
                     branchNode.setBranch(nodeBranchNibble, remainingLeaf)
                 } else if (matchingLength == nibblesKey.size) {
                     branchNode.value = value
@@ -259,7 +261,7 @@ class PatriciaTrie {
 
 
                 return if (!extNibbles.isEmpty()) {
-                    ExtensionNode(extNibbles, branchNode)
+                    Node.extension(extNibbles, branchNode)
                 } else {
                     branchNode
                 }
