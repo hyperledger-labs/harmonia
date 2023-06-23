@@ -20,7 +20,7 @@ data class NibbleArray(val values: ByteArray) {
     }
 
     fun toBytes(): ByteArray {
-        require(values.size.isEven) {
+        require(isEvenSized) {
             "Cannot convert odd-sized nibble array to bytes"
         }
 
