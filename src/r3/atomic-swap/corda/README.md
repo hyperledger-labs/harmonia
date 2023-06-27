@@ -16,7 +16,7 @@ The following is a list of components included in this project. All of these are
 
 2. **Identity Module**: This module allows for the configuration of the EVM identity a flow will operate with. It also supports the implementation of custom identity modules leveraging Hardware Security Modules (HSMs) or other protocols to ensure the safety of the private key used for signing EVM transactions. The basic module is fully implemented and tested, and other modules are being implemented.
 
-3. **Web3 Interfaces**: Current implementation supports interaction with ERC20 tokens and standard Web3 APIs like querying blocks and transactions. These features are fully implemented and tested. Support for ERC712 and ERC1155 tokens is in the pipeline and will be added soon.
+3. **Web3 Interfaces**: Current implementation supports interaction with ERC20 tokens and standard Web3 APIs like querying blocks and transactions. These features are fully implemented and tested. Support for ERC721 and ERC1155 tokens is in the pipeline and will be added soon.
 
 4. **Atomic Swap Flows**: Basic atomic swap flows for executing Corda-EVM DvP and PvP scenarios are under active development.
 
