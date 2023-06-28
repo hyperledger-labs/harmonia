@@ -57,54 +57,7 @@ class PatriciaTrie {
      * @return Merkle proof as KeyValueStore.
      */
     fun generateMerkleProof(key: ByteArray) : KeyValueStore {
-        return generateMerkleProof(root, NibbleArray.fromBytes(key), SimpleKeyValueStore())
-    }
-
-    /**
-     * Generates a Merkle proof for a given key.
-     *
-     * @param node Key as ByteArray.
-     * @param key Key as a nibbles' ByteArray.
-     * @param store A simple Key-Value that will collect the trie proofs
-     * @return Merkle proof as KeyValueStore.
-     */
-    private fun generateMerkleProof(node: Node, key: NibbleArray, store: WriteableKeyValueStore) : KeyValueStore {
-        while (true) {
-            when (node) {
-                is EmptyNode -> throw IllegalArgumentException("Key is not part of the trie")
-                is LeafNode -> {
-                    if (node.path == key) {
-                        store.put(node.hash, node.encoded)
-                        return store
-                    } else {
-                        throw IllegalArgumentException("Key is not part of the trie")
-                    }
-                }
-
-                is BranchNode -> {
-                    store.put(node.hash, node.encoded)
-
-                    if (key.isEmpty()) {
-                        require(node.value.isNotEmpty()) { "Terminal branch without value" }
-                        return store
-                    }
-
-                    val nextNibble = key.head
-                    return generateMerkleProof(node.getBranch(nextNibble), key.tail, store)
-                }
-
-                is ExtensionNode -> {
-                    if (key.startsWith(node.path)) {
-                        store.put(node.hash, node.encoded)
-                        return generateMerkleProof(node.innerNode, key.dropFirst(node.path.size), store)
-                    } else {
-                        throw IllegalArgumentException("Key is not part of the trie")
-                    }
-                }
-
-                else -> throw IllegalArgumentException("Invalid node type")
-            }
-        }
+        return root.generateMerkleProof(NibbleArray.fromBytes(key), SimpleKeyValueStore())
     }
 
     /**

@@ -57,6 +57,15 @@ sealed class Node {
     abstract fun get(key: NibbleArray): ByteArray
 
     /**
+     * Generates a Merkle proof for a given key.
+     *
+     * @param key Key as a NibbleArray
+     * @param store A simple Key-Value that will collect the trie proofs
+     * @return Merkle proof as KeyValueStore.
+     */
+    abstract fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore) : KeyValueStore
+
+    /**
      * Provide a String representation of the Node for debugging.
      * @return String representation of the Node.
      */
@@ -160,6 +169,10 @@ sealed class Node {
         override fun put(key: NibbleArray, newValue: ByteArray): Node = leaf(key, newValue)
 
         override fun get(key: NibbleArray): ByteArray = ByteArray(0)
+
+        override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore {
+            throw IllegalArgumentException("Key is not part of the trie")
+        }
     }
 
     /**
@@ -237,6 +250,14 @@ sealed class Node {
 
             return innerNode.get(key.dropFirst(matchingLength))
         }
+
+        override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore =
+                if (key.startsWith(path)) {
+                    store.put(hash, encoded)
+                    innerNode.generateMerkleProof(key.dropFirst(path.size), store)
+                } else {
+                    throw IllegalArgumentException("Key is not part of the trie")
+                }
     }
 
     /**
@@ -283,6 +304,16 @@ sealed class Node {
 
         override fun get(key: NibbleArray): ByteArray = if (key.isEmpty()) value else getBranch(key.head).get(key.tail)
 
+        override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore {
+                store.put(hash, encoded)
+
+                if (key.isEmpty()) {
+                    require(value.isNotEmpty()) { "Terminal branch without value" }
+                    return store
+                }
+
+                return getBranch(key.head).generateMerkleProof(key.tail, store)
+            }
     }
 
     /**
@@ -305,6 +336,10 @@ sealed class Node {
 
         override fun get(key: NibbleArray): ByteArray {
             throw UnsupportedOperationException("Cannot get from HashNode")
+        }
+
+        override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore {
+            throw UnsupportedOperationException("Cannot generate Merkle proof from HashNode")
         }
     }
 
@@ -377,6 +412,15 @@ sealed class Node {
         }
 
         override fun get(key: NibbleArray): ByteArray = if (key == path) value else ByteArray(0)
+
+        override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore {
+            if (path == key) {
+                store.put(hash, encoded)
+                return store
+            } else {
+                throw IllegalArgumentException("Key is not part of the trie")
+            }
+        }
     }
 
 }
