@@ -39,6 +39,9 @@ interface KeyValueStore {
      */
     fun isEmpty(): Boolean
 
+    fun verify(rootHash: ByteArray, key: NibbleArray, expectedValue: ByteArray): Boolean =
+        Node.createFromRLP(get(rootHash) ?: throw IllegalArgumentException("Proof is invalid"))
+            .verifyMerkleProof(key, expectedValue, this)
 }
 
 interface WriteableKeyValueStore : KeyValueStore {

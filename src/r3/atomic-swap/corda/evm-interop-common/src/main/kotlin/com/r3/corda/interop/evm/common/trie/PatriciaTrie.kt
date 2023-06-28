@@ -21,7 +21,7 @@ package com.r3.corda.interop.evm.common.trie
  * It's an ordered tree data structure used to store a dynamic set or associative array
  * where the keys are usually strings.
  */
-class PatriciaTrie(var root: Node = Node.empty) {
+class PatriciaTrie(var root: Node = EmptyNode) {
 
     /**
      * The root node of the Patricia Trie.
@@ -58,7 +58,7 @@ class PatriciaTrie(var root: Node = Node.empty) {
     }
 
     fun verifyMerkleProof(key: ByteArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
-        root.verifyMerkleProof(NibbleArray.fromBytes(key), expectedValue, proof)
+        proof.verify(root.hash, NibbleArray.fromBytes(key), expectedValue)
 
     /**
      * Companion object that provides functionality to verify a Merkle proof.
@@ -79,7 +79,7 @@ class PatriciaTrie(var root: Node = Node.empty) {
             key: ByteArray,
             expectedValue: ByteArray,
             proof: KeyValueStore
-        ): Boolean = Node.verifyMerkleProof(rootHash, NibbleArray.fromBytes(key), expectedValue, proof)
+        ): Boolean = proof.verify(rootHash, NibbleArray.fromBytes(key), expectedValue)
 
     }
 

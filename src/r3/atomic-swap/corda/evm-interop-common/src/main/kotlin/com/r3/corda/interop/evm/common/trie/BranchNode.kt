@@ -29,10 +29,21 @@ import org.web3j.rlp.RlpString
  * @property branches The array of Nodes that the BranchNode contains.
  * @property value The value of the BranchNode.
  */
-class BranchNode(
-    private val branches: Array<Node>,
-    private val value: ByteArray
-) : Node {
+class BranchNode(private val branches: Array<Node>, private val value: ByteArray) : Node {
+
+    companion object {
+        private val emptyArray = ByteArray(0)
+
+        fun from(sparseBranches: List<Pair<Int, Node>>): BranchNode = from(sparseBranches, emptyArray)
+
+        fun from(sparseBranches: List<Pair<Int, Node>>, value: ByteArray): BranchNode {
+            val branches = Array<Node>(16) { EmptyNode }
+            sparseBranches.forEach { (index, branch) ->
+                    branches[index] = branch
+                }
+            return BranchNode(branches, value)
+        }
+    }
 
     /**
      * The RLP-encoded form of the BranchNode, which is an RLP-encoded list of the branches and value.
@@ -54,12 +65,12 @@ class BranchNode(
     private fun getBranch(branch: Byte): Node = branches[branch.toInt()]
 
     override fun put(key: NibbleArray, newValue: ByteArray): Node =
-        if (key.isEmpty()) Node.branch(branches, newValue)
+        if (key.isEmpty()) BranchNode(branches, newValue)
         else {
             val newBranches = Array(16) { index ->
                 if (index == key.head.toInt()) getBranch(key.head).put(key.tail, newValue) else branches[index]
             }
-            Node.branch(newBranches, value)
+            BranchNode(newBranches, value)
         }
 
     override fun get(key: NibbleArray): ByteArray = if (key.isEmpty()) value else getBranch(key.head).get(key.tail)
@@ -79,6 +90,6 @@ class BranchNode(
         if (key.isEmpty()) {
             value.contentEquals(expectedValue)
         } else {
-            Node.verifyMerkleProof(getBranch(key.head).hash, key.tail, expectedValue, proof)
+            proof.verify(getBranch(key.head).hash, key.tail, expectedValue)
         }
 }

@@ -85,7 +85,7 @@ class TrieTests {
 
         trie.put(key, value)
 
-        val leaf = Node.leaf(key, value)
+        val leaf = LeafNode(NibbleArray.fromBytes(key), value)
         val expectedHash = "0x2fc0c91eb10b756afb03c8ceafc121c9c2f4eb47b6ef974ba808f8b46067a6d0"
 
         assertTrue(trie.root is LeafNode)

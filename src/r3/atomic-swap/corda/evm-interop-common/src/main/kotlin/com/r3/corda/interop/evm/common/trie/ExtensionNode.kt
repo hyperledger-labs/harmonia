@@ -30,10 +30,7 @@ import org.web3j.rlp.RlpString
  * @property path The path of the ExtensionNode, stored as a nibbles array.
  * @property innerNode The inner Node that the ExtensionNode points to.
  */
-class ExtensionNode(
-    private val path: NibbleArray,
-    private val innerNode: Node
-) : Node {
+class ExtensionNode(private val path: NibbleArray, private val innerNode: Node) : Node {
 
     /**
      * The RLP-encoded form of the ExtensionNode, which is an RLP-encoded list of the path and the inner node.
@@ -59,7 +56,7 @@ class ExtensionNode(
         // Key (1, 2, 3...) contains entire path (1, 2, 3)
         if (matchingLength == path.size) {
             // Put the value into the inner node, at the remaining key
-            return Node.extension(path, innerNode.put(key.dropFirst(matchingLength), newValue))
+            return ExtensionNode(path, innerNode.put(key.dropFirst(matchingLength), newValue))
         }
 
         // Key (1, 2, 3...) contains part of path (1, 2, 4, 5, 6)
@@ -68,13 +65,13 @@ class ExtensionNode(
         val remainingPath = path.remainingAfter(matchingLength) // Path nibbles after divergence (5, 6)
 
         // Branch either to the inner node or to an extension terminating in the inner node
-        val firstBranch = if (remainingPath.isEmpty()) innerNode else Node.extension(remainingPath, innerNode)
+        val firstBranch = if (remainingPath.isEmpty()) innerNode else ExtensionNode(remainingPath, innerNode)
 
         val branchNode = if (matchingLength == key.size) {
             // Path (1, 2, 3...) contains entire key (1, 2, 3)
 
             // 3 -> firstBranch
-            Node.branch(listOf(pathIndex to firstBranch), newValue)
+            BranchNode.from(listOf(pathIndex to firstBranch), newValue)
         } else {
             // Path (1, 2, 3...) contains part of key (1, 2, 4, 5, 6)
             val keyIndex = key[matchingLength].toInt()            // Nibble where key and path diverge (4)
@@ -82,10 +79,10 @@ class ExtensionNode(
 
             // 3 -> firstBranch
             // 4 -> leaf((5, 6), newValue)
-            Node.branch(listOf(pathIndex to firstBranch, keyIndex to Node.leaf(remainingKey, newValue)))
+            BranchNode.from(listOf(pathIndex to firstBranch, keyIndex to LeafNode(remainingKey, newValue)))
         }
 
-        return if (matchingPath.isEmpty()) branchNode else Node.extension(matchingPath, branchNode)
+        return if (matchingPath.isEmpty()) branchNode else ExtensionNode(matchingPath, branchNode)
     }
 
     override fun get(key: NibbleArray): ByteArray {
@@ -106,7 +103,7 @@ class ExtensionNode(
             }
 
     override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
-        if (key.startsWith(path)) Node.verifyMerkleProof(innerNode.hash, key.dropFirst(path.size), expectedValue, proof)
+        if (key.startsWith(path)) proof.verify(innerNode.hash, key.dropFirst(path.size), expectedValue)
         else throw IllegalArgumentException("Key is not part of the trie")
 
 }

@@ -33,7 +33,7 @@ object EmptyNode : Node {
     override val encoded: ByteArray
         get() = RlpEncoder.encode(RlpString.create(ByteArray(0)))
 
-    override fun put(key: NibbleArray, newValue: ByteArray): Node = Node.leaf(key, newValue)
+    override fun put(key: NibbleArray, newValue: ByteArray): Node = LeafNode(key, newValue)
 
     override fun get(key: NibbleArray): ByteArray = ByteArray(0)
 

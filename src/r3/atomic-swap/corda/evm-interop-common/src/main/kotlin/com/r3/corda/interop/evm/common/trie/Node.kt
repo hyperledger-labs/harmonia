@@ -71,32 +71,16 @@ interface Node {
 
     companion object {
 
-        private val emptyArray = ByteArray(0)
-        val empty: EmptyNode get() = EmptyNode
-
-        fun leaf(key: ByteArray, value: ByteArray): LeafNode = leaf(NibbleArray.fromBytes(key), value)
-        fun leaf(key: NibbleArray, value: ByteArray): LeafNode = LeafNode(key, value)
-
-        fun branch(sparseBranches: List<Pair<Int, Node>>): BranchNode = branch(sparseBranches, emptyArray)
-        fun branch(sparseBranches: List<Pair<Int, Node>>, value: ByteArray): BranchNode {
-            val branches = Array<Node>(16) { empty }
-            sparseBranches.forEach { (index, branch) ->
-                branches[index] = branch
-            }
-            return branch(branches, value)
-        }
-
-        fun branch(branches: Array<Node>, value: ByteArray): BranchNode = BranchNode(branches, value)
-
-        fun extension(path: NibbleArray, value: Node): ExtensionNode = ExtensionNode(path, value)
-
         /**
          * Create a Node from a RLP encoded byte array.
          * @param encoded RLP encoded byte array.
          * @return Node created from the RLP encoded byte array.
          */
         fun createFromRLP(encoded: ByteArray): Node =
-            if (encoded.size == 32) HashNode(encoded, empty) else createFromRLP(RlpDecoder.decode(encoded) as RlpList)
+            if (encoded.size == 32) HashNode(
+                encoded,
+                EmptyNode
+            ) else createFromRLP(RlpDecoder.decode(encoded) as RlpList)
 
         /**
          * Create a Node from a RLP list.
@@ -122,7 +106,7 @@ interface Node {
                 }
             }.toTypedArray()
 
-            return branch(branches, valueBytes)
+            return BranchNode(branches, valueBytes)
         }
 
         private fun nonBranchNode(keyBytes: ByteArray, valueOrNode: RlpType): Node {
@@ -133,18 +117,14 @@ interface Node {
 
             return when (valueOrNode) {
                 is RlpString -> {
-                    if (pathType == PatriciaTriePathType.LEAF) leaf(pathNibbles, valueOrNode.bytes)
-                    else extension(pathNibbles, createFromRLP(valueOrNode.bytes))
+                    if (pathType == PatriciaTriePathType.LEAF) LeafNode(pathNibbles, valueOrNode.bytes)
+                    else ExtensionNode(pathNibbles, createFromRLP(valueOrNode.bytes))
                 }
 
-                is RlpList -> extension(pathNibbles, createFromRLP(valueOrNode))
+                is RlpList -> ExtensionNode(pathNibbles, createFromRLP(valueOrNode))
                 else -> throw IllegalArgumentException("Invalid RLP encoding")
             }
         }
-
-        fun verifyMerkleProof(rootHash: ByteArray, key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
-            createFromRLP(proof.get(rootHash) ?: throw IllegalArgumentException("Proof is invalid"))
-                .verifyMerkleProof(key, expectedValue, proof)
     }
 
 }
