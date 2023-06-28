@@ -24,7 +24,7 @@ import org.web3j.utils.Numeric
  * This store utilizes a hash map to store and retrieve key-value pairings.
  * Keys are wrapped in an ArrayKey data class to allow for proper comparison of byte arrays.
  */
-class SimpleKeyValueStore : KeyValueStore {
+class SimpleKeyValueStore : WriteableKeyValueStore {
 
     /**
      * Data class to allow for proper comparison of byte array keys.
@@ -63,7 +63,7 @@ class SimpleKeyValueStore : KeyValueStore {
      * @param key The key to be associated with the given value.
      * @param value The value to be stored.
      */
-    fun put(key: ByteArray, value: ByteArray) {
+    override fun put(key: ByteArray, value: ByteArray) {
         store[ArrayKey(key)] = value
     }
 

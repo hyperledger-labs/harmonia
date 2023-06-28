@@ -39,3 +39,13 @@ interface KeyValueStore {
      */
     fun isEmpty(): Boolean
 }
+
+interface WriteableKeyValueStore : KeyValueStore {
+    /**
+     * Inserts or updates a key-value pairing in the store.
+     *
+     * @param key The key to be associated with the given value.
+     * @param value The value to be stored.
+     */
+    fun put(key: ByteArray, value: ByteArray)
+}
