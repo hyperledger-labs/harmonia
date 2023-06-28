@@ -150,8 +150,10 @@ sealed class Node {
      */
     class ExtensionNode(
         val path: NibbleArray,
-        var innerNode: Node
+        val innerNode: Node
     ) : Node() {
+
+        fun withInnerNode(newInnerNode: Node): ExtensionNode = ExtensionNode(path, newInnerNode)
 
         /**
          * The RLP-encoded form of the ExtensionNode, which is an RLP-encoded list of the path and the inner node.
@@ -182,8 +184,8 @@ sealed class Node {
      * @property value The value of the BranchNode.
      */
     class BranchNode(
-        val branches: Array<Node>,
-        var value: ByteArray
+        private val branches: Array<Node>,
+        val value: ByteArray
     ) : Node() {
 
         /**
@@ -209,9 +211,18 @@ sealed class Node {
          * @param nibbleKey The index at which to set the branch.
          * @param node The node to set at the index.
          */
-        fun setBranch(nibbleKey: Byte, node: Node) {
-            branches[nibbleKey.toInt()] = node
+        fun withBranch(nibbleKey: Byte, node: Node): BranchNode {
+            val newBranches = Array(16) { index ->
+                if (index == nibbleKey.toInt()) node else branches[index]
+            }
+            return BranchNode(newBranches, value)
         }
+
+        fun withValue(newValue: ByteArray): BranchNode {
+            return BranchNode(branches, newValue)
+        }
+
+        fun getBranch(branch: Byte): Node = branches[branch.toInt()]
     }
 
     /**

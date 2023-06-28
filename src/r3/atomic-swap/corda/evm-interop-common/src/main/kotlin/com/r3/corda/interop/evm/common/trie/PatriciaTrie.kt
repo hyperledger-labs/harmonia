@@ -93,7 +93,7 @@ class PatriciaTrie {
 
                     val nextNibble = nodeKey.head
                     nodeKey = nodeKey.tail
-                    node = node.branches[nextNibble.toInt()]
+                    node = node.getBranch(nextNibble)
                 }
                 is ExtensionNode -> {
                     if (nodeKey.startsWith(node.path)) {
@@ -151,7 +151,7 @@ class PatriciaTrie {
 
                         val nextNibble = nodeKey.head
                         nodeKey = nodeKey.tail
-                        node.branches[nextNibble.toInt()].hash
+                        node.getBranch(nextNibble).hash
                     }
                     is ExtensionNode -> {
                         if (nodeKey.startsWith(node.path)) {
@@ -190,47 +190,42 @@ class PatriciaTrie {
                 return Node.leaf(nibblesKey, value)
             }
 
-            val branchNode = when (matchingLength) {
+            var branchNode = when (matchingLength) {
                 nodePathNibbles.size -> Node.branch(node.value)
                 nibblesKey.size -> Node.branch(value)
                 else -> Node.branch()
             }
 
-            val extOrBranchNode = if (matchingLength > 0) {
-                Node.extension(nodePathNibbles.takeFirst(matchingLength), branchNode)
-            } else {
-                branchNode
-            }
-
-            if (matchingLength < nodePathNibbles.size) {
-                branchNode.setBranch(
+            branchNode = if (matchingLength < nodePathNibbles.size) {
+                branchNode.withBranch(
                     nodePathNibbles[matchingLength],
                     Node.leaf(nodePathNibbles.dropFirst(matchingLength + 1), node.value)
                 )
-            }
+            } else branchNode
 
-            if (matchingLength < nibblesKey.size) {
-                branchNode.setBranch(
+            branchNode = if (matchingLength < nibblesKey.size) {
+                branchNode.withBranch(
                     nibblesKey[matchingLength],
                     Node.leaf(nibblesKey.dropFirst(matchingLength + 1), value)
                 )
-            }
+            } else branchNode
 
-            return extOrBranchNode
+            return if (matchingLength > 0) {
+                Node.extension(nodePathNibbles.takeFirst(matchingLength), branchNode)
+            } else branchNode
         }
 
         if (node is BranchNode) {
-            if (nibblesKey.isNotEmpty()) {
-                val branch = nibblesKey.head.toInt()
-                node.branches[branch] = internalPut(
-                    node.branches[branch],
+            return if (nibblesKey.isNotEmpty()) {
+                val branch = nibblesKey.head
+                node.withBranch(branch, internalPut(
+                    node.getBranch(branch),
                     nibblesKey.tail,
                     value
-                )
+                ))
             } else {
-                node.value = value
+                node.withValue(value)
             }
-            return node
         }
 
         if (node is ExtensionNode) {
@@ -250,25 +245,24 @@ class PatriciaTrie {
                             }
                 ))
 
-                if (matchingLength < nibblesKey.size) {
+                val newBranchNode = if (matchingLength < nibblesKey.size) {
                     val nodeBranchNibble = nibblesKey[matchingLength]
                     val nodeLeafNibbles = nibblesKey.dropFirst(matchingLength + 1)
                     val remainingLeaf = Node.leaf(nodeLeafNibbles, value)
-                    branchNode.setBranch(nodeBranchNibble, remainingLeaf)
+                    branchNode.withBranch(nodeBranchNibble, remainingLeaf)
                 } else if (matchingLength == nibblesKey.size) {
-                    branchNode.value = value
+                    branchNode.withValue(value)
                 } else throw IllegalArgumentException("Something went wrong")
 
 
                 return if (extNibbles.isNotEmpty()) {
-                    Node.extension(extNibbles, branchNode)
+                    Node.extension(extNibbles, newBranchNode)
                 } else {
-                    branchNode
+                    newBranchNode
                 }
             }
 
-            node.innerNode = internalPut(node.innerNode, nibblesKey.dropFirst(matchingLength), value)
-            return node
+            return node.withInnerNode(internalPut(node.innerNode, nibblesKey.dropFirst(matchingLength), value))
         }
 
         throw IllegalArgumentException("Unknown node type")
@@ -301,7 +295,7 @@ class PatriciaTrie {
                     return node.value // TODO: should check if the node has a value?
                 }
 
-                node = node.branches[key.head.toInt()]
+                node = node.getBranch(key.head)
                 key = key.tail
                 continue
             }
