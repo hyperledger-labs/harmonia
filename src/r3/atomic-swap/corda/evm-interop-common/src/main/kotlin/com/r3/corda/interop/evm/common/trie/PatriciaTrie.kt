@@ -47,7 +47,7 @@ class PatriciaTrie {
      * @return Value associated with the key as ByteArray.
      */
     fun get(key: ByteArray): ByteArray {
-        return internalGet(NibbleArray.fromBytes(key))
+        return internalGet(root, NibbleArray.fromBytes(key))
     }
 
     /**
@@ -173,11 +173,9 @@ class PatriciaTrie {
      * @param nibblesKey The key for which to get the value.
      * @return The value associated with the key, or an empty ByteArray if the key does not exist.
      */
-    private fun internalGet(nibblesKey: NibbleArray): ByteArray {
-        var node = root
-        var key = nibblesKey
+    private fun internalGet(node: Node, nibblesKey: NibbleArray): ByteArray {
+        val key = nibblesKey
 
-        while (true) {
             if (node is EmptyNode) return ByteArray(0) // TODO: key not found ?
 
             if (node is LeafNode) {
@@ -190,13 +188,8 @@ class PatriciaTrie {
             }
 
             if (node is BranchNode) {
-                if (key.isEmpty()) {
-                    return node.value // TODO: should check if the node has a value?
-                }
-
-                node = node.getBranch(key.head)
-                key = key.tail
-                continue
+                // TODO: should check if node has value?
+                return if (key.isEmpty()) node.value else internalGet(node.getBranch(key.head), key.tail)
             }
 
             if (node is ExtensionNode) {
@@ -206,13 +199,11 @@ class PatriciaTrie {
                     return ByteArray(0) // TODO: key not found
                 }
 
-                node = node.innerNode
-                key = key.dropFirst(matchingLength)
-                continue
+                return internalGet(node.innerNode, key.dropFirst(matchingLength))
             }
 
             throw IllegalArgumentException("Invalid node type")
-        }
+
     }
 }
 
