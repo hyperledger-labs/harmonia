@@ -38,6 +38,7 @@ interface KeyValueStore {
      * @return True if the store is empty, false otherwise.
      */
     fun isEmpty(): Boolean
+
 }
 
 interface WriteableKeyValueStore : KeyValueStore {

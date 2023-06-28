@@ -65,6 +65,12 @@ sealed class Node {
      */
     abstract fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore) : KeyValueStore
 
+    abstract fun verifyMerkleProof(
+        key: NibbleArray,
+        expectedValue: ByteArray,
+        proof: KeyValueStore
+    ): Boolean
+
     /**
      * Provide a String representation of the Node for debugging.
      * @return String representation of the Node.
@@ -98,6 +104,25 @@ sealed class Node {
         private fun branch(branches: Array<Node>, value: ByteArray): BranchNode = BranchNode(branches, value)
 
         fun extension(path: NibbleArray, value: Node): ExtensionNode = ExtensionNode(path, value)
+
+        /**
+         * Verifies the Merkle proof for a given key and expected value.
+         *
+         * @param rootHash The root hash of the trie.
+         * @param key The key for which to verify the proof.
+         * @param expectedValue The expected value for the key.
+         * @param proof The proof to verify.
+         * @return Boolean indicating whether the proof is valid.
+         */
+        fun verifyMerkleProof(
+            rootHash: ByteArray,
+            key: NibbleArray,
+            expectedValue: ByteArray,
+            proof: KeyValueStore
+        ): Boolean {
+            val node = createFromRLP(proof.get(rootHash) ?: throw IllegalArgumentException("Proof is invalid"))
+            return node.verifyMerkleProof(key, expectedValue, proof)
+        }
 
         /**
          * Create a Node from a RLP encoded byte array.
@@ -171,6 +196,10 @@ sealed class Node {
         override fun get(key: NibbleArray): ByteArray = ByteArray(0)
 
         override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore {
+            throw IllegalArgumentException("Key is not part of the trie")
+        }
+
+        override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean {
             throw IllegalArgumentException("Key is not part of the trie")
         }
     }
@@ -258,6 +287,19 @@ sealed class Node {
                 } else {
                     throw IllegalArgumentException("Key is not part of the trie")
                 }
+
+        override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
+            if (key.startsWith(path)) {
+                verifyMerkleProof(
+                    innerNode.hash,
+                    key.dropFirst(path.size),
+                    expectedValue,
+                    proof
+                )
+            } else {
+                throw IllegalArgumentException("Key is not part of the trie")
+            }
+
     }
 
     /**
@@ -314,6 +356,13 @@ sealed class Node {
 
                 return getBranch(key.head).generateMerkleProof(key.tail, store)
             }
+
+        override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
+            if (key.isEmpty()) {
+                value.contentEquals(expectedValue)
+            } else {
+                verifyMerkleProof(getBranch(key.head).hash, key.tail, expectedValue, proof)
+            }
     }
 
     /**
@@ -340,6 +389,10 @@ sealed class Node {
 
         override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore {
             throw UnsupportedOperationException("Cannot generate Merkle proof from HashNode")
+        }
+
+        override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean {
+            throw UnsupportedOperationException("Cannot verify Merkle proof from HashNode")
         }
     }
 
@@ -421,6 +474,12 @@ sealed class Node {
                 throw IllegalArgumentException("Key is not part of the trie")
             }
         }
-    }
 
+        override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
+            if (path == key) {
+                value.contentEquals(expectedValue)
+            } else {
+                throw IllegalArgumentException("Key is not part of the trie")
+            }
+    }
 }

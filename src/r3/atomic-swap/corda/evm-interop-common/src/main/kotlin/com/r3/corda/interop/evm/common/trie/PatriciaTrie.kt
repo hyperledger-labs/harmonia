@@ -64,6 +64,7 @@ class PatriciaTrie {
      * Companion object that provides functionality to verify a Merkle proof.
      */
     companion object {
+
         /**
          * Verifies the Merkle proof for a given key and expected value.
          *
@@ -78,45 +79,7 @@ class PatriciaTrie {
             key: ByteArray,
             expectedValue: ByteArray,
             proof: KeyValueStore
-        ): Boolean {
-            var nodeHash = rootHash
-            var nodeKey = NibbleArray.fromBytes(key)
-
-            while (true) {
-                val encodedNode = proof.get(nodeHash) ?: throw IllegalArgumentException("Proof is invalid")
-                val node = Node.createFromRLP(encodedNode)
-
-                nodeHash = when (node) {
-                    is EmptyNode -> throw IllegalArgumentException("Key is not part of the trie")
-                    is LeafNode -> {
-                        if (node.path == nodeKey) {
-                            return node.value.contentEquals(expectedValue)
-                        } else {
-                            throw IllegalArgumentException("Key is not part of the trie")
-                        }
-                    }
-                    is BranchNode -> {
-                        if(nodeKey.isEmpty()) {
-                            return node.value.contentEquals(expectedValue)
-                        }
-
-                        val nextNibble = nodeKey.head
-                        nodeKey = nodeKey.tail
-                        node.getBranch(nextNibble).hash
-                    }
-                    is ExtensionNode -> {
-                        if (nodeKey.startsWith(node.path)) {
-                            nodeKey = nodeKey.dropFirst(node.path.size)
-                            node.innerNode.hash
-                        } else {
-                            throw IllegalArgumentException("Key is not part of the trie")
-                        }
-                    }
-
-                    else -> throw IllegalArgumentException("Invalid node type")
-                }
-            }
-        }
+        ): Boolean = Node.verifyMerkleProof(rootHash, NibbleArray.fromBytes(key), expectedValue, proof)
     }
 
 }
