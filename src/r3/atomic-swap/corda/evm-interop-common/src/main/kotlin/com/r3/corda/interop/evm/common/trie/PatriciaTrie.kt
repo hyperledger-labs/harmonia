@@ -47,7 +47,7 @@ class PatriciaTrie {
      * @return Value associated with the key as ByteArray.
      */
     fun get(key: ByteArray): ByteArray {
-        return internalGet(root, NibbleArray.fromBytes(key))
+        return root.get(NibbleArray.fromBytes(key))
     }
 
     /**
@@ -63,47 +63,45 @@ class PatriciaTrie {
     /**
      * Generates a Merkle proof for a given key.
      *
-     * @param startNode Key as ByteArray.
-     * @param nibblesKey Key as a nibbles' ByteArray.
+     * @param node Key as ByteArray.
+     * @param key Key as a nibbles' ByteArray.
      * @param store A simple Key-Value that will collect the trie proofs
      * @return Merkle proof as KeyValueStore.
      */
-    private fun generateMerkleProof(startNode: Node, nibblesKey: NibbleArray, store: WriteableKeyValueStore) : KeyValueStore {
-        var node = startNode
-        var nodeKey = nibblesKey
-
+    private fun generateMerkleProof(node: Node, key: NibbleArray, store: WriteableKeyValueStore) : KeyValueStore {
         while (true) {
             when (node) {
                 is EmptyNode -> throw IllegalArgumentException("Key is not part of the trie")
                 is LeafNode -> {
-                    if (node.path == nodeKey) {
+                    if (node.path == key) {
                         store.put(node.hash, node.encoded)
                         return store
                     } else {
                         throw IllegalArgumentException("Key is not part of the trie")
                     }
                 }
+
                 is BranchNode -> {
                     store.put(node.hash, node.encoded)
 
-                    if(nodeKey.isEmpty()) {
+                    if (key.isEmpty()) {
                         require(node.value.isNotEmpty()) { "Terminal branch without value" }
                         return store
                     }
 
-                    val nextNibble = nodeKey.head
-                    nodeKey = nodeKey.tail
-                    node = node.getBranch(nextNibble)
+                    val nextNibble = key.head
+                    return generateMerkleProof(node.getBranch(nextNibble), key.tail, store)
                 }
+
                 is ExtensionNode -> {
-                    if (nodeKey.startsWith(node.path)) {
+                    if (key.startsWith(node.path)) {
                         store.put(node.hash, node.encoded)
-                        nodeKey = nodeKey.dropFirst(node.path.size)
-                        node = node.innerNode
+                        return generateMerkleProof(node.innerNode, key.dropFirst(node.path.size), store)
                     } else {
                         throw IllegalArgumentException("Key is not part of the trie")
                     }
                 }
+
                 else -> throw IllegalArgumentException("Invalid node type")
             }
         }
@@ -167,43 +165,6 @@ class PatriciaTrie {
             }
         }
     }
-    /**
-     * Gets the value for a given key from the Patricia Trie.
-     *
-     * @param nibblesKey The key for which to get the value.
-     * @return The value associated with the key, or an empty ByteArray if the key does not exist.
-     */
-    private fun internalGet(node: Node, nibblesKey: NibbleArray): ByteArray {
-        val key = nibblesKey
 
-            if (node is EmptyNode) return ByteArray(0) // TODO: key not found ?
-
-            if (node is LeafNode) {
-                val nodePathNibbles = node.path
-                val matchingLength = nodePathNibbles.prefixMatchingLength(key)
-                if (matchingLength != nodePathNibbles.size || matchingLength != key.size) {
-                    return ByteArray(0) // key not found
-                }
-                return node.value
-            }
-
-            if (node is BranchNode) {
-                // TODO: should check if node has value?
-                return if (key.isEmpty()) node.value else internalGet(node.getBranch(key.head), key.tail)
-            }
-
-            if (node is ExtensionNode) {
-                val nodePathNibbles = node.path
-                val matchingLength = nodePathNibbles.prefixMatchingLength(key)
-                if (matchingLength < nodePathNibbles.size) {
-                    return ByteArray(0) // TODO: key not found
-                }
-
-                return internalGet(node.innerNode, key.dropFirst(matchingLength))
-            }
-
-            throw IllegalArgumentException("Invalid node type")
-
-    }
 }
 

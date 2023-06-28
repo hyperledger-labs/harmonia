@@ -49,6 +49,14 @@ sealed class Node {
     abstract fun put(key: NibbleArray, newValue: ByteArray): Node
 
     /**
+     * Gets the value for a given key from the Patricia Trie.
+     *
+     * @param key The key for which to get the value.
+     * @return The value associated with the key, or an empty ByteArray if the key does not exist.
+     */
+    abstract fun get(key: NibbleArray): ByteArray
+
+    /**
      * Provide a String representation of the Node for debugging.
      * @return String representation of the Node.
      */
@@ -150,6 +158,8 @@ sealed class Node {
             get() = RlpEncoder.encode(RlpString.create(ByteArray(0)))
 
         override fun put(key: NibbleArray, newValue: ByteArray): Node = leaf(key, newValue)
+
+        override fun get(key: NibbleArray): ByteArray = ByteArray(0)
     }
 
     /**
@@ -218,6 +228,15 @@ sealed class Node {
 
             return if (matchingPath.isEmpty()) branchNode else extension(matchingPath, branchNode)
         }
+
+        override fun get(key: NibbleArray): ByteArray {
+            val matchingLength = path.prefixMatchingLength(key)
+            if (matchingLength < path.size) {
+                return ByteArray(0) // TODO: key not found
+            }
+
+            return innerNode.get(key.dropFirst(matchingLength))
+        }
     }
 
     /**
@@ -262,6 +281,8 @@ sealed class Node {
                 branch(newBranches, value)
             }
 
+        override fun get(key: NibbleArray): ByteArray = if (key.isEmpty()) value else getBranch(key.head).get(key.tail)
+
     }
 
     /**
@@ -279,7 +300,11 @@ sealed class Node {
         override val encoded: ByteArray get() = if (innerNode is EmptyNode) hash else innerNode.encoded
 
         override fun put(key: NibbleArray, newValue: ByteArray): Node {
-            throw IllegalArgumentException("Cannot put into HashNode")
+            throw UnsupportedOperationException("Cannot put into HashNode")
+        }
+
+        override fun get(key: NibbleArray): ByteArray {
+            throw UnsupportedOperationException("Cannot get from HashNode")
         }
     }
 
@@ -350,5 +375,8 @@ sealed class Node {
 
             return if (matchingLength == 0) branchNode else extension(path.takeFirst(matchingLength), branchNode)
         }
+
+        override fun get(key: NibbleArray): ByteArray = if (key == path) value else ByteArray(0)
     }
+
 }
