@@ -60,28 +60,7 @@ class PatriciaTrie(var root: Node = EmptyNode) {
     fun verifyMerkleProof(key: ByteArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
         proof.verify(root.hash, NibbleArray.fromBytes(key), expectedValue)
 
-    /**
-     * Companion object that provides functionality to verify a Merkle proof.
-     */
-    companion object {
 
-        /**
-         * Verifies the Merkle proof for a given key and expected value.
-         *
-         * @param rootHash The root hash of the trie.
-         * @param key The key for which to verify the proof.
-         * @param expectedValue The expected value for the key.
-         * @param proof The proof to verify.
-         * @return Boolean indicating whether the proof is valid.
-         */
-        fun verifyMerkleProof(
-            rootHash: ByteArray,
-            key: ByteArray,
-            expectedValue: ByteArray,
-            proof: KeyValueStore
-        ): Boolean = proof.verify(rootHash, NibbleArray.fromBytes(key), expectedValue)
-
-    }
 
 }
 

@@ -19,7 +19,7 @@ package com.r3.corda.interop.evm.common.trie
 /**
  * Represents an array of nibbles (values between 0-15 inclusive)
  */
-data class NibbleArray(val values: ByteArray) {
+class NibbleArray(private val values: ByteArray) {
 
     companion object {
         fun fromBytes(bytes: ByteArray): NibbleArray {
