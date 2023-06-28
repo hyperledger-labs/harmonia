@@ -16,8 +16,6 @@
 
 package com.r3.corda.interop.evm.common.trie
 
-import com.r3.corda.interop.evm.common.trie.Node.*
-
 /**
  * The Patricia Trie is a space-optimized version of a binary trie.
  * It's an ordered tree data structure used to store a dynamic set or associative array

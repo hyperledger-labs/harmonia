@@ -6,7 +6,7 @@ class LeafNodeBuilder(val nibbles: NibbleArray) {
 }
 
 class ExtensionNodeBuilder(val pathNibbles: NibbleArray) {
-    fun empty() = Node.extension(pathNibbles, Node.EmptyNode)
+    fun empty() = Node.extension(pathNibbles, EmptyNode)
     fun withInner(inner: Node) = Node.extension(pathNibbles, inner)
     fun toBranches(vararg branches: Pair<Int, Node>) =
         InnerBranchNodeBuilder(this, branchNode(*branches))
