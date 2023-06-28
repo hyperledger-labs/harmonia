@@ -91,25 +91,6 @@ interface Node {
         fun extension(path: NibbleArray, value: Node): ExtensionNode = ExtensionNode(path, value)
 
         /**
-         * Verifies the Merkle proof for a given key and expected value.
-         *
-         * @param rootHash The root hash of the trie.
-         * @param key The key for which to verify the proof.
-         * @param expectedValue The expected value for the key.
-         * @param proof The proof to verify.
-         * @return Boolean indicating whether the proof is valid.
-         */
-        fun verifyMerkleProof(
-            rootHash: ByteArray,
-            key: NibbleArray,
-            expectedValue: ByteArray,
-            proof: KeyValueStore
-        ): Boolean {
-            val node = createFromRLP(proof.get(rootHash) ?: throw IllegalArgumentException("Proof is invalid"))
-            return node.verifyMerkleProof(key, expectedValue, proof)
-        }
-
-        /**
          * Create a Node from a RLP encoded byte array.
          * @param encoded RLP encoded byte array.
          * @return Node created from the RLP encoded byte array.
@@ -160,6 +141,10 @@ interface Node {
                 else -> throw IllegalArgumentException("Invalid RLP encoding")
             }
         }
+
+        fun verifyMerkleProof(rootHash: ByteArray, key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
+            createFromRLP(proof.get(rootHash) ?: throw IllegalArgumentException("Proof is invalid"))
+                .verifyMerkleProof(key, expectedValue, proof)
     }
 
 }

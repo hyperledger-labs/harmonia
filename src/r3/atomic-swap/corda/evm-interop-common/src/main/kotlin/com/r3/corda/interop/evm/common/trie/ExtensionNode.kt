@@ -106,15 +106,7 @@ class ExtensionNode(
             }
 
     override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
-        if (key.startsWith(path)) {
-            Node.verifyMerkleProof(
-                innerNode.hash,
-                key.dropFirst(path.size),
-                expectedValue,
-                proof
-            )
-        } else {
-            throw IllegalArgumentException("Key is not part of the trie")
-        }
+        if (key.startsWith(path)) Node.verifyMerkleProof(innerNode.hash, key.dropFirst(path.size), expectedValue, proof)
+        else throw IllegalArgumentException("Key is not part of the trie")
 
 }
