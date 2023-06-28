@@ -47,6 +47,8 @@ data class NibbleArray(val values: ByteArray) {
     fun dropFirst(numberOfNibbles: Int): NibbleArray =
         NibbleArray(values.copyOfRange(numberOfNibbles, values.size))
 
+    fun remainingAfter(index: Int): NibbleArray = dropFirst(index + 1)
+
     fun takeFirst(numberOfNibbles: Int): NibbleArray =
         NibbleArray(values.copyOfRange(0, numberOfNibbles))
 

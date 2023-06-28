@@ -38,6 +38,17 @@ sealed class Node {
         get() = sha3(encoded)
 
     /**
+     * Puts a key-value pair into a node of the Patricia Trie.
+     * If the node does not exist, a new LeafNode is created.
+     *
+     * @param node The node where to put the key-value pair.
+     * @param key The key to put.
+     * @param value The value to put.
+     * @return The node where the key-value pair was put.
+     */
+    abstract fun put(key: NibbleArray, newValue: ByteArray): Node
+
+    /**
      * Provide a String representation of the Node for debugging.
      * @return String representation of the Node.
      */
@@ -137,6 +148,8 @@ sealed class Node {
          */
         override val encoded: ByteArray
             get() = RlpEncoder.encode(RlpString.create(ByteArray(0)))
+
+        override fun put(key: NibbleArray, newValue: ByteArray): Node = leaf(key, newValue)
     }
 
     /**
@@ -152,8 +165,6 @@ sealed class Node {
         val path: NibbleArray,
         val innerNode: Node
     ) : Node() {
-
-        fun withInnerNode(newInnerNode: Node): ExtensionNode = ExtensionNode(path, newInnerNode)
 
         /**
          * The RLP-encoded form of the ExtensionNode, which is an RLP-encoded list of the path and the inner node.
@@ -172,6 +183,41 @@ sealed class Node {
                     )
                 )
             }
+
+        override fun put(key: NibbleArray, newValue: ByteArray): Node {
+            val matchingLength = path.prefixMatchingLength(key)
+
+            // Key (1, 2, 3...) contains entire path (1, 2, 3)
+            if (matchingLength == path.size) {
+                // Put the value into the inner node, at the remaining key
+                return extension(path, innerNode.put(key.dropFirst(matchingLength), newValue))
+            }
+
+            // Key (1, 2, 3...) contains part of path (1, 2, 4, 5, 6)
+            val matchingPath = path.takeFirst(matchingLength)       // Nibbles where key and path agree (1, 2)
+            val pathIndex = path[matchingLength].toInt()            // Nibble where key and path diverge (4)
+            val remainingPath = path.remainingAfter(matchingLength) // Path nibbles after divergence (5, 6)
+
+            // Branch either to the inner node or to an extension terminating in the inner node
+            val firstBranch = if (remainingPath.isEmpty()) innerNode else extension(remainingPath, innerNode)
+
+            val branchNode = if (matchingLength == key.size) {
+                // Path (1, 2, 3...) contains entire key (1, 2, 3)
+
+                // 3 -> firstBranch
+                branch(listOf(pathIndex to firstBranch), newValue)
+            } else {
+                // Path (1, 2, 3...) contains part of key (1, 2, 4, 5, 6)
+                val keyIndex = key[matchingLength].toInt()            // Nibble where key and path diverge (4)
+                val remainingKey = key.remainingAfter(matchingLength) // Key nibbles after divergence (5, 6)
+
+                // 3 -> firstBranch
+                // 4 -> leaf((5, 6), newValue)
+                branch(listOf(pathIndex to firstBranch, keyIndex to leaf(remainingKey, newValue)))
+            }
+
+            return if (matchingPath.isEmpty()) branchNode else extension(matchingPath, branchNode)
+        }
     }
 
     /**
@@ -205,24 +251,17 @@ sealed class Node {
                 }.plus(RlpString.create(value))))
             }
 
-        /**
-         * Set a branch at the nibbleKey index to the provided node.
-         *
-         * @param nibbleKey The index at which to set the branch.
-         * @param node The node to set at the index.
-         */
-        fun withBranch(nibbleKey: Byte, node: Node): BranchNode {
-            val newBranches = Array(16) { index ->
-                if (index == nibbleKey.toInt()) node else branches[index]
-            }
-            return BranchNode(newBranches, value)
-        }
-
-        fun withValue(newValue: ByteArray): BranchNode {
-            return BranchNode(branches, newValue)
-        }
-
         fun getBranch(branch: Byte): Node = branches[branch.toInt()]
+
+        override fun put(key: NibbleArray, newValue: ByteArray): Node =
+            if (key.isEmpty()) branch(branches, newValue)
+            else {
+                val newBranches = Array(16) { index ->
+                    if (index == key.head.toInt()) getBranch(key.head).put(key.tail, newValue) else branches[index]
+                }
+                branch(newBranches, value)
+            }
+
     }
 
     /**
@@ -238,6 +277,10 @@ sealed class Node {
          * it returns the hash of the node, otherwise it returns the encoded representation of the inner node.
          */
         override val encoded: ByteArray get() = if (innerNode is EmptyNode) hash else innerNode.encoded
+
+        override fun put(key: NibbleArray, newValue: ByteArray): Node {
+            throw IllegalArgumentException("Cannot put into HashNode")
+        }
     }
 
     /**
@@ -266,5 +309,46 @@ sealed class Node {
                     )
                 )
             }
+
+        override fun put(key: NibbleArray, newValue: ByteArray): Node {
+            // Overwrite value if key and path match exactly
+            if (path == key) return leaf(key, newValue)
+
+            val matchingLength = path.prefixMatchingLength(key)
+
+            val branches = mutableListOf<Pair<Int, Node>>()
+
+            // If there's some path (1, 2, 3, 4) left after the match (1, 2) with key (1, 2, 5, 6)
+            if (matchingLength < path.size) {
+                // Put the current value in a branch: 3 -> leaf((4), value)
+                branches.add(path[matchingLength].toInt() to leaf(path.remainingAfter(matchingLength), value))
+            }
+
+            // If there's some key (1, 2, 5, 6) left after the match (1, 2) with path (1, 2, 3, 4)
+            if (matchingLength < key.size) {
+                // Put the new value in a branch: 5 -> ((6), newValue)
+                branches.add(key[matchingLength].toInt() to leaf(key.remainingAfter(matchingLength), newValue))
+            }
+
+            /*
+            Note implicit logic here:
+
+            * matchingLength is never more than path.size, and never more than key.size
+            * path.size and key.size are never equal, or we would have hit the exact match condition above.
+            * If matchingLength is path.size, it cannot be equal to key.size, so it must be less than key.size.
+            * If matchingLength is key.size, it cannot be equal to path.size, so it must be less than path.size
+
+             */
+            val branchNode = when (matchingLength) {
+                // Implicitly, matchingLength < key.size, so branch to newValue is in branches
+                path.size -> branch(branches, value)
+                // Implicitly, matchingLength < path.size, so branch to value is in branches
+                key.size -> branch(branches, newValue)
+                // MatchingLength < key.size && matchingLength < path.size, so both branches are present
+                else -> branch(branches)
+            }
+
+            return if (matchingLength == 0) branchNode else extension(path.takeFirst(matchingLength), branchNode)
+        }
     }
 }

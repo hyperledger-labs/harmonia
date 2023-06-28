@@ -37,7 +37,7 @@ class PatriciaTrie {
      * @param value Value as ByteArray.
      */
     fun put(key: ByteArray, value: ByteArray) {
-        root = internalPut(root, NibbleArray.fromBytes(key), value)
+        root = root.put(NibbleArray.fromBytes(key), value)
     }
 
     /**
@@ -167,104 +167,6 @@ class PatriciaTrie {
             }
         }
     }
-
-    /**
-     * Puts a key-value pair into a node of the Patricia Trie.
-     * If the node does not exist, a new LeafNode is created.
-     *
-     * @param node The node where to put the key-value pair.
-     * @param nibblesKey The key to put.
-     * @param value The value to put.
-     * @return The node where the key-value pair was put.
-     */
-    private fun internalPut(node: Node, nibblesKey: NibbleArray, value: ByteArray): Node = when(node) {
-        is EmptyNode -> Node.leaf(nibblesKey, value)
-        is LeafNode -> putAtLeaf(node, nibblesKey, value)
-        is BranchNode -> putAtBranch(node, nibblesKey, value)
-        is ExtensionNode -> putAtExtension(node, nibblesKey, value)
-        is HashNode -> throw IllegalArgumentException("Cannot put at HashNode")
-    }
-
-    private fun putAtExtension(node: ExtensionNode, nibblesKey: NibbleArray, value: ByteArray): Node {
-        val nodePathNibbles = node.path
-        val matchingLength = nodePathNibbles.prefixMatchingLength(nibblesKey)
-
-        if (matchingLength >= nodePathNibbles.size) {
-            return node.withInnerNode(internalPut(node.innerNode, nibblesKey.dropFirst(matchingLength), value))
-        }
-
-        val extNibbles = nodePathNibbles.takeFirst(matchingLength)
-        val branchNibble = nodePathNibbles[matchingLength]
-        val extRemainingNibbles = nodePathNibbles.dropFirst(matchingLength + 1)
-
-        val firstBranchTarget = if (extRemainingNibbles.isEmpty()) node.innerNode
-        else Node.extension(extRemainingNibbles, node.innerNode)
-
-        val firstBranch = branchNibble.toInt() to firstBranchTarget
-
-        val branchNode = when {
-            matchingLength == nibblesKey.size -> Node.branch(listOf(firstBranch), value)
-            matchingLength < nibblesKey.size -> {
-                val nodeBranchNibble = nibblesKey[matchingLength]
-                val nodeLeafNibbles = nibblesKey.dropFirst(matchingLength + 1)
-                val remainingLeaf = Node.leaf(nodeLeafNibbles, value)
-                val secondBranch = nodeBranchNibble.toInt() to remainingLeaf
-
-                Node.branch(listOf(firstBranch, secondBranch))
-            }
-            else -> throw IllegalArgumentException("Something went wrong")
-        }
-
-        return if (extNibbles.isEmpty()) branchNode else Node.extension(extNibbles, branchNode)
-    }
-
-    private fun putAtBranch(node: BranchNode, nibblesKey: NibbleArray, value: ByteArray): Node =
-        if (nibblesKey.isEmpty()) {
-            node.withValue(value)
-        } else {
-            val branch = nibblesKey.head
-            node.withBranch(
-                branch, internalPut(
-                    node.getBranch(branch),
-                    nibblesKey.tail,
-                    value
-                )
-            )
-        }
-
-    private fun putAtLeaf(node: LeafNode, nibblesKey: NibbleArray, value: ByteArray): Node {
-        val nodePathNibbles = node.path
-        val matchingLength = nodePathNibbles.prefixMatchingLength(nibblesKey)
-
-        if (matchingLength == nodePathNibbles.size && matchingLength == nibblesKey.size) {
-            return Node.leaf(nibblesKey, value)
-        }
-
-        var branchNode = when (matchingLength) {
-            nodePathNibbles.size -> Node.branch(node.value)
-            nibblesKey.size -> Node.branch(value)
-            else -> Node.branch()
-        }
-
-        branchNode = if (matchingLength < nodePathNibbles.size) {
-            branchNode.withBranch(
-                nodePathNibbles[matchingLength],
-                Node.leaf(nodePathNibbles.dropFirst(matchingLength + 1), node.value)
-            )
-        } else branchNode
-
-        branchNode = if (matchingLength < nibblesKey.size) {
-            branchNode.withBranch(
-                nibblesKey[matchingLength],
-                Node.leaf(nibblesKey.dropFirst(matchingLength + 1), value)
-            )
-        } else branchNode
-
-        return if (matchingLength > 0) {
-            Node.extension(nodePathNibbles.takeFirst(matchingLength), branchNode)
-        } else branchNode
-    }
-
     /**
      * Gets the value for a given key from the Patricia Trie.
      *
