@@ -15,16 +15,11 @@ import kotlin.test.assertEquals
 
 class ProofTests : TestNetSetup() {
 
-    private val eventSignature = "Transfer(address,address,uint256)"
-    private val signatureHash: String = Numeric.toHexString(Hash.sha3(eventSignature.toByteArray()))
-    private val zeroAddress = "0".repeat(64)
-
-    override fun onNetworkSetup() {
-    }
-
     @Test
     fun `can prove inclusion of event in a block`() {
         val amount = 1.toBigInteger()
+        val eventSignature = "Transfer(address,address,uint256)"
+        val signatureHash: String = Numeric.toHexString(Hash.sha3(eventSignature.toByteArray()))
 
         // create an ERC20 Transaction that will emit a Transfer event
         val transactionReceipt: TransactionReceipt = alice.startFlow(
@@ -34,16 +29,18 @@ class ProofTests : TestNetSetup() {
         // Retrieve the event from the receipt logs. The event will have references to the
         // transaction that generated it, and the block that mined the transaction.
         val transferEvent = transactionReceipt.logs?.single { log ->
+            // Expecting an event with 3 Topics
+            log.topics != null && log.topics!!.size == 3
             // Topic0 = event signature
-            log.topics?.firstOrNull() == signatureHash &&
+            log.topics!![0] == signatureHash &&
             // Topic1 = address indexed `Transfer from`
-            log.topics?.getOrElse(1) { _ -> zeroAddress }?.takeLast(40) == Numeric.cleanHexPrefix(aliceAddress) &&
+            log.topics!![1].takeLast(40) == Numeric.cleanHexPrefix(aliceAddress) &&
             // Topic2 = address indexed `Transfer to`
-            log.topics?.getOrElse(2) { _ -> zeroAddress }?.takeLast(40) == Numeric.cleanHexPrefix(bobAddress) &&
+            log.topics!![2].takeLast(40) == Numeric.cleanHexPrefix(bobAddress) &&
             // data = uint256 non-indexed `Transfer amount` - single non-indexed value = 32 bytes long string
-            log.data?.let { Numeric.toBigInt(it) } == amount
+            log.data != null && Numeric.toBigInt(log.data) == amount
         }
-        assertNotNull(transferEvent, "Expected Transfer event not found")
+        assertNotNull(transferEvent, "The expected Transfer event was not found")
 
         // Got the event from the transaction receipt instead that from event filter
         // Same logic applies after proving the transaction contains the expected event
