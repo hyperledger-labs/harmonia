@@ -9,9 +9,6 @@ import kotlin.test.assertEquals
 
 class Erc20Tests : TestNetSetup() {
 
-    override fun onNetworkSetup() {
-    }
-
     @Test
     fun `can read ERC20 token metadata`() {
         val metaData = alice.startFlow(

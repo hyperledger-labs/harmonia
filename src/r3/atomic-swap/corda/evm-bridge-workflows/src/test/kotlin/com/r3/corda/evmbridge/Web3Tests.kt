@@ -10,9 +10,6 @@ import kotlin.test.assertNotNull
 
 class Web3Tests : TestNetSetup() {
 
-    override fun onNetworkSetup() {
-    }
-
     @Test
     fun `can retrieve transactions by hash`() {
 

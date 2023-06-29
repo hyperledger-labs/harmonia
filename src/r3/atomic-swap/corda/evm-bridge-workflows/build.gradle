@@ -34,6 +34,7 @@ dependencies {
     cordapp("org.web3j:rlp:$web3jVersion")
 
     cordapp project(':evm-bridge-contracts')
+    cordapp project(':evm-interop-common')
 
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"

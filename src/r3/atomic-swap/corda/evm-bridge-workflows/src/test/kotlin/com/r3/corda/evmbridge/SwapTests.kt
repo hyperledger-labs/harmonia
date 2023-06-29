@@ -20,9 +20,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class SwapTests : TestNetSetup() {
-    override fun onNetworkSetup() {
-    }
-
 
     @Test
     fun successfulSwap() {

@@ -92,7 +92,7 @@ abstract class TestNetSetup(
             ))
     }
 
-    protected abstract fun onNetworkSetup()
+    protected open fun onNetworkSetup() {}
 
     private fun networkTeardown() {
         network?.stopNodes()

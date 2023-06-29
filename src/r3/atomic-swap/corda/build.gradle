@@ -89,6 +89,7 @@ dependencies {
     cordaCompile "org.slf4j:jul-to-slf4j:$slf4j_version"
     cordaDriver "net.corda:corda-shell:4.9"
 
+    cordapp project(':evm-interop-common')
     cordapp project(':evm-bridge-contracts')
     cordapp project(':evm-bridge-workflows')
 }
@@ -105,6 +106,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         projectCordapp {
             deploy = false
         }
+        cordapp project(':evm-interop-common')
         cordapp project(':evm-bridge-contracts')
         cordapp project(':evm-bridge-workflows')
         runSchemaMigration = true //This configuration is for any CorDapps with custom schema, We will leave this as true to avoid
