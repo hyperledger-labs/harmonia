@@ -1,11 +1,29 @@
+/*
+ * Copyright 2023, R3 LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.r3.corda.interop.evm.common.trie
 
 /**
  * Represents an array of nibbles (values between 0-15 inclusive)
  */
-data class NibbleArray(val values: ByteArray) {
+class NibbleArray(private val values: ByteArray) {
 
     companion object {
+        val empty: NibbleArray = NibbleArray(ByteArray(0))
+
         fun fromBytes(bytes: ByteArray): NibbleArray {
             val result = ByteArray(bytes.size shl 1)
 
@@ -47,6 +65,8 @@ data class NibbleArray(val values: ByteArray) {
     fun dropFirst(numberOfNibbles: Int): NibbleArray =
         NibbleArray(values.copyOfRange(numberOfNibbles, values.size))
 
+    fun remainingAfter(index: Int): NibbleArray = dropFirst(index + 1)
+
     fun takeFirst(numberOfNibbles: Int): NibbleArray =
         NibbleArray(values.copyOfRange(0, numberOfNibbles))
 
@@ -60,8 +80,6 @@ data class NibbleArray(val values: ByteArray) {
     val tail: NibbleArray get() = dropFirst(1)
 
     fun isEmpty(): Boolean = values.isEmpty()
-
-    fun isNotEmpty(): Boolean = values.isNotEmpty()
 
     fun startsWith(other: NibbleArray): Boolean {
         if (other.size > size) {
@@ -91,6 +109,84 @@ data class NibbleArray(val values: ByteArray) {
 
     override fun hashCode(): Int = values.contentHashCode()
 
+}
+
+/**
+ * Represents the result of comparing the prefixes of a key and a path.
+ */
+sealed class PathPrefixMatch {
+
+    companion object {
+        /**
+         * Compare a key and a path, and return a [PathPrefixMatch] representing the agreement between their prefixes.
+         */
+        fun match(key: NibbleArray, path: NibbleArray): PathPrefixMatch {
+            if (key == path) return Equals
+
+            val matchesUpTo = path.prefixMatchingLength(key)
+            return when (matchesUpTo) {
+                0 -> NoMatch(
+                    path[0].toInt(),
+                    path.remainingAfter(0),
+                    key[0].toInt(),
+                    key.remainingAfter(0)
+                )
+
+                key.size -> KeyPrefixesPath(path.dropFirst(matchesUpTo))
+                path.size -> PathPrefixesKey(key.dropFirst(matchesUpTo))
+                else -> PartialMatch(
+                    path.takeFirst(matchesUpTo),
+                    path.dropFirst(matchesUpTo),
+                    key.dropFirst(matchesUpTo)
+                )
+            }
+        }
+    }
+
+    /**
+     * The path and the key are entirely equal.
+     */
+    object Equals: PathPrefixMatch()
+
+    /**
+     * The path and the key are entirely unequal.
+     */
+    data class NoMatch(
+        val pathHead: Int,
+        val pathTail: NibbleArray,
+        val keyHead: Int,
+        val keyTail: NibbleArray
+    ) : PathPrefixMatch()
+
+    /**
+     * The entire key (e.g. 1, 2, 3) is a prefix to the path (e.g. 1, 2, 3, 4)
+     */
+    data class KeyPrefixesPath(val pathRemainder: NibbleArray): PathPrefixMatch() {
+        val pathRemainderHead: Int get() = pathRemainder.head.toInt()
+        val pathRemainderTail: NibbleArray get() = pathRemainder.tail
+    }
+
+    /**
+     * The entire path (e.g. 1, 2, 3) is a prefix to the entire key (e.g. 1, 2, 3, 4)
+     */
+    data class PathPrefixesKey(val keyRemainder: NibbleArray): PathPrefixMatch() {
+        val keyRemainderHead: Int get() = keyRemainder.head.toInt()
+        val keyRemainderTail: NibbleArray get() = keyRemainder.tail
+    }
+
+    /**
+     * The key and the path have a shared prefix (e.g. 1, 2) not equal to the entire key (e.g. 1, 2, 3)
+     * or the entire path (e.g. 1, 2, 4)
+     */
+    data class PartialMatch(
+        val sharedPrefix: NibbleArray,
+        val pathRemainder: NibbleArray,
+        val keyRemainder: NibbleArray): PathPrefixMatch() {
+        val pathRemainderHead: Int get() = pathRemainder.head.toInt()
+        val pathRemainderTail: NibbleArray get() = pathRemainder.tail
+        val keyRemainderHead: Int get() = keyRemainder.head.toInt()
+        val keyRemainderTail: NibbleArray get() = keyRemainder.tail
+    }
 }
 
 // Logic operations for Bytes

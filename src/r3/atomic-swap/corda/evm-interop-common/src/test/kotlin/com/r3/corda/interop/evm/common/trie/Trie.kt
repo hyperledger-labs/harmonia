@@ -27,7 +27,7 @@ class TrieTests {
 
     @Test
     fun testEmptyNodeHashCalculation() {
-        val emptyNode = Node.EmptyNode
+        val emptyNode = EmptyNode
         val expectedHash = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
 
         assertEquals(expectedHash, Numeric.toHexString(emptyNode.hash))
@@ -70,7 +70,7 @@ class TrieTests {
         val trie = trie { }
         val expectedHash = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
 
-        assert(trie.root is Node.EmptyNode)
+        assert(trie.root is EmptyNode)
         assertEquals(expectedHash, Numeric.toHexString(trie.root.hash))
     }
 
@@ -85,10 +85,10 @@ class TrieTests {
 
         trie.put(key, value)
 
-        val leaf = Node.leaf(key, value)
+        val leaf = LeafNode(NibbleArray.fromBytes(key), value)
         val expectedHash = "0x2fc0c91eb10b756afb03c8ceafc121c9c2f4eb47b6ef974ba808f8b46067a6d0"
 
-        assertTrue(trie.root is Node.LeafNode)
+        assertTrue(trie.root is LeafNode)
         assertArrayEquals(leaf.hash, trie.root.hash)
         assertEquals(expectedHash, Numeric.toHexString(trie.root.hash))
     }

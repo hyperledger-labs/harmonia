@@ -134,12 +134,7 @@ class ProofTests {
 
         assertTrue(entries.all { (key, value) ->
             val proof = trie.generateMerkleProof(key)
-
-            PatriciaTrie.verifyMerkleProof(
-                rootHash = trie.root.hash,
-                key = key,
-                expectedValue = value,
-                proof = proof)
+            trie.verifyMerkleProof(key, value, proof)
         })
     }
 }
