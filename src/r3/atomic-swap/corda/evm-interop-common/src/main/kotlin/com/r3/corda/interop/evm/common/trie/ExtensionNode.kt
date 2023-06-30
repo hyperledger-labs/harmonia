@@ -50,7 +50,40 @@ class ExtensionNode(private val path: NibbleArray, private val innerNode: Node) 
             )
         }
 
+    private fun extendIfNonEmpty(path: NibbleArray, innerNode: Node): Node =
+        if (path.isEmpty()) innerNode else ExtensionNode(path, innerNode)
+
     override fun put(key: NibbleArray, newValue: ByteArray): Node {
+        val prefixMatch = PathPrefixMatch.match(key, path)
+
+        return when (prefixMatch) {
+            is PathPrefixMatch.Equals -> ExtensionNode(path, innerNode.put(NibbleArray.empty, newValue))
+            is PathPrefixMatch.NoMatch -> BranchNode.from(
+                prefixMatch.pathHead to extendIfNonEmpty(prefixMatch.pathTail, innerNode),
+                prefixMatch.keyHead to LeafNode(prefixMatch.keyTail, newValue)
+            )
+
+            is PathPrefixMatch.PathPrefixesKey -> ExtensionNode(
+                path,
+                innerNode.put(prefixMatch.keyRemainder, newValue)
+            )
+
+            is PathPrefixMatch.KeyPrefixesPath -> extendIfNonEmpty(
+                key, BranchNode.from(
+                    prefixMatch.pathRemainderHead to extendIfNonEmpty(prefixMatch.pathRemainderTail, innerNode),
+                    value = newValue
+                )
+            )
+
+            is PathPrefixMatch.PartialMatch -> ExtensionNode(
+                prefixMatch.sharedPrefix, BranchNode.from(
+                    prefixMatch.pathRemainderHead to extendIfNonEmpty(prefixMatch.pathRemainderTail, innerNode),
+                    prefixMatch.keyRemainderHead to LeafNode(prefixMatch.keyRemainderTail, newValue)
+                )
+            )
+        }
+
+        /*
         val matchingLength = path.prefixMatchingLength(key)
 
         // Key (1, 2, 3...) contains entire path (1, 2, 3)
@@ -83,6 +116,8 @@ class ExtensionNode(private val path: NibbleArray, private val innerNode: Node) 
         }
 
         return if (matchingPath.isEmpty()) branchNode else ExtensionNode(matchingPath, branchNode)
+
+         */
     }
 
     override fun get(key: NibbleArray): ByteArray {

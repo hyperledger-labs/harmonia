@@ -34,6 +34,9 @@ class BranchNode(private val branches: Array<Node>, private val value: ByteArray
     companion object {
         private val emptyArray = ByteArray(0)
 
+        fun from(vararg sparseBranches: Pair<Int, Node>): BranchNode = from(sparseBranches.toList())
+        fun from(vararg sparseBranches: Pair<Int, Node>, value: ByteArray): BranchNode =
+            from(sparseBranches.toList(), value)
         fun from(sparseBranches: List<Pair<Int, Node>>): BranchNode = from(sparseBranches, emptyArray)
 
         fun from(sparseBranches: List<Pair<Int, Node>>, value: ByteArray): BranchNode {

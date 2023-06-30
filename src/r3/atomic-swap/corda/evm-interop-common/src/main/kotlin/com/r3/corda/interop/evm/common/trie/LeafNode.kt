@@ -45,44 +45,25 @@ class LeafNode(private val path: NibbleArray, private val value: ByteArray) : No
         }
 
     override fun put(key: NibbleArray, newValue: ByteArray): Node {
-        // Overwrite value if key and path match exactly
-        if (path == key) return LeafNode(key, newValue)
+        val matchResult = PathPrefixMatch.match(key, path)
 
-        val matchingLength = path.prefixMatchingLength(key)
-
-        val branches = mutableListOf<Pair<Int, Node>>()
-
-        // If there's some path (1, 2, 3, 4) left after the match (1, 2) with key (1, 2, 5, 6)
-        if (matchingLength < path.size) {
-            // Put the current value in a branch: 3 -> leaf((4), value)
-            branches.add(path[matchingLength].toInt() to LeafNode(path.remainingAfter(matchingLength), value))
+        return when(matchResult) {
+            is PathPrefixMatch.Equals -> LeafNode(key, newValue)
+            is PathPrefixMatch.NoMatch -> BranchNode.from(
+                matchResult.pathHead to LeafNode(matchResult.pathTail, value),
+                matchResult.keyHead to LeafNode(matchResult.keyTail, newValue)
+            )
+            is PathPrefixMatch.PathPrefixesKey -> ExtensionNode(path, BranchNode.from(
+                matchResult.keyRemainderHead to LeafNode(matchResult.keyRemainderTail, newValue),
+                value = value))
+            is PathPrefixMatch.KeyPrefixesPath -> ExtensionNode(key, BranchNode.from(
+                matchResult.pathRemainderHead to LeafNode(matchResult.pathRemainderTail, value),
+                value = newValue))
+            is PathPrefixMatch.PartialMatch -> ExtensionNode(matchResult.sharedPrefix, BranchNode.from(
+                matchResult.pathRemainderHead to LeafNode(matchResult.pathRemainderTail, value),
+                matchResult.keyRemainderHead to LeafNode(matchResult.keyRemainderTail, newValue)
+            ))
         }
-
-        // If there's some key (1, 2, 5, 6) left after the match (1, 2) with path (1, 2, 3, 4)
-        if (matchingLength < key.size) {
-            // Put the new value in a branch: 5 -> ((6), newValue)
-            branches.add(key[matchingLength].toInt() to LeafNode(key.remainingAfter(matchingLength), newValue))
-        }
-
-        /*
-        Note implicit logic here:
-
-        * matchingLength is never more than path.size, and never more than key.size
-        * path.size and key.size are never equal, or we would have hit the exact match condition above.
-        * If matchingLength is path.size, it cannot be equal to key.size, so it must be less than key.size.
-        * If matchingLength is key.size, it cannot be equal to path.size, so it must be less than path.size
-
-         */
-        val branchNode = when (matchingLength) {
-            // Implicitly, matchingLength < key.size, so branch to newValue is in branches
-            path.size -> BranchNode.from(branches, value)
-            // Implicitly, matchingLength < path.size, so branch to value is in branches
-            key.size -> BranchNode.from(branches, newValue)
-            // MatchingLength < key.size && matchingLength < path.size, so both branches are present
-            else -> BranchNode.from(branches)
-        }
-
-        return if (matchingLength == 0) branchNode else ExtensionNode(path.takeFirst(matchingLength), branchNode)
     }
 
     override fun get(key: NibbleArray): ByteArray = if (key == path) value else ByteArray(0)
