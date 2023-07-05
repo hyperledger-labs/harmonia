@@ -9,3 +9,4 @@ Table of Contents:
 * [Portable Proofs](portable_proofs.md)
 * [Vicarious trust](vicarious_trust.md)
 * [Remote Finality Guarantors](remote_finality_guarantors.md)
+* [Appendix A: Externally Verifiable Transaction Properties](externally_verifiable_transaction_properties.md)
