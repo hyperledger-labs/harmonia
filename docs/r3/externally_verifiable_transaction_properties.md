@@ -11,4 +11,8 @@ An _externally verifiable transaction property_, in the case of obfuscated Corda
 * The value could not be accidentally present at the given position, or maliciously caused to appear there, even though the transaction itself did not actually contain that value for the specified property.
 * If the value could have been assigned to a different property of the transaction, it would appear at a different position in that case.
 
+The entire transaction need not be serialised and inspected. since it already has a Merkle tree structure in which input and output states appear in separate branches. We will typically want to demonstrate the presence of the required property in a particular output state, and show a Merkle inclusion proof demonstrating that this output state was indeed included in the total transaction whose root hash was signed by the notary.
+
+An externally verifiable transaction property can be used to associate a Corda transaction with a particular approved trade identity that is then "marked off" by the observing EVM contract, so that the same Corda transaction cannot be used to complete multiple trades on the EVM side.
+
 This approach is brittle in some regards. An upgrade to a CorDapp, for example introducing a new field to a class representing a transaction state or command, might change the position at which the value assigned to the specified property was written in the serialied transaction stream. A more resilient approach to consider in future might be to represent property values pertaining to a transaction as labelled nodes within a Merkle tree, such that other property values could be "torn off" (replaced with hashes) and a Merkle inclusion proof used to validate the presence of a particular value for a particular property.
