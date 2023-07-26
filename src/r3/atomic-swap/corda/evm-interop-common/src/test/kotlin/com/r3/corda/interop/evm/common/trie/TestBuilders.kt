@@ -1,13 +1,13 @@
 package com.r3.corda.interop.evm.common.trie
 
 class LeafNodeBuilder(val nibbles: NibbleArray) {
-    fun withValue(stringValue: String) = Node.leaf(nibbles, stringValue.toByteArray())
-    fun withValue(vararg byteArray: Byte) = Node.leaf(nibbles, byteArray)
+    fun withValue(stringValue: String) = LeafNode(nibbles, stringValue.toByteArray())
+    fun withValue(vararg byteArray: Byte) = LeafNode(nibbles, byteArray)
 }
 
 class ExtensionNodeBuilder(val pathNibbles: NibbleArray) {
-    fun empty() = Node.extension(pathNibbles, Node.EmptyNode)
-    fun withInner(inner: Node) = Node.extension(pathNibbles, inner)
+    fun empty() = ExtensionNode(pathNibbles, EmptyNode)
+    fun withInner(inner: Node) = ExtensionNode(pathNibbles, inner)
     fun toBranches(vararg branches: Pair<Int, Node>) =
         InnerBranchNodeBuilder(this, branchNode(*branches))
 }
@@ -21,9 +21,9 @@ class BranchNodeBuilder(val branches: List<Pair<Int, Node>>) {
 
     fun withValue(value: String): Node = withValue(value.toByteArray())
 
-    fun withValue(value: ByteArray): Node = Node.branch(branches, value)
+    fun withValue(value: ByteArray): Node = BranchNode.from(branches, value)
 
-    fun empty() = Node.branch(branches)
+    fun empty() = BranchNode.from(branches)
 }
 
 fun trie(build: TrieBuilder.() -> Unit): PatriciaTrie {
