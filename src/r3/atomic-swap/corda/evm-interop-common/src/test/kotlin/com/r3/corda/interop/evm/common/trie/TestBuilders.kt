@@ -41,12 +41,12 @@ class TrieBuilder {
 }
 
 fun leafNodeFromKey(vararg pathBytes: Byte): LeafNodeBuilder = LeafNodeBuilder(NibbleArray.fromBytes(pathBytes))
-fun leafNode(vararg nibbles: Byte): LeafNodeBuilder = LeafNodeBuilder(NibbleArray(nibbles))
+fun leafNode(vararg nibbles: Byte): LeafNodeBuilder = LeafNodeBuilder(NibbleArray.of(nibbles))
 
 fun extensionNodeFromKey(vararg pathBytes: Byte): ExtensionNodeBuilder =
     ExtensionNodeBuilder(NibbleArray.fromBytes(pathBytes))
 fun extensionNode(vararg nibbles: Byte): ExtensionNodeBuilder =
-    ExtensionNodeBuilder(NibbleArray(nibbles))
+    ExtensionNodeBuilder(NibbleArray.of(nibbles))
 
 fun branchNode(vararg branches: Pair<Int, Node>): BranchNodeBuilder =
     BranchNodeBuilder(branches.toList())

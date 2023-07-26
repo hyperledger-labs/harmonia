@@ -34,7 +34,22 @@ enum class PatriciaTriePathType(
         }
     }
 
-    fun applyPrefix(nibbles: NibbleArray): NibbleArray =
-        nibbles.prepend((if (nibbles.isEvenSized) evenPrefix else oddPrefix).prefixNibbles)
+    fun getPrefixedBytes(nibbles: NibbleArray): ByteArray {
+        val prefix = (if (nibbles.isEvenSized) evenPrefix else oddPrefix).prefixNibbles
+        val totalSize = prefix.size + nibbles.size
+        val allNibbles = prefix.asSequence() + nibbles.asSequence()
+        val result = ByteArray(totalSize shr 1)
+
+        allNibbles.forEachIndexed { nibbleIndex, nibble ->
+            val resultIndex = nibbleIndex shr 1
+            result[resultIndex] = if ((nibbleIndex and 1) == 0) nibble shl 4
+            else result[resultIndex] or nibble
+        }
+
+        return result
+    }
+
+    private infix fun Byte.shl(shift: Int) = (toInt() shl shift).toByte()
+    private infix fun Byte.or(other: Byte) = (toInt() or other.toInt()).toByte()
 }
 

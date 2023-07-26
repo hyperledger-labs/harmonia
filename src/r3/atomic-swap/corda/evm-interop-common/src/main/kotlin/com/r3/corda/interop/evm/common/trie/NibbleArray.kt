@@ -19,74 +19,98 @@ package com.r3.corda.interop.evm.common.trie
 /**
  * Represents an array of nibbles (values between 0-15 inclusive)
  */
-class NibbleArray(private val values: ByteArray) {
+data class NibbleArray(val values: ByteArray, val range: IntRange) {
 
     companion object {
-        val empty: NibbleArray = NibbleArray(ByteArray(0))
 
+        /**
+         * An empty [NibbleArray].
+         */
+        val empty: NibbleArray = NibbleArray(ByteArray(0), IntRange.EMPTY)
+
+        /**
+         * Construct a [NibbleArray] containing the provided nibble values.
+         *
+         * @param nibbles The nibbles to wrap.
+         */
+        fun of(nibbles: ByteArray): NibbleArray = NibbleArray(nibbles, nibbles.indices)
+
+        /**
+         * Convert an array of bytes (which contains two nibbles per byte) into a [NibbleArray].
+         *
+         * @param bytes The bytes to break into nibbles to build the [NibbleArray].
+         */
         fun fromBytes(bytes: ByteArray): NibbleArray {
             val result = ByteArray(bytes.size shl 1)
 
             bytes.forEachIndexed { byteIndex, byte ->
                 val nibbleIndex = byteIndex shl 1
-                result[nibbleIndex] = (byte shr 4) and 0x0F
-                result[nibbleIndex + 1] = byte and 0x0F
+                result[nibbleIndex] = (((byte.toInt() shr 4).toByte()).toInt() and 0x0F).toByte()
+                result[nibbleIndex + 1] = (byte.toInt() and 0x0F).toByte()
             }
 
-            return NibbleArray(result)
+            return of(result)
         }
     }
 
-    fun toBytes(): ByteArray {
-        require(isEvenSized) {
-            "Cannot convert odd-sized nibble array to bytes"
-        }
+    /**
+     * The number of nibbles in the array.
+     */
+    val size: Int get() = range.last + 1 - range.first
 
-        val result = ByteArray(values.size shr 1)
-
-        values.forEachIndexed { nibbleIndex, nibble ->
-            val resultIndex = nibbleIndex shr 1
-            result[resultIndex] = if (nibbleIndex.isEven) nibble shl 4
-            else result[resultIndex] or nibble
-        }
-
-        return result
+    /**
+     * Returns a copy of the [NibbleArray] minus a given number of nibbles removed from the start.
+     *
+     * @param count The number of nibbles to drop from the start of the array.
+     */
+    fun dropFirst(count: Int): NibbleArray = when {
+        count == size -> empty
+        count <= size -> copy(range = IntRange(range.first + count, range.last))
+        else -> throw IndexOutOfBoundsException()
     }
 
-    fun prepend(prefix: NibbleArray): NibbleArray {
-        val prepended = ByteArray(prefix.size + values.size)
-
-        prefix.values.copyInto(prepended, 0)
-        values.copyInto(prepended, prefix.size)
-
-        return NibbleArray(prepended)
+    /**
+     * Returns a [NibbleArray] containing only the first n nibbles from this array.
+     *
+     * @param count The number of nibbles to take from the start of the array.
+     */
+    fun takeFirst(count: Int): NibbleArray = when {
+        count == 0 -> empty
+        count < size -> copy(range = range.first until (range.first + count))
+        count == size -> this
+        else -> throw IndexOutOfBoundsException()
     }
 
-    fun dropFirst(numberOfNibbles: Int): NibbleArray =
-        NibbleArray(values.copyOfRange(numberOfNibbles, values.size))
+    /**
+     * Get the nibble at the provided index.
+     *
+     * @param index The index of the nibble to retrieve.
+     */
+    operator fun get(index: Int): Byte = values[index + range.first]
 
+    fun asSequence(): Sequence<Byte> = (0 until size).asSequence().map { this[it] }
+
+    /**
+     * Return a [NibbleArray] containing the nibbles after (and not including) the nibble at the provided index.
+     *
+     * @param index The index of the nibble to split this nibble array at.
+     */
     fun remainingAfter(index: Int): NibbleArray = dropFirst(index + 1)
 
-    fun takeFirst(numberOfNibbles: Int): NibbleArray =
-        NibbleArray(values.copyOfRange(0, numberOfNibbles))
+    val isEvenSized: Boolean get() = (size and 1) == 0
 
-    val size: Int get() = values.size
-
-    val isEvenSized: Boolean get() = size.isEven
-
-    val head: Byte get() = values.firstOrNull() ?:
-        throw IllegalStateException("head called on empty nibble array")
+    val head: Byte get() = if (isEmpty()) throw IllegalStateException("head called on empty nibble array") else this[0]
 
     val tail: NibbleArray get() = dropFirst(1)
 
-    fun isEmpty(): Boolean = values.isEmpty()
+    fun isEmpty(): Boolean = size == 0
 
     fun startsWith(other: NibbleArray): Boolean {
         if (other.size > size) {
             return false
         }
-        for (i in other.values.indices) {
-            if (values[i] != other[i]) {
+        (0 until other.size).forEach { i ->
+            if (this[i] != other[i]) {
                 return false
             }
         }
@@ -96,19 +120,16 @@ class NibbleArray(private val values: ByteArray) {
     fun prefixMatchingLength(other: NibbleArray): Int {
         var ptr = 0
         while (ptr < size && ptr < other.size) {
-            if (values[ptr] != other.values[ptr]) break
+            if (this[ptr] != other[ptr]) break
             ptr++
         }
         return ptr
     }
 
-    operator fun get(index: Int): Byte = values[index]
+    override fun equals(other: Any?): Boolean =
+        (other is NibbleArray) && (size == other.size) && (0 until size).all { this[it] == other[it] }
 
-    override fun equals(other: Any?) =
-        this === other || (other is NibbleArray && values.contentEquals(other.values))
-
-    override fun hashCode(): Int = values.contentHashCode()
-
+    override fun hashCode(): Int = (0 until size).fold(0) { a, i -> a + 31 * this[i].hashCode() }
 }
 
 /**
@@ -126,18 +147,13 @@ sealed class PathPrefixMatch {
             val matchesUpTo = path.prefixMatchingLength(key)
             return when (matchesUpTo) {
                 0 -> NoMatch(
-                    path[0].toInt(),
-                    path.remainingAfter(0),
-                    key[0].toInt(),
-                    key.remainingAfter(0)
+                    path[0].toInt(), path.remainingAfter(0), key[0].toInt(), key.remainingAfter(0)
                 )
 
                 key.size -> KeyPrefixesPath(path.dropFirst(matchesUpTo))
                 path.size -> PathPrefixesKey(key.dropFirst(matchesUpTo))
                 else -> PartialMatch(
-                    path.takeFirst(matchesUpTo),
-                    path.dropFirst(matchesUpTo),
-                    key.dropFirst(matchesUpTo)
+                    path.takeFirst(matchesUpTo), path.dropFirst(matchesUpTo), key.dropFirst(matchesUpTo)
                 )
             }
         }
@@ -146,22 +162,19 @@ sealed class PathPrefixMatch {
     /**
      * The path and the key are entirely equal.
      */
-    object Equals: PathPrefixMatch()
+    object Equals : PathPrefixMatch()
 
     /**
      * The path and the key are entirely unequal.
      */
     data class NoMatch(
-        val pathHead: Int,
-        val pathTail: NibbleArray,
-        val keyHead: Int,
-        val keyTail: NibbleArray
+        val pathHead: Int, val pathTail: NibbleArray, val keyHead: Int, val keyTail: NibbleArray
     ) : PathPrefixMatch()
 
     /**
      * The entire key (e.g. 1, 2, 3) is a prefix to the path (e.g. 1, 2, 3, 4)
      */
-    data class KeyPrefixesPath(val pathRemainder: NibbleArray): PathPrefixMatch() {
+    data class KeyPrefixesPath(val pathRemainder: NibbleArray) : PathPrefixMatch() {
         val pathRemainderHead: Int get() = pathRemainder.head.toInt()
         val pathRemainderTail: NibbleArray get() = pathRemainder.tail
     }
@@ -169,7 +182,7 @@ sealed class PathPrefixMatch {
     /**
      * The entire path (e.g. 1, 2, 3) is a prefix to the entire key (e.g. 1, 2, 3, 4)
      */
-    data class PathPrefixesKey(val keyRemainder: NibbleArray): PathPrefixMatch() {
+    data class PathPrefixesKey(val keyRemainder: NibbleArray) : PathPrefixMatch() {
         val keyRemainderHead: Int get() = keyRemainder.head.toInt()
         val keyRemainderTail: NibbleArray get() = keyRemainder.tail
     }
@@ -179,29 +192,11 @@ sealed class PathPrefixMatch {
      * or the entire path (e.g. 1, 2, 4)
      */
     data class PartialMatch(
-        val sharedPrefix: NibbleArray,
-        val pathRemainder: NibbleArray,
-        val keyRemainder: NibbleArray): PathPrefixMatch() {
+        val sharedPrefix: NibbleArray, val pathRemainder: NibbleArray, val keyRemainder: NibbleArray
+    ) : PathPrefixMatch() {
         val pathRemainderHead: Int get() = pathRemainder.head.toInt()
         val pathRemainderTail: NibbleArray get() = pathRemainder.tail
         val keyRemainderHead: Int get() = keyRemainder.head.toInt()
         val keyRemainderTail: NibbleArray get() = keyRemainder.tail
-    }
-}
-
-// Logic operations for Bytes
-private infix fun Byte.shl(shift: Int) = (toInt() shl shift).toByte()
-private infix fun Byte.shr(shift: Int) = (toInt() shr shift).toByte()
-private infix fun Byte.and(other: Byte) = (toInt() and other.toInt()).toByte()
-private infix fun Byte.or(other: Byte) = (toInt() or other.toInt()).toByte()
-
-// Test if an Int is even
-private val Int.isEven: Boolean get() = (this and 1) == 0
-
-// Not available in this version of Kotlin
-private fun ByteArray.copyInto(other: ByteArray, startIndex: Int) {
-    var ptr = startIndex
-    forEach {
-        other[ptr++] = it
     }
 }

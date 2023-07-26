@@ -38,7 +38,7 @@ class LeafNode(private val path: NibbleArray, private val value: ByteArray) : No
         get() {
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(PatriciaTriePathType.LEAF.applyPrefix(path).toBytes()),
+                    RlpString.create(PatriciaTriePathType.LEAF.getPrefixedBytes(path)),
                     RlpString.create(value)
                 )
             )
@@ -69,7 +69,7 @@ class LeafNode(private val path: NibbleArray, private val value: ByteArray) : No
     override fun get(key: NibbleArray): ByteArray = if (key == path) value else ByteArray(0)
 
     override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore {
-        if (path == key) {
+        if (path ==key) {
             store.put(hash, encoded)
             return store
         } else {

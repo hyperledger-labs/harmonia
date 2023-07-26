@@ -28,5 +28,5 @@ enum class PatriciaTriePathPrefix(vararg  nibbleValues: Byte) {
                 throw IllegalArgumentException("Nibbles $nibbles do not start with a valid prefix")
     }
 
-    val prefixNibbles = NibbleArray(nibbleValues)
+    val prefixNibbles = NibbleArray.of(nibbleValues)
 }

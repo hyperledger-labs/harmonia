@@ -40,7 +40,7 @@ class ExtensionNode(private val path: NibbleArray, private val innerNode: Node) 
             val encodedInnerNode = innerNode.encoded
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(PatriciaTriePathType.EXTENSION.applyPrefix(path).toBytes()),
+                    RlpString.create(PatriciaTriePathType.EXTENSION.getPrefixedBytes(path)),
                     if (encodedInnerNode.size >= 32) {
                         RlpString.create(innerNode.hash)
                     } else {
@@ -82,42 +82,6 @@ class ExtensionNode(private val path: NibbleArray, private val innerNode: Node) 
                 )
             )
         }
-
-        /*
-        val matchingLength = path.prefixMatchingLength(key)
-
-        // Key (1, 2, 3...) contains entire path (1, 2, 3)
-        if (matchingLength == path.size) {
-            // Put the value into the inner node, at the remaining key
-            return ExtensionNode(path, innerNode.put(key.dropFirst(matchingLength), newValue))
-        }
-
-        // Key (1, 2, 3...) contains part of path (1, 2, 4, 5, 6)
-        val matchingPath = path.takeFirst(matchingLength)       // Nibbles where key and path agree (1, 2)
-        val pathIndex = path[matchingLength].toInt()            // Nibble where key and path diverge (4)
-        val remainingPath = path.remainingAfter(matchingLength) // Path nibbles after divergence (5, 6)
-
-        // Branch either to the inner node or to an extension terminating in the inner node
-        val firstBranch = if (remainingPath.isEmpty()) innerNode else ExtensionNode(remainingPath, innerNode)
-
-        val branchNode = if (matchingLength == key.size) {
-            // Path (1, 2, 3...) contains entire key (1, 2, 3)
-
-            // 3 -> firstBranch
-            BranchNode.from(listOf(pathIndex to firstBranch), newValue)
-        } else {
-            // Path (1, 2, 3...) contains part of key (1, 2, 4, 5, 6)
-            val keyIndex = key[matchingLength].toInt()            // Nibble where key and path diverge (4)
-            val remainingKey = key.remainingAfter(matchingLength) // Key nibbles after divergence (5, 6)
-
-            // 3 -> firstBranch
-            // 4 -> leaf((5, 6), newValue)
-            BranchNode.from(listOf(pathIndex to firstBranch, keyIndex to LeafNode(remainingKey, newValue)))
-        }
-
-        return if (matchingPath.isEmpty()) branchNode else ExtensionNode(matchingPath, branchNode)
-
-         */
     }
 
     override fun get(key: NibbleArray): ByteArray {
