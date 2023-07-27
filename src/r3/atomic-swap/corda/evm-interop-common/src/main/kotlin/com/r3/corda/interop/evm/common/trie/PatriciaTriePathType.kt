@@ -34,16 +34,22 @@ enum class PatriciaTriePathType(
         }
     }
 
+    /**
+     * Encode the supplied [NibbleArray] as a [ByteArray] prefixed with the appropriate prefix for this type and the
+     * array length.
+     *
+     * @param nibbles The [NibbleArray] to encode.
+     */
     fun getPrefixedBytes(nibbles: NibbleArray): ByteArray {
-        val prefix = (if (nibbles.isEvenSized) evenPrefix else oddPrefix).prefixNibbles
+        val prefix = (if ((nibbles.size and 1) == 0) evenPrefix else oddPrefix).prefixNibbles
+
         val totalSize = prefix.size + nibbles.size
         val allNibbles = prefix.asSequence() + nibbles.asSequence()
         val result = ByteArray(totalSize shr 1)
 
         allNibbles.forEachIndexed { nibbleIndex, nibble ->
             val resultIndex = nibbleIndex shr 1
-            result[resultIndex] = if ((nibbleIndex and 1) == 0) nibble shl 4
-            else result[resultIndex] or nibble
+            result[resultIndex] = if ((nibbleIndex and 1) == 0) nibble shl 4 else result[resultIndex] or nibble
         }
 
         return result

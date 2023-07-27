@@ -110,10 +110,7 @@ interface Node {
         }
 
         private fun nonBranchNode(keyBytes: ByteArray, valueOrNode: RlpType): Node {
-            val allNibbles = NibbleArray.fromBytes(keyBytes)
-            val prefix = PatriciaTriePathPrefix.fromNibbles(allNibbles)
-            val pathType = PatriciaTriePathType.forPrefix(prefix)
-            val pathNibbles = allNibbles.dropFirst(prefix.prefixNibbles.size)
+            val (pathType, pathNibbles) = PatriciaTriePath.fromPrefixedBytes(keyBytes)
 
             return when (valueOrNode) {
                 is RlpString -> {

@@ -19,7 +19,7 @@ package com.r3.corda.interop.evm.common.trie
 /**
  * Represents an array of nibbles (values between 0-15 inclusive)
  */
-data class NibbleArray(val values: ByteArray, val range: IntRange) {
+class NibbleArray private constructor(private val values: ByteArray, private val range: IntRange) {
 
     companion object {
 
@@ -65,7 +65,7 @@ data class NibbleArray(val values: ByteArray, val range: IntRange) {
      */
     fun dropFirst(count: Int): NibbleArray = when {
         count == size -> empty
-        count <= size -> copy(range = IntRange(range.first + count, range.last))
+        count <= size -> NibbleArray(values, IntRange(range.first + count, range.last))
         else -> throw IndexOutOfBoundsException()
     }
 
@@ -76,7 +76,7 @@ data class NibbleArray(val values: ByteArray, val range: IntRange) {
      */
     fun takeFirst(count: Int): NibbleArray = when {
         count == 0 -> empty
-        count < size -> copy(range = range.first until (range.first + count))
+        count < size -> NibbleArray(values, range.first until (range.first + count))
         count == size -> this
         else -> throw IndexOutOfBoundsException()
     }
@@ -88,6 +88,9 @@ data class NibbleArray(val values: ByteArray, val range: IntRange) {
      */
     operator fun get(index: Int): Byte = values[index + range.first]
 
+    /**
+     * Obtain the nibbles in this [NibbleArray] as a [Sequence<Byte>].
+     */
     fun asSequence(): Sequence<Byte> = (0 until size).asSequence().map { this[it] }
 
     /**
@@ -97,26 +100,26 @@ data class NibbleArray(val values: ByteArray, val range: IntRange) {
      */
     fun remainingAfter(index: Int): NibbleArray = dropFirst(index + 1)
 
-    val isEvenSized: Boolean get() = (size and 1) == 0
-
+    /**
+     * Return the first element of this array, or throw [IllegalStateException] if it is empty.
+     */
     val head: Byte get() = if (isEmpty()) throw IllegalStateException("head called on empty nibble array") else this[0]
 
+    /**
+     * Return the suffix of this array after the first element has been removed.
+     */
     val tail: NibbleArray get() = dropFirst(1)
 
+    /**
+     * Returns true if this array is empty, and false otherwise.
+     */
     fun isEmpty(): Boolean = size == 0
 
-    fun startsWith(other: NibbleArray): Boolean {
-        if (other.size > size) {
-            return false
-        }
-        (0 until other.size).forEach { i ->
-            if (this[i] != other[i]) {
-                return false
-            }
-        }
-        return true
-    }
-
+    /**
+     * Calculates the length of the match between the supplied [NibbleArray] and the prefix of this [NibbleArray].
+     *
+     * @param other The [NibbleArray] to compare.
+     */
     fun prefixMatchingLength(other: NibbleArray): Int {
         var ptr = 0
         while (ptr < size && ptr < other.size) {
@@ -126,14 +129,22 @@ data class NibbleArray(val values: ByteArray, val range: IntRange) {
         return ptr
     }
 
+    /**
+     * Returns true if this [NibbleArray] starts with the supplied [NibbleArray], and false otherwise.
+     *
+     * @param other The [NibbleArray] to compare.
+     */
+    fun startsWith(other: NibbleArray): Boolean = prefixMatchingLength(other) == other.size
+
+    // Two NibbleArrays are equal if they have the same values at the same indices
     override fun equals(other: Any?): Boolean =
         (other is NibbleArray) && (size == other.size) && (0 until size).all { this[it] == other[it] }
 
-    override fun hashCode(): Int = (0 until size).fold(0) { a, i -> a + 31 * this[i].hashCode() }
+    override fun hashCode(): Int = asSequence().fold(0) { a, i -> a + 31 * i.hashCode() }
 }
 
 /**
- * Represents the result of comparing the prefixes of a key and a path.
+ * Represents the result of comparing the prefixes of a key and a path, capturing useful matching and non-matching parts.
  */
 sealed class PathPrefixMatch {
 
