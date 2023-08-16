@@ -1,6 +1,10 @@
 package com.r3.corda.cno.evmbridge.dto
 
 import net.corda.core.serialization.CordaSerializable
+import org.web3j.rlp.RlpEncoder
+import org.web3j.rlp.RlpList
+import org.web3j.rlp.RlpString
+import org.web3j.utils.Numeric
 import java.math.BigInteger
 
 /**
@@ -8,7 +12,8 @@ import java.math.BigInteger
  * ethereum transaction receipt object using Corda serialization.
  */
 @CordaSerializable
-data class TransactionReceipt(
+data class
+TransactionReceipt(
     val transactionHash: String? = null,
     val transactionIndex: String? = null,
     val blockHash: String? = null,
@@ -71,3 +76,28 @@ data class TransactionReceipt(
                 + '}')
     }
 }
+
+fun TransactionReceipt.encoded() : ByteArray {
+    fun serializeLog(log: TransactionReceiptLog): RlpList {
+        val address = Numeric.hexStringToByteArray(log.address)
+        val topics = log.topics?.map { topic -> Numeric.hexStringToByteArray(topic) } ?: listOf()
+
+        require(address.size == 20) { "Invalid contract address size (${address.size})" }
+        require(topics.isNotEmpty() && topics.all { it.size == 32}) { "Invalid topics length or size" }
+
+        return RlpList(listOf(
+            RlpString.create(address),
+            RlpList(topics.map { topic -> RlpString.create(topic) }),
+            RlpString.create(Numeric.hexStringToByteArray(log.data))
+        ))
+    }
+
+    return RlpEncoder.encode(RlpList(listOf(
+        RlpString.create(Numeric.toBigInt(this.status)),
+        RlpString.create(Numeric.toBigInt(this.cumulativeGasUsed)),
+        RlpString.create(Numeric.hexStringToByteArray(this.logsBloom)),
+        RlpList(this.logs?.map { serializeLog(it) } ?: listOf())
+    )))
+}
+
+

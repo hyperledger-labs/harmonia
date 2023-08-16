@@ -41,6 +41,11 @@ dependencies {
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.mockito:mockito-inline:$mockitoVersion"
 
+    testImplementation("org.web3j:core:$web3jVersion")
+    testImplementation("org.web3j:utils:$web3jVersion")
+    testImplementation("org.web3j:crypto:$web3jVersion")
+    testImplementation("org.web3j:rlp:$web3jVersion")
+
     testImplementation "$corda_release_group:corda-node:$corda_release_version"
     testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
     testImplementation "$corda_release_group:corda-core-test-utils:$corda_release_version"

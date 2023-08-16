@@ -38,11 +38,13 @@ class BuildAndProposeDraftTransactionFlow(val swapTxDetails: SwapTransactionDeta
             .addInputState(swapTxDetails.cordaAssetState)
             .addOutputState(lockedAssetState, notary = notary, encumbrance = 1)
             .addOutputState(LockState(
-                swapTxDetails.senderEvmAddress,
                 swapTxDetails.cordaAssetState.state.data.owner.owningKey,
-                swapTxDetails.receiverEvmAddress, swapTxDetails.receiverCordaName.owningKey,
+                swapTxDetails.receiverCordaName.owningKey,
                 swapTxDetails.approvedCordaValidators.map { it.owningKey },
                 swapTxDetails.minimumNumberOfEventValidations,
+                swapTxDetails.evmBlockchainId,
+                swapTxDetails.forwardEvent,
+                swapTxDetails.backwardEvent,
                 participants = listOf(ourIdentity, swapTxDetails.receiverCordaName)),
                 notary = notary, encumbrance = 0)
             .addCommand(lockCommand)

@@ -1,22 +1,25 @@
 package com.r3.corda.evmbridge
 
-import com.r3.corda.cno.evmbridge.dto.TransactionReceipt
+import com.r3.corda.cno.evmbridge.dto.*
 import com.r3.corda.evmbridge.internal.TestNetSetup
+import com.r3.corda.evmbridge.DefaultEventEncoder
 import com.r3.corda.evmbridge.workflows.*
+import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import net.corda.core.utilities.getOrThrow
 import org.junit.Test
 import org.web3j.crypto.Hash
-import kotlin.test.assertNotNull
-import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import org.web3j.rlp.RlpEncoder
 import org.web3j.rlp.RlpString
 import org.web3j.utils.Numeric
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
 
 class ProofTests : TestNetSetup() {
 
     @Test
-    fun `can prove inclusion of event in a block`() {
+    fun `can prove inclusion of transaction in a block`() {
         val amount = 1.toBigInteger()
         val eventSignature = "Transfer(address,address,uint256)"
         val signatureHash: String = Numeric.toHexString(Hash.sha3(eventSignature.toByteArray()))
@@ -70,5 +73,62 @@ class ProofTests : TestNetSetup() {
             )
         }
         assertEquals(eventSourceBlock.transactionsRoot, Numeric.toHexString(trie.root.hash))
+    }
+
+    @Test
+    fun `can prove inclusion of event in a block`() {
+
+        // Event expectations are defined ahead of the transaction/event
+        val encodedEvent = DefaultEventEncoder().encodeEvent(
+            goldTokenDeployAddress,
+            "Transfer(address,address,uint256)",
+            Indexed(aliceAddress),
+            Indexed(bobAddress),
+            1.toBigInteger()
+        )
+
+        val amount = 1.toBigInteger()
+        // create an ERC20 Transaction that will emit a Transfer event
+        val transactionReceipt: TransactionReceipt = alice.startFlow(
+            Erc20TransferFlow(goldTokenDeployAddress, bobAddress, amount)
+        ).getOrThrow()
+
+        val transferEvent = encodedEvent.findIn(transactionReceipt)
+        assertNotNull(transferEvent.found, "The expected Transfer event was not found")
+
+        // Got the event from the transaction receipt instead that from event filter
+        // Same logic applies after proving the transaction contains the expected event
+
+        // get the block that mined the transaction that generated the event following the blockHash from the event
+        val eventSourceBlock = alice.startFlow(
+            GetBlockFlow(hash = transferEvent.log.blockHash!!, includeTransactions = true)
+        ).getOrThrow()
+
+        val receipts = alice.startFlow(
+            GetBlockReceiptsFlow(eventSourceBlock.number)
+        ).getOrThrow()
+
+        // make sure the block is not tampered with by calculating the transactions trie root
+        // and comparing it against the block-header's transactionsRoot
+        val trie = PatriciaTrie()
+        for(receipt in receipts) {
+            trie.put(
+                RlpEncoder.encode(RlpString.create(Numeric.toBigInt(receipt.transactionIndex!!).toLong())),
+                receipt.encoded()
+            )
+        }
+        assertEquals(eventSourceBlock.receiptsRoot, Numeric.toHexString(trie.root.hash))
+
+        val txIndex = Numeric.toBigInt(transferEvent.log.transactionIndex!!).toInt()
+        val key = RlpEncoder.encode(RlpString.create(txIndex.toLong()))
+        val transactionProof = trie.generateMerkleProof(key)
+
+        val verified = PatriciaTrie.verifyMerkleProof(
+            Numeric.hexStringToByteArray(eventSourceBlock.receiptsRoot),
+            key,
+            receipts[txIndex].encoded(),
+            transactionProof
+        )
+        assertTrue(verified)
     }
 }

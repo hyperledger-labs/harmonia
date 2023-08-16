@@ -1,5 +1,6 @@
 package com.r3.corda.evmbridge.states.swap
 
+import com.r3.corda.evmbridge.EncodedEvent
 import net.corda.core.contracts.OwnableState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.Party
@@ -13,10 +14,11 @@ import net.corda.core.serialization.CordaSerializable
  */
 @CordaSerializable
 data class SwapTransactionDetails(val senderCordaName: Party,
-                                  val senderEvmAddress: String,
                                   val receiverCordaName: Party,
-                                  val receiverEvmAddress: String,
                                   val cordaAssetState: StateAndRef<OwnableState>,
                                   val evmAssetContractAddress: String,
                                   val approvedCordaValidators: List<Party>,
-                                  val minimumNumberOfEventValidations: Int)
+                                  val minimumNumberOfEventValidations: Int,
+                                  val evmBlockchainId: Int,
+                                  val forwardEvent: EncodedEvent,
+                                  val backwardEvent: EncodedEvent)

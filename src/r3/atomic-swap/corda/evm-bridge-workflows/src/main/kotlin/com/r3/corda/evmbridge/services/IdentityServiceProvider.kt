@@ -250,6 +250,14 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
         fun getTransactionByHash(hash: String): CompletableFuture<com.r3.corda.cno.evmbridge.dto.Transaction> {
             return connection(connectionId).getTransactionByHash(hash)
         }
+
+        fun getTransactionReceiptByHash(hash: String): CompletableFuture<TransactionReceipt> {
+            return connection(connectionId).getTransactionReceiptByHash(hash)
+        }
+
+        fun getBlockReceipts(blockNumber: BigInteger): CompletableFuture<List<TransactionReceipt>> {
+            return connection(connectionId).getBlockReceipts(blockNumber)
+        }
     }
 
     /**
@@ -498,6 +506,19 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
             val transaction = session.getTransactionByHash(hash)
 
             return ResponseOperation(transaction)
+        }
+
+        override fun getTransactionReceiptByHash(hash: String) : FlowExternalOperation<com.r3.corda.cno.evmbridge.dto.TransactionReceipt> {
+            val transactionReceipt = session.getTransactionReceiptByHash(hash)
+
+            return ResponseOperation(transactionReceipt)
+        }
+
+
+        override fun getBlockReceipts(blockNumber: BigInteger) : FlowExternalOperation<List<com.r3.corda.cno.evmbridge.dto.TransactionReceipt>> {
+            val transactionReceipts = session.getBlockReceipts(blockNumber)
+
+            return ResponseOperation(transactionReceipts)
         }
     }
 }

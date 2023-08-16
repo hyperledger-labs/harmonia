@@ -3,7 +3,7 @@ package com.r3.corda.evmbridge.workflows.swap
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evmbridge.contracts.swap.LockCommand
 import com.r3.corda.evmbridge.states.swap.LockState
-import com.r3.corda.evmbridge.states.swap.TransferProof
+import com.r3.corda.evmbridge.states.swap.UnlockData
 import net.corda.core.contracts.Command
 import net.corda.core.contracts.OwnableState
 import net.corda.core.contracts.StateAndRef
@@ -20,13 +20,13 @@ import net.corda.core.transactions.TransactionBuilder
 @InitiatingFlow
 class UnlockTransactionAndObtainAssetFlow(val lockedAsset: StateAndRef<OwnableState>,
                                           val lockState: StateAndRef<LockState>,
-                                          val evmTransferProof: TransferProof,
+                                          val unlockData: UnlockData,
                                           val notary: Party
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
-        val unlockCommand = Command(LockCommand.Unlock(evmTransferProof), listOf(ourIdentity.owningKey))
+        val unlockCommand = Command(LockCommand.Unlock(unlockData), listOf(ourIdentity.owningKey))
         val builder = TransactionBuilder(notary = notary)
             .addInputState(lockedAsset)
             .addInputState(lockState)

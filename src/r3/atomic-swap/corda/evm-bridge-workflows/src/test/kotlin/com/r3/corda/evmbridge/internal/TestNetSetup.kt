@@ -5,6 +5,7 @@ import com.r3.corda.evmbridge.IWeb3
 import com.r3.corda.evmbridge.services.IdentityServiceProvider
 import com.r3.corda.evmbridge.services.evmBridge
 import com.r3.corda.evmbridge.workflows.UnsecureRemoteEvmIdentityFlow
+import net.corda.core.concurrent.CordaFuture
 import net.corda.core.flows.FlowExternalOperation
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.utilities.getOrThrow
@@ -131,4 +132,9 @@ abstract class TestNetSetup(
         alice.web3j().evmSetNextBlockTimestamp(futureInstant.epochSecond.toBigInteger())
     }
 
+    protected fun <R> await(flow: CordaFuture<R>): R {
+        //if(network != null && network!!.networkSendManuallyPumped == false)
+        network!!.runNetwork()
+        return flow.getOrThrow()
+    }
 }

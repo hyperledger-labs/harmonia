@@ -16,12 +16,15 @@
 
 package com.r3.corda.interop.evm.common.trie
 
+import net.corda.core.serialization.CordaSerializable
+
 /**
  * An interface for a key-value store.
  *
  * This store provides methods to retrieve and inspect
  * key-value pairings stored within it.
  */
+@CordaSerializable
 interface KeyValueStore {
 
     /**
@@ -44,6 +47,7 @@ interface KeyValueStore {
             .verifyMerkleProof(key, expectedValue, this)
 }
 
+@CordaSerializable
 interface WriteableKeyValueStore : KeyValueStore {
     /**
      * Inserts or updates a key-value pairing in the store.

@@ -3,6 +3,7 @@ package com.r3.corda.evmbridge.services
 import com.r3.corda.cno.evmbridge.dto.Block
 import com.r3.corda.cno.evmbridge.dto.TransactionReceipt
 import com.r3.corda.evmbridge.workflows.internal.toSerializable
+import net.corda.core.flows.FlowExternalOperation
 import net.corda.core.utilities.loggerFor
 import org.web3j.crypto.*
 import org.web3j.protocol.Web3j
@@ -303,7 +304,11 @@ internal class Connection(private val connectionId: ConnectionId) {
             block.gasLimit,
             block.gasUsed,
             block.timestamp,
-            block.transactions.map { mapTransaction(it as EthBlock.TransactionObject) },
+            block.transactions.map {
+                // TODO: when fullTransactionObject = false, the TransactionResult is the hash (String) of the
+                //       transaction, not the transaction object! Implement support for both cases.
+                mapTransaction(it as EthBlock.TransactionObject)
+            },
             block.uncles,
             //block.sealFields,
             block.baseFeePerGas
@@ -335,6 +340,10 @@ internal class Connection(private val connectionId: ConnectionId) {
         )
     }
 
+    fun mapTransactionReceipt(receipt: org.web3j.protocol.core.methods.response.TransactionReceipt): com.r3.corda.cno.evmbridge.dto.TransactionReceipt {
+        return receipt.toSerializable()
+    }
+
     fun getTransactionByHash(hash: String): CompletableFuture<com.r3.corda.cno.evmbridge.dto.Transaction> {
         val txResponse = web3j.ethGetTransactionByHash(hash).sendAsync()
 
@@ -344,12 +353,32 @@ internal class Connection(private val connectionId: ConnectionId) {
         }
     }
 
+    fun getTransactionReceiptByHash(hash: String): CompletableFuture<com.r3.corda.cno.evmbridge.dto.TransactionReceipt> {
+        val txResponse = web3j.ethGetTransactionReceipt(hash).sendAsync()
+
+        return txResponse.thenApply {
+            mapTransactionReceipt(it.result)
+        }
+    }
+
+    fun getBlockReceipts(blockNumber: BigInteger) : CompletableFuture<List<TransactionReceipt>> {
+        TODO("Depends on web3j 4.10.1-CORDA4 fork, which is soon to be published on the R3 Artifactory.")
+//        val txResponse = web3j.ethGetBlockReceipts(DefaultBlockParameter.valueOf(blockNumber)).sendAsync()
+//
+//        return txResponse.thenApply { it ->
+//            val blockReceipts = it.blockReceipts
+//            if(blockReceipts.isPresent) blockReceipts.get().map { receipt ->
+//                mapTransactionReceipt(receipt)
+//            } else emptyList()
+//        }
+    }
+
     private fun rebuildRawTransaction(tx: Transaction): Transaction {
         val v = Numeric.toBytesPadded(BigInteger.valueOf(if (tx.v < 27) (tx.v + 27) else tx.v), 32)
         val r = Numeric.toBytesPadded(Numeric.toBigInt(tx.r), 32)
         val s = Numeric.toBytesPadded(Numeric.toBigInt(tx.s), 32)
 
-        val rawTx = if (tx.maxPriorityFeePerGasRaw == null || tx.maxFeePerGasRaw == null)
+        val rawTx = if (tx.maxPriorityFeePerGasRaw == null || tx.maxFeePerGasRaw == null) // pre EIP-1559
             SignedRawTransaction.createTransaction(
                 tx.nonce,
                 tx.gasPrice,
@@ -358,7 +387,7 @@ internal class Connection(private val connectionId: ConnectionId) {
                 tx.value,
                 tx.input
             )
-        else SignedRawTransaction.createTransaction(
+        else SignedRawTransaction.createTransaction(  // post EIP-1559
             tx.chainId,
             tx.nonce,
             tx.gas,

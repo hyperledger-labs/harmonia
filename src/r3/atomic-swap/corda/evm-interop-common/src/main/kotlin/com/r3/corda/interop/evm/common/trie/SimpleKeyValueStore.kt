@@ -16,6 +16,7 @@
 
 package com.r3.corda.interop.evm.common.trie
 
+import net.corda.core.serialization.CordaSerializable
 import org.web3j.utils.Numeric
 
 /**
@@ -24,28 +25,8 @@ import org.web3j.utils.Numeric
  * This store utilizes a hash map to store and retrieve key-value pairings.
  * Keys are wrapped in an ArrayKey data class to allow for proper comparison of byte arrays.
  */
-class SimpleKeyValueStore : WriteableKeyValueStore {
-
-    /**
-     * Data class to allow for proper comparison of byte array keys.
-     */
-    data class ArrayKey(val data: ByteArray) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as ArrayKey
-            return data.contentEquals(other.data)
-        }
-
-        override fun hashCode(): Int {
-            return data.contentHashCode()
-        }
-
-        override fun toString(): String = Numeric.toHexString(data)
-    }
-
-    private val store: HashMap<ArrayKey, ByteArray> = HashMap()
+@CordaSerializable
+class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray> = LinkedHashMap()) : WriteableKeyValueStore {
 
     /**
      * Retrieves the value associated with a given key.
@@ -54,7 +35,7 @@ class SimpleKeyValueStore : WriteableKeyValueStore {
      * @return The value associated with the key, or null if the key is not present in the store.
      */
     override fun get(key: ByteArray): ByteArray? {
-        return store[ArrayKey(key)]
+        return store[key.contentHashCode()]
     }
 
     /**
@@ -64,7 +45,7 @@ class SimpleKeyValueStore : WriteableKeyValueStore {
      * @param value The value to be stored.
      */
     override fun put(key: ByteArray, value: ByteArray) {
-        store[ArrayKey(key)] = value
+        store[key.contentHashCode()] = value
     }
 
     /**
@@ -81,6 +62,7 @@ class SimpleKeyValueStore : WriteableKeyValueStore {
      * @return A string representation of the store's contents.
      */
     override fun toString(): String {
-        return store.entries.joinToString("\n") { (key, value) -> "(Key: ${key}, Value: ${Numeric.toHexString(value)}" }
+        // This method will now print hash codes for keys
+        return store.entries.joinToString("\n") { (key, value) -> "(Key Hash: $key, Value: ${Numeric.toHexString(value)}" }
     }
 }

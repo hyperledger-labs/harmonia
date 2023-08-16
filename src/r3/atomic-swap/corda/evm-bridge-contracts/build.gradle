@@ -23,6 +23,7 @@ cordapp {
 
 dependencies {
 
+    implementation project(path: ':evm-interop-common')
     cordaCompile "$corda_core_release_group:corda-core:$corda_core_release_version"
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
@@ -33,6 +34,7 @@ dependencies {
     cordapp("org.web3j:crypto:$web3jVersion")
     cordapp("org.web3j:rlp:$web3jVersion")
 
+    cordapp project(':evm-interop-common')
 
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"

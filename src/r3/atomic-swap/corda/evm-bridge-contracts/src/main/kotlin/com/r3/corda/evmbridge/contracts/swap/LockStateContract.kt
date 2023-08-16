@@ -1,13 +1,17 @@
 package com.r3.corda.evmbridge.contracts.swap
 
+import com.r3.corda.cno.evmbridge.dto.encoded
 import com.r3.corda.evmbridge.states.swap.LockState
-import com.r3.corda.evmbridge.states.swap.TransferProof
+import com.r3.corda.evmbridge.states.swap.UnlockData
+import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
 import net.corda.core.crypto.CompositeKey
 import net.corda.core.crypto.DigitalSignature
-import net.corda.core.crypto.SecureHash
 import net.corda.core.transactions.LedgerTransaction
+import org.web3j.rlp.RlpEncoder
+import org.web3j.rlp.RlpString
+import org.web3j.utils.Numeric
 import java.security.PublicKey
 
 class LockStateContract : Contract {
@@ -26,38 +30,49 @@ class LockStateContract : Contract {
                     val lockState = tx.outputStates.filterIsInstance<LockState>().single()
                     "Asset state needs to be owned by the composite key created from original owner and new owner public keys" using((lockedAssetState.owner.owningKey as CompositeKey).isFulfilledBy(setOf(lockState.senderCordaAddress, lockState.recipientCordaAddress)))
                     "Required number of validator signatures is greater than the number of approved validators" using (lockState.minimumNumberOfValidatorSignatures <= lockState.approvedValidators.size)
+                    // REVIEW: must check forward/backward events
                 }
             }
             is LockCommand.Revert -> {
                 val unlockedAssetState = tx.outputStates.filterIsInstance<OwnableState>().single()
                 val lockState = tx.inputStates.filterIsInstance<LockState>().single()
+                val txIndexKey = RlpEncoder.encode(RlpString.create(Numeric.toBigInt(cmd.proof.transactionReceipt.transactionIndex!!).toLong()))
+                val receiptsRoot = Numeric.hexStringToByteArray(cmd.proof.receiptsRootHash)
+                val leafData = cmd.proof.transactionReceipt.encoded()
+
                 requireThat {
                     "Only two input states can exist" using (tx.inputStates.size == 2)
-                    "Asset can only be reverted to original owner" using (unlockedAssetState.owner.owningKey == lockState.senderCordaAddress)
-                    // TODO: verify proof which allows reversal of Corda asset to original owner
+                    "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.senderCordaAddress)
+                    "The transaction receipt does not contain the expected unlock event" using(lockState.backwardEvent.isFoundIn(cmd.proof.transactionReceipt))
+                    "The transaction receipts merkle proof failed to validate" using(PatriciaTrie.verifyMerkleProof(receiptsRoot, txIndexKey, leafData, cmd.proof.merkleProof))
+                    "One or more validator signatures failed to verify block inclusion" using (verifyValidatorSignatures(cmd.proof.validatorSignatures, receiptsRoot, lockState.approvedValidators))
                 }
             }
             is LockCommand.Unlock -> {
                 val unlockedAssetState = tx.outputStates.filterIsInstance<OwnableState>().single()
                 val lockState = tx.inputStates.filterIsInstance<LockState>().single()
-                val lockedAssetTxId = tx.inRefsOfType<OwnableState>().single().ref.txhash
+                val txIndexKey = RlpEncoder.encode(RlpString.create(Numeric.toBigInt(cmd.proof.transactionReceipt.transactionIndex!!).toLong()))
+                val receiptsRoot = Numeric.hexStringToByteArray(cmd.proof.receiptsRootHash)
+                val leafData = cmd.proof.transactionReceipt.encoded()
+
                 requireThat {
                     "Only two input states can exist" using (tx.inputStates.size == 2)
-                    "Asset can only be transferred to new owner" using (unlockedAssetState.owner.owningKey == lockState.recipientCordaAddress)
-                    "EVM Transfer event references the wrong Corda transaction" using (lockedAssetTxId == cmd.proof.transferEvent.txId)
+                    "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.recipientCordaAddress)
                     "EVM Transfer event has not been validated by the minimum number of validators" using (cmd.proof.validatorSignatures.size >= lockState.minimumNumberOfValidatorSignatures)
-                    "One or more validator signatures cannot be verified" using (verifyValidatorSignatures(cmd.proof.validatorSignatures, lockedAssetTxId, lockState.approvedValidators))
+                    "The transaction receipt does not contain the expected unlock event" using(lockState.forwardEvent.isFoundIn(cmd.proof.transactionReceipt))
+                    "The transaction receipts merkle proof failed to validate" using(PatriciaTrie.verifyMerkleProof(receiptsRoot, txIndexKey, leafData, cmd.proof.merkleProof))
+                    "One or more validator signatures failed to verify block inclusion" using (verifyValidatorSignatures(cmd.proof.validatorSignatures, receiptsRoot, lockState.approvedValidators))
                 }
             }
+
         }
     }
 
-    private fun verifyValidatorSignatures(sigs: List<DigitalSignature.WithKey>, txId: SecureHash, approvedValidators: List<PublicKey>): Boolean {
+    private fun verifyValidatorSignatures(sigs: List<DigitalSignature.WithKey>, signableData: ByteArray, approvedValidators: List<PublicKey>): Boolean {
         sigs.forEach {
             val validator = it.by
-            if (!approvedValidators.contains(validator) || !it.verify(txId.bytes))
+            if (!approvedValidators.contains(validator) || !it.verify(signableData))
                 return false
-
         }
 
         return true
@@ -66,6 +81,6 @@ class LockStateContract : Contract {
 
 sealed class LockCommand : CommandData {
     object Lock : LockCommand()
-    class Revert(val proof: TransferProof) : LockCommand()
-    class Unlock(val proof: TransferProof) : LockCommand()
+    class Revert(val proof: UnlockData) : LockCommand()
+    class Unlock(val proof: UnlockData) : LockCommand()
 }

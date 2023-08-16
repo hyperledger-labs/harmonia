@@ -1,6 +1,10 @@
 package com.r3.corda.cno.evmbridge.dto
 
 import net.corda.core.serialization.CordaSerializable
+import okio.Utf8
+import org.web3j.abi.FunctionEncoder
+import org.web3j.abi.datatypes.Utf8String
+import org.web3j.crypto.Hash
 import java.math.BigInteger
 
 /**
@@ -14,12 +18,21 @@ data class TransactionReceiptLog(
     val transactionIndex: String? = null,
     val transactionHash: String? = null,
     val blockHash: String? = null,
-    val blockNumber: BigInteger,
+    val blockNumber: BigInteger = BigInteger.ZERO,
     val address: String? = null,
     val data: String? = null,
     val type: String? = null,
     val topics: List<String>? = null
 ) {
+    fun eventHash(): ByteArray {
+        val builder = StringBuilder()
+        topics?.forEach { topic ->
+            builder.append(topic ?: "")
+        }
+        builder.append(data ?: "")
+        return Hash.sha3(builder.toString().toByteArray())
+    }
+
     override fun toString(): String {
         return ("TransactionReceiptLog{"
                 + "removed="
@@ -53,3 +66,4 @@ data class TransactionReceiptLog(
                 + '}')
     }
 }
+
