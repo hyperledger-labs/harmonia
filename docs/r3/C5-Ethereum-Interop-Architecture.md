@@ -1,3 +1,43 @@
+# Table of Contents
+
+<!-- ts -->
+* [Corda 5 – EVM Interoperability](#corda-5--evm-interoperability)
+    * [Agenda - What are we going to cover?](#agenda---what-are-we-going-to-cover)
+    * [Scene setting - Why are we here?](#scene-setting---why-are-we-here)
+    * [Work to date – what’s in the wild?](#work-to-date--whats-in-the-wild)
+    * [The industry demands standards](#the-industry-demands-standards)
+    * [A layered solution –  Enterprise Ethereum Alliance standard](#a-layered-solution---enterprise-ethereum-alliance-standard)
+    * [A layered solution – Splitting the problem](#a-layered-solution--splitting-the-problem)
+* [Platform Layer](#platform-layer)
+* [Outbound Communication](#outbound-communication)
+    * [How to use Web3?](#how-to-use-web3)
+    * [Web3j in a flow?!](#web3j-in-a-flow)
+    * [Solution(a) Make Web3j work for us](#solutiona-make-web3j-work-for-us)
+    * [Solution(b) Encode the Web3 functions ourselves](#solutionb-encode-the-web3-functions-ourselves)
+    * [Recap - A basic primer on the architecture of Corda 5](#recap---a-basic-primer-on-the-architecture-of-corda-5)
+    * [How do we communicate with an EVM from a flow?](#how-do-we-communicate-with-an-evm-from-a-flow)
+    * [External Events](#external-events)
+    * [What do we do when Corda Identity is not the same as an Ethereum wallet address?](#what-do-we-do-when-corda-identity-is-not-the-same-as-an-ethereum-wallet-address)
+    * [Transactions need to be signed](#transactions-need-to-be-signed)
+    * [When does a flow resume from a call?](#when-does-a-flow-resume-from-a-call)
+    * [Summary – From Flow to EVM (and back again)](#summary--from-flow-to-evm-and-back-again)
+* [Inbound Communication](#inbound-communication)
+    * [What about events that originate on an EVM?](#what-about-events-that-originate-on-an-evm)
+* [High Availability](#high-availability)
+    * [What about Corda 5 and HA?](#what-about-corda-5-and-ha)
+    * [Scaling out for multiple EVM Workers](#scaling-out-for-multiple-evm-workers)
+* [User Experience](#user-experience)
+    * [Does this look right?](#does-this-look-right)
+* [Platform Layer - Architecture](#platform-layer---architecture)
+* [Protocol Layer](#protocol-layer)
+    * [Platform isn’t protocol](#platform-isnt-protocol)
+    * [What if we want to apply a C5-C5 protocol to C5-EVM?](#what-if-we-want-to-apply-a-c5-c5-protocol-to-c5-evm)
+        * [Façades](#façades)
+* [Summary](#summary)
+<!-- end -->
+
+<!-- body-start -->
+
 # Corda 5 – EVM Interoperability
 
 This document aims to address the Corda 5 to Ethereum architecture and what will be done to enable interoperability between the two platforms.
@@ -368,7 +408,7 @@ These flows will be stored as a library of useful utilities that can be included
 Let's examine the following use case: A user executes C5-C5 swaps via a command, but decides to do the same for C5-EVM, ideally with as little effort on their part to switch as possible. (and note that this would also be useful for the next blockchain/ledger we add)
 
 ### Façades
-For that, we can introduce façades.  Currently in use by the C5-C5 interop, façades allow for an interface to by dynamically mapped to a runtime execution.  So we can bind the C5-EVM protocols to a given command instead of the C5-C5 ones.  
+For that, we can introduce façades.  Currently in use by the C5-C5 interop, façades allow for an interface to by dynamically mapped to a runtime execution.  So we can bind the C5-EVM protocols to a given command instead of the C5-C5 ones.
 
 Note that work is ongoing to determine the common interface between these different protocol models and what, for example, `PvP` means in each use case.  Again, our work with `Harmonia` will inform a lot of this discussion.
 
