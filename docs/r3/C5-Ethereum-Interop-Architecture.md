@@ -74,11 +74,19 @@ Why are we looking to interop with Ethereum?
   * trusted bridging to allow liquidity to move between networks e\.g\.\, attract liquidity on Ethereum\, manage it on Corda
   * swaps to enable customer networks to expand usage
 
+## The goal
+This picture shows our vision of Corda communicating with Ethereum.  Each [Virtual Node](https://docs.r3.com/en/platform/corda/5.0/key-concepts/cluster-admin/virtual-nodes.html) will interact with a specific EVM Node in a network.
+
+![](img/CordaEVMInterop.png)
+
 ## Work to date – what’s in the wild?
 
 There are many different groups working on interoperability.  Below are a few.
 
   * __Enterprise Ethereum Alliance \(EEA\)__ - [EEA Crosschain Draft](https://entethalliance.github.io/crosschain-interoperability/draft_crosschain_techspec_messaging.html)
+  * __Hyperledger__
+    * __Cacti__ - (https://www.hyperledger.org/projects/cacti)
+    * __YUI__ - https://labs.hyperledger.org/labs/yui.html
   * __Inter Blockchain Communication \(IBC\)__ 
     * __Cosmos__ - https://github.com/cosmos/ibc
     * __Cross Framework__ (https://datachainlab.github.io/cross-docs/)
@@ -91,7 +99,6 @@ We know that there is a need in the industry for chains to have the capability t
 ## A layered solution –  Enterprise Ethereum Alliance standard
 
 ![](img/ExtInterop_C5ARB0.png)
-
 
 How would this look in Corda?
 
@@ -198,7 +205,7 @@ A compiled smart contract will provide a `json` representation of the smart cont
 
 Before we continue it's worth revisiting the architecture of Corda 5.  Corda 5 operates as a cluster or [workers](https://docs.r3.com/en/platform/corda/5.0/key-concepts/cluster-admin/workers.html), each of which may contain one or more `processors`.  
 
-The workers are the runtime applications, while the processors are what do the work.  It is possible, and even likely, that we will have multiple workers running at a time, allowing for some parallelism of the processors, giving us the ability to execute multiple instructions (in our case, EVM commands) at the same time.
+The workers are the runtime services, while the processors are what do the work.  It is possible, and even likely, that we will have multiple workers running at a time, allowing for some parallelism of the processors, giving us the ability to execute multiple instructions (in our case, EVM commands) at the same time.
 
 ## How do we communicate with an EVM from a flow?
 
@@ -263,7 +270,7 @@ We will need to add to the Crypto Worker the operations we need:
 
 On Ethereum there are, broadly, two types of calls we can make:
   * Queries – where a result is returned immediately
-  * Transactions – where a transaction hash is returned which can be queried to determine the result/receipt of a transaction
+  * Transactions – which are signed instructions to perform some action on the underlying EVM network. These instructions may or may not be valid, and may or may not be executed and confirmed in any given timescale, so an ID (transaction hash) is returned, which can be queried to determine the result.
 
 For queries we will simply return the result immediately back to the flow.
 
