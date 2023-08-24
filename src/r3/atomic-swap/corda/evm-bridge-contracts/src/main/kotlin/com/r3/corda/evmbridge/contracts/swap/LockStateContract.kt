@@ -28,8 +28,8 @@ class LockStateContract : Contract {
                     "Exactly one asset state can be generated alongside a net.corda.swap.contracts.LockState" using (tx.outputStates.size  == 2)
                     val lockedAssetState = tx.outputStates.filterIsInstance<OwnableState>().single()
                     val lockState = tx.outputStates.filterIsInstance<LockState>().single()
-                    "Asset state needs to be owned by the composite key created from original owner and new owner public keys" using((lockedAssetState.owner.owningKey as CompositeKey).isFulfilledBy(setOf(lockState.senderCordaAddress, lockState.recipientCordaAddress)))
-                    "Required number of validator signatures is greater than the number of approved validators" using (lockState.minimumNumberOfValidatorSignatures <= lockState.approvedValidators.size)
+                    "Asset state needs to be owned by the composite key created from original owner and new owner public keys" using((lockedAssetState.owner.owningKey as CompositeKey).isFulfilledBy(setOf(lockState.assetSender, lockState.assetRecipient)))
+                    "Required number of validator signatures is greater than the number of approved validators" using (lockState.signaturesThreshold <= lockState.approvedValidators.size)
                     // REVIEW: must check forward/backward events
                 }
             }
@@ -42,7 +42,7 @@ class LockStateContract : Contract {
 
                 requireThat {
                     "Only two input states can exist" using (tx.inputStates.size == 2)
-                    "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.senderCordaAddress)
+                    "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.assetSender)
                     "The transaction receipt does not contain the expected unlock event" using(lockState.backwardEvent.isFoundIn(cmd.proof.transactionReceipt))
                     "The transaction receipts merkle proof failed to validate" using(PatriciaTrie.verifyMerkleProof(receiptsRoot, txIndexKey, leafData, cmd.proof.merkleProof))
                     "One or more validator signatures failed to verify block inclusion" using (verifyValidatorSignatures(cmd.proof.validatorSignatures, receiptsRoot, lockState.approvedValidators))
@@ -57,14 +57,14 @@ class LockStateContract : Contract {
 
                 requireThat {
                     "Only two input states can exist" using (tx.inputStates.size == 2)
-                    "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.recipientCordaAddress)
-                    "EVM Transfer event has not been validated by the minimum number of validators" using (cmd.proof.validatorSignatures.size >= lockState.minimumNumberOfValidatorSignatures)
+                    "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.assetRecipient)
+                    "EVM Transfer event has not been validated by the minimum number of validators" using (cmd.proof.validatorSignatures.size >= lockState.signaturesThreshold)
                     "The transaction receipt does not contain the expected unlock event" using(lockState.forwardEvent.isFoundIn(cmd.proof.transactionReceipt))
                     "The transaction receipts merkle proof failed to validate" using(PatriciaTrie.verifyMerkleProof(receiptsRoot, txIndexKey, leafData, cmd.proof.merkleProof))
                     "One or more validator signatures failed to verify block inclusion" using (verifyValidatorSignatures(cmd.proof.validatorSignatures, receiptsRoot, lockState.approvedValidators))
                 }
             }
-
+            //fun verifyMerkleProof(key: ByteArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
         }
     }
 

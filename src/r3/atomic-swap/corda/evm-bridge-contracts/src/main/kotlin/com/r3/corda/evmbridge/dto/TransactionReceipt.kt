@@ -12,8 +12,7 @@ import java.math.BigInteger
  * ethereum transaction receipt object using Corda serialization.
  */
 @CordaSerializable
-data class
-TransactionReceipt(
+data class TransactionReceipt(
     val transactionHash: String? = null,
     val transactionIndex: String? = null,
     val blockHash: String? = null,

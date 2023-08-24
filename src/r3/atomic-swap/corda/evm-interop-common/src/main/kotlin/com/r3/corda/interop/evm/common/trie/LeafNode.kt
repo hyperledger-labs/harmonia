@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,10 @@ import org.web3j.rlp.RlpString
  * @property path The path of the node, represented as a nibble array.
  * @property value The value of the node, represented as a byte array.
  */
-class LeafNode(private val path: NibbleArray, private val value: ByteArray) : Node {
+class LeafNode private constructor(
+    val path: ByteArray, // NOTE: this is stored as a nibbles array
+    val value: ByteArray
+) : Node() {
 
     /**
      * The RLP-encoded form of the LeafNode, which is an RLP-encoded list of the path and value.
@@ -38,49 +41,43 @@ class LeafNode(private val path: NibbleArray, private val value: ByteArray) : No
         get() {
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(PatriciaTriePathType.LEAF.applyPrefix(path).toBytes()),
+                    RlpString.create(prefixedNibbles(path).fromPrefixedNibblesToBytes()),
                     RlpString.create(value)
                 )
             )
         }
 
-    override fun put(key: NibbleArray, newValue: ByteArray): Node {
-        val matchResult = PathPrefixMatch.match(key, path)
-
-        return when(matchResult) {
-            is PathPrefixMatch.Equals -> LeafNode(key, newValue)
-            is PathPrefixMatch.NoMatch -> BranchNode.from(
-                matchResult.pathHead to LeafNode(matchResult.pathTail, value),
-                matchResult.keyHead to LeafNode(matchResult.keyTail, newValue)
-            )
-            is PathPrefixMatch.PathPrefixesKey -> ExtensionNode(path, BranchNode.from(
-                matchResult.keyRemainderHead to LeafNode(matchResult.keyRemainderTail, newValue),
-                value = value))
-            is PathPrefixMatch.KeyPrefixesPath -> ExtensionNode(key, BranchNode.from(
-                matchResult.pathRemainderHead to LeafNode(matchResult.pathRemainderTail, value),
-                value = newValue))
-            is PathPrefixMatch.PartialMatch -> ExtensionNode(matchResult.sharedPrefix, BranchNode.from(
-                matchResult.pathRemainderHead to LeafNode(matchResult.pathRemainderTail, value),
-                matchResult.keyRemainderHead to LeafNode(matchResult.keyRemainderTail, newValue)
-            ))
-        }
+    /**
+     * Prefixes the provided nibble array.
+     *
+     * @param nibbles The nibble array to prefix.
+     * @return The prefixed nibble array.
+     */
+    private fun prefixedNibbles(nibbles: ByteArray): ByteArray {
+        return (if (nibbles.size % 2 > 0) byteArrayOf(3) else byteArrayOf(2, 0)).plus(nibbles)
     }
 
-    override fun get(key: NibbleArray): ByteArray = if (key == path) value else ByteArray(0)
+    companion object {
+        /**
+         * Factory function to create a LeafNode given a key and value, where the key is a byte array.
+         *
+         * @param key The key to use for the node path.
+         * @param value The value to use for the node.
+         * @return The created LeafNode.
+         */
+        fun createFromBytes(key: ByteArray, value: ByteArray): LeafNode {
+            return LeafNode(key.toNibbles(), value)
+        }
 
-    override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore {
-        if (path == key) {
-            store.put(hash, encoded)
-            return store
-        } else {
-            throw IllegalArgumentException("Key is not part of the trie")
+        /**
+         * Factory function to create a LeafNode given a nibble key and a value.
+         *
+         * @param nibblesKey The nibble key to use for the node path.
+         * @param value The value to use for the node.
+         * @return The created LeafNode.
+         */
+        fun createFromNibbles(nibblesKey: ByteArray, value: ByteArray): LeafNode {
+            return LeafNode(nibblesKey, value)
         }
     }
-
-    override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
-        if (path == key) {
-            value.contentEquals(expectedValue)
-        } else {
-            throw IllegalArgumentException("Key is not part of the trie")
-        }
 }
