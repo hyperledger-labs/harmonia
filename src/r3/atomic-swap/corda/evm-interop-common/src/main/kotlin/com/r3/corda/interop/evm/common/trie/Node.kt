@@ -17,57 +17,54 @@
 package com.r3.corda.interop.evm.common.trie
 
 import org.web3j.crypto.Hash.sha3
-import org.web3j.rlp.*
+import org.web3j.rlp.RlpDecoder
+import org.web3j.rlp.RlpList
+import org.web3j.rlp.RlpString
+import org.web3j.utils.Numeric
 
 /**
  * The base class for all types of nodes in a Patricia Trie.
  */
-interface Node {
+abstract class Node
+{
     /**
      * Get the encoded version of this node.
      * @return encoded byte array of this node.
      */
-    val encoded: ByteArray
+    abstract val encoded: ByteArray
 
     /**
      * Get the SHA-3 hash of the encoded node.
      * @return hash of the encoded node.
      */
-    val hash: ByteArray
+    open val hash: ByteArray
         get() = sha3(encoded)
 
     /**
-     * Puts a key-value pair into a node of the Patricia Trie.
-     * If the node does not exist, a new LeafNode is created.
-     *
-     * @param key The key to put.
-     * @param newValue The value to put.
-     * @return The node where the key-value pair was put.
+     * Provide a String representation of the Node for debugging.
+     * @return String representation of the Node.
      */
-    fun put(key: NibbleArray, newValue: ByteArray): Node
+    override fun toString(): String {
+        return "NodeType: ${javaClass.simpleName} Hash: ${Numeric.toHexString(hash)} Encoded: ${Numeric.toHexString(encoded)}"
+    }
 
     /**
-     * Gets the value for a given key from the Patricia Trie.
-     *
-     * @param key The key for which to get the value.
-     * @return The value associated with the key, or an empty ByteArray if the key does not exist.
+     * Convert a ByteArray from prefixed nibbles to bytes.
+     * Prefixed nibbles always have an even count.
+     * @return ByteArray of bytes.
      */
-    fun get(key: NibbleArray): ByteArray
+    protected fun ByteArray.fromPrefixedNibblesToBytes(): ByteArray {
+        require(this.size % 2 == 0) { "Nibble array size must be even" }
 
-    /**
-     * Generates a Merkle proof for a given key.
-     *
-     * @param key Key as a NibbleArray
-     * @param store A simple Key-Value that will collect the trie proofs
-     * @return Merkle proof as KeyValueStore.
-     */
-    fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore) : KeyValueStore
-
-    fun verifyMerkleProof(
-        key: NibbleArray,
-        expectedValue: ByteArray,
-        proof: KeyValueStore
-    ): Boolean
+        val result = ByteArray(this.size / 2)
+        for (i in this.indices step 2) {
+            // Since these are nibbles, we do not AND with 0xF0 and 0x0F.
+            // Before calling this function, make sure to validate the input data (sanity check).
+            // Each byte in the input should be a valid nibble, i.e., in the range 0..15.
+            result[i / 2] = ((this[i].toInt() shl 4) or (this[i + 1].toInt())).toByte()
+        }
+        return result
+    }
 
     companion object {
 
@@ -76,11 +73,14 @@ interface Node {
          * @param encoded RLP encoded byte array.
          * @return Node created from the RLP encoded byte array.
          */
-        fun createFromRLP(encoded: ByteArray): Node =
-            if (encoded.size == 32) HashNode(
-                encoded,
-                EmptyNode
-            ) else createFromRLP(RlpDecoder.decode(encoded) as RlpList)
+        fun createFromRLP(encoded: ByteArray): Node {
+            return if(encoded.size == 32) {
+                HashNode.create(encoded)
+            } else {
+                val outerList = RlpDecoder.decode(encoded) as RlpList
+                createFromRLP(outerList)
+            }
+        }
 
         /**
          * Create a Node from a RLP list.
@@ -91,40 +91,43 @@ interface Node {
             val rlpList = outerList.values[0] as RlpList
 
             return when (rlpList.values.size) {
-                2 -> nonBranchNode((rlpList.values[0] as RlpString).bytes, rlpList.values[1])
-                17 -> branchNode(rlpList.values.subList(0, 16), (rlpList.values[16] as RlpString).bytes)
-                else -> throw IllegalArgumentException("Invalid RLP encoding")
-            }
-        }
+                2 -> {
+                    var path = (rlpList.values[0] as RlpString).bytes.toNibbles()
+                    val valueOrNode = rlpList.values[1]
+                    val select = path[0].toInt()
 
-        private fun branchNode(branchValues: List<RlpType>, valueBytes: ByteArray): BranchNode {
-            val branches = branchValues.mapIndexed { index, value ->
-                when (value) {
-                    is RlpString -> if (value.bytes.isNotEmpty()) createFromRLP(value.bytes) else EmptyNode
-                    is RlpList -> createFromRLP(value)
-                    else -> throw IllegalArgumentException("Invalid RLP encoding")
+                    path = when (select) {
+                        2, 0 -> path.copyOfRange(2, path.size)
+                        3, 1 -> path.copyOfRange(1, path.size)
+                        else -> throw IllegalArgumentException("Invalid path")
+                    }
+
+                    when (valueOrNode) {
+                        is RlpString -> {
+                            when(select) {
+                                2,3 -> LeafNode.createFromNibbles(path, valueOrNode.bytes)
+                                else -> ExtensionNode.createFromNibbles(path, createFromRLP(valueOrNode.bytes))
+                            }
+                        }
+                        is RlpList -> ExtensionNode.createFromNibbles(path, createFromRLP(valueOrNode))
+                        else -> throw IllegalArgumentException("Invalid RLP encoding")
+                    }
                 }
-            }.toTypedArray()
+                17 -> {
+                    val branches = rlpList.values.subList(0, 16).mapIndexedNotNull { index, value ->
+                        val key = index.toByte()
+                        when (value) {
+                            is RlpString -> if (value.bytes.isNotEmpty()) key to createFromRLP(value.bytes) else null
+                            is RlpList -> key to createFromRLP(value)
+                            else -> throw IllegalArgumentException("Invalid RLP encoding")
+                        }
+                    }.toTypedArray()
 
-            return BranchNode(branches, valueBytes)
-        }
-
-        private fun nonBranchNode(keyBytes: ByteArray, valueOrNode: RlpType): Node {
-            val allNibbles = NibbleArray.fromBytes(keyBytes)
-            val prefix = PatriciaTriePathPrefix.fromNibbles(allNibbles)
-            val pathType = PatriciaTriePathType.forPrefix(prefix)
-            val pathNibbles = allNibbles.dropFirst(prefix.prefixNibbles.size)
-
-            return when (valueOrNode) {
-                is RlpString -> {
-                    if (pathType == PatriciaTriePathType.LEAF) LeafNode(pathNibbles, valueOrNode.bytes)
-                    else ExtensionNode(pathNibbles, createFromRLP(valueOrNode.bytes))
+                    val value = (rlpList.values[16] as RlpString).bytes
+                    BranchNode.createWithBranches(*branches, value = value)
                 }
-
-                is RlpList -> ExtensionNode(pathNibbles, createFromRLP(valueOrNode))
                 else -> throw IllegalArgumentException("Invalid RLP encoding")
             }
         }
     }
-
 }

@@ -16,9 +16,7 @@ import net.corda.core.serialization.CordaSerializable
 data class SwapTransactionDetails(val senderCordaName: Party,
                                   val receiverCordaName: Party,
                                   val cordaAssetState: StateAndRef<OwnableState>,
-                                  val evmAssetContractAddress: String,
                                   val approvedCordaValidators: List<Party>,
                                   val minimumNumberOfEventValidations: Int,
-                                  val evmBlockchainId: Int,
                                   val forwardEvent: EncodedEvent,
                                   val backwardEvent: EncodedEvent)

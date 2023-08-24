@@ -26,7 +26,10 @@ import org.web3j.utils.Numeric
  * Keys are wrapped in an ArrayKey data class to allow for proper comparison of byte arrays.
  */
 @CordaSerializable
-class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray> = LinkedHashMap()) : WriteableKeyValueStore {
+class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray>) // : KeyValueStore
+{
+
+    constructor() : this(LinkedHashMap<Int, ByteArray>())
 
     /**
      * Retrieves the value associated with a given key.
@@ -34,7 +37,7 @@ class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray> = LinkedHashM
      * @param key The key for which the value is to be retrieved.
      * @return The value associated with the key, or null if the key is not present in the store.
      */
-    override fun get(key: ByteArray): ByteArray? {
+    fun get(key: ByteArray): ByteArray? {
         return store[key.contentHashCode()]
     }
 
@@ -44,7 +47,7 @@ class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray> = LinkedHashM
      * @param key The key to be associated with the given value.
      * @param value The value to be stored.
      */
-    override fun put(key: ByteArray, value: ByteArray) {
+    fun put(key: ByteArray, value: ByteArray) {
         store[key.contentHashCode()] = value
     }
 
@@ -53,7 +56,7 @@ class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray> = LinkedHashM
      *
      * @return True if the store is empty, false otherwise.
      */
-    override fun isEmpty() = store.isEmpty()
+    fun isEmpty() = store.isEmpty()
 
     /**
      * Provides a string representation of the key-value pairings in the store.
@@ -62,7 +65,6 @@ class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray> = LinkedHashM
      * @return A string representation of the store's contents.
      */
     override fun toString(): String {
-        // This method will now print hash codes for keys
         return store.entries.joinToString("\n") { (key, value) -> "(Key Hash: $key, Value: ${Numeric.toHexString(value)}" }
     }
 }

@@ -8,11 +8,12 @@ import net.corda.core.identity.AbstractParty
 import java.security.PublicKey
 
 @BelongsToContract(LockStateContract::class)
-class LockState(val senderCordaAddress: PublicKey,
-                val recipientCordaAddress: PublicKey,
+class LockState(val assetSender: PublicKey,
+                val assetRecipient: PublicKey,
                 val approvedValidators: List<PublicKey>,
-                val minimumNumberOfValidatorSignatures: Int,
-                val evmBlockchainId: Int,
+                val signaturesThreshold: Int,
                 val forwardEvent: EncodedEvent,
                 val backwardEvent: EncodedEvent,
                 override val participants: List<AbstractParty> = emptyList()) : ContractState
+
+// REVIEW: add notary
