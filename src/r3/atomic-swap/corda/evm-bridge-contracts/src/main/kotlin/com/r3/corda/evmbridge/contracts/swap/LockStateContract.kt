@@ -64,7 +64,6 @@ class LockStateContract : Contract {
                     "One or more validator signatures failed to verify block inclusion" using (verifyValidatorSignatures(cmd.proof.validatorSignatures, receiptsRoot, lockState.approvedValidators))
                 }
             }
-            //fun verifyMerkleProof(key: ByteArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
         }
     }
 

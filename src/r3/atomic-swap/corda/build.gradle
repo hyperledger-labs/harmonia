@@ -1,3 +1,6 @@
+import net.corda.plugins.Cordform
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 buildscript { //properties that you need to build the project
 
     Properties constants = new Properties()
@@ -15,7 +18,7 @@ buildscript { //properties that you need to build the project
         log4j_version = constants.getProperty("log4jVersion")
         slf4j_version = constants.getProperty("slf4jVersion")
         corda_platform_version = constants.getProperty("platformVersion").toInteger()
-        //springboot
+        // springboot
         spring_boot_version = '2.0.2.RELEASE'
         spring_boot_gradle_plugin_version = '2.0.2.RELEASE'
     }
@@ -24,6 +27,7 @@ buildscript { //properties that you need to build the project
         mavenLocal()
         mavenCentral()
         maven { url 'https://download.corda.net/maven/corda-releases' }
+        maven { url 'https://download.corda.net/maven/corda-dependencies' }
     }
 
     dependencies {
@@ -35,7 +39,7 @@ buildscript { //properties that you need to build the project
     }
 }
 
-allprojects { //Properties that you need to compile your project (The application)
+allprojects { // Properties that you need to compile your project (The application)
     apply from: "${rootProject.projectDir}/repositories.gradle"
 
     apply plugin: 'net.corda.plugins.cordapp'
@@ -45,11 +49,11 @@ allprojects { //Properties that you need to compile your project (The applicatio
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url 'https://download.corda.net/maven/corda-releases' }
+        maven { url 'https://download.corda.net/maven/corda' }
         maven { url 'https://jitpack.io' }
     }
 
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+    tasks.withType(KotlinCompile) {
         kotlinOptions {
             languageVersion = "1.2"
             apiVersion = "1.2"
@@ -65,19 +69,7 @@ allprojects { //Properties that you need to compile your project (The applicatio
     }
 }
 
-apply plugin: 'net.corda.plugins.cordapp'
-apply plugin: 'net.corda.plugins.cordformation'
-apply plugin: 'net.corda.plugins.quasar-utils'
-
-//sourceSets {
-//    main {
-//        resources {
-//            srcDir rootProject.file("config/dev")
-//        }
-//    }
-//}
-
-//Module dependencis
+// Module dependencies
 dependencies {
     // Corda dependencies.
     cordaCompile "$corda_core_release_group:corda-core:$corda_core_release_version"
@@ -87,76 +79,88 @@ dependencies {
     cordaCompile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
     cordaCompile "org.apache.logging.log4j:log4j-web:${log4j_version}"
     cordaCompile "org.slf4j:jul-to-slf4j:$slf4j_version"
+
     cordaDriver "net.corda:corda-shell:4.9"
 
-    cordapp "org.web3j:rlp:$web3jVersion"
-    cordapp "org.web3j:core:$web3jVersion"
-    cordapp "org.web3j:crypto:$web3jVersion"
-    cordapp "org.web3j:abi:$web3jVersion"
-    cordapp "org.web3j:utils:$web3jVersion"
-    cordapp "org.web3j:tuples:$web3jVersion"
-    cordapp "io.reactivex.rxjava2:rxjava:2.2.2"
-    cordapp "org.reactivestreams:reactive-streams:1.0.2"
+    // Web3j dependencies
 
-    cordapp project(':evm-interop-common')
+    cordaDriver("org.web3j:core:$web3jVersion") {
+        transitive = true
+    }
+
+//    cordaDriver "org.web3j:rlp:$web3jVersion"
+//    cordaDriver "org.web3j:crypto:$web3jVersion"
+//    cordaDriver "org.web3j:abi:$web3jVersion"
+//    cordaDriver "org.web3j:utils:$web3jVersion"
+//    cordaDriver "org.web3j:tuples:$web3jVersion"
+//    cordaDriver "io.reactivex.rxjava2:rxjava:2.2.2"
+//    cordaDriver "org.reactivestreams:reactive-streams:1.0.2"
+
+    // Project dependencies
     cordapp project(':evm-bridge-contracts')
     cordapp project(':evm-bridge-workflows')
 }
 
-//Task to deploy the nodes in order to bootstrap a network
-task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
-
-    /* This property will load the CorDapps to each of the node by default, including the Notary. You can find them
-     * in the cordapps folder of the node at build/nodes/Notary/cordapps. However, the notary doesn't really understand
-     * the notion of cordapps. In production, Notary does not need cordapps as well. This is just a short cut to load
-     * the Corda network bootstrapper.
-     */
+// Task to deploy the nodes in order to bootstrap a network
+task deployNodes(type: Cordform, dependsOn: ['jar']) {
     nodeDefaults {
         projectCordapp {
             deploy = false
         }
+        extraConfig = [
+                quasarExcludePackages: ["okhttp3**"]
+        ]
+        runSchemaMigration = true
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
 
-        cordapp project(':evm-interop-common')
         cordapp project(':evm-bridge-contracts')
         cordapp project(':evm-bridge-workflows')
-
-
-        // core Web3j dependency
-        cordapp "org.web3j:rlp:$web3jVersion"
-        cordapp "org.web3j:core:$web3jVersion"
-        cordapp "org.web3j:crypto:$web3jVersion"
-        cordapp "org.web3j:abi:$web3jVersion"
-        cordapp "org.web3j:utils:$web3jVersion"
-        cordapp "org.web3j:tuples:$web3jVersion"
-        cordapp "io.reactivex.rxjava2:rxjava:2.2.2"
-        cordapp "org.reactivestreams:reactive-streams:1.0.2"
-
-        runSchemaMigration = true
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
         name "O=Notary,L=London,C=GB"
-        notary = [validating : false]
-        p2pPort 10002
+        notary = [validating: true]
+        p2pPort 10001
+        extraConfig = [
+                'custom.jvmArgs': [
+                        "-Xmx1G",
+                        "-XX:+UseG1GC",
+                        "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5001"
+                ]
+        ]
         rpcSettings {
-            address("localhost:10003")
-            adminAddress("localhost:10043")
+            address("localhost:10011")
+            adminAddress("localhost:10021")
         }
+
     }
     node {
         name "O=PartyA,L=London,C=GB"
-        p2pPort 10005
+        p2pPort 10002
+        extraConfig = [
+                'custom.jvmArgs': [
+                        "-Xmx1G",
+                        "-XX:+UseG1GC",
+                        "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5002"
+                ]
+        ]
         rpcSettings {
-            address("localhost:10006")
-            adminAddress("localhost:10046")
+            address("localhost:10012")
+            adminAddress("localhost:10022")
         }
     }
     node {
         name "O=PartyB,L=New York,C=US"
-        p2pPort 10008
+        p2pPort 10003
+        extraConfig = [
+                'custom.jvmArgs': [
+                        "-Xmx1G",
+                        "-XX:+UseG1GC",
+                        "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5003"
+                ]
+        ]
         rpcSettings {
-            address("localhost:10009")
-            adminAddress("localhost:10049")
+            address("localhost:10013")
+            adminAddress("localhost:10023")
         }
     }
 }

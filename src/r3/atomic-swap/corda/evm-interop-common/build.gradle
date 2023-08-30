@@ -26,12 +26,14 @@ dependencies {
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    // Web3j
-    cordapp("org.web3j:core:$web3jVersion")
-    cordapp("org.web3j:utils:$web3jVersion")
-    cordapp("org.web3j:crypto:$web3jVersion")
-    cordapp("org.web3j:rlp:$web3jVersion")
-
+    implementation "org.web3j:rlp:$web3jVersion"
+    implementation "org.web3j:core:$web3jVersion"
+    implementation "org.web3j:crypto:$web3jVersion"
+    implementation "org.web3j:abi:$web3jVersion"
+    implementation "org.web3j:utils:$web3jVersion"
+    implementation "org.web3j:tuples:$web3jVersion"
+    implementation "io.reactivex.rxjava2:rxjava:2.2.2"
+    implementation "org.reactivestreams:reactive-streams:1.0.2"
 
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"
