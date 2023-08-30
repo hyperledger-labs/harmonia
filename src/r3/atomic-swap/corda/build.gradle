@@ -77,7 +77,7 @@ dependencies {
     cordaDriver project(':evm-interop-common')
     cordaDriver("org.web3j:core:$web3jVersion") { transitive = true }
     cordaDriver "net.corda:corda-shell:4.9"
-    
+
     cordapp project(':evm-bridge-contracts')
     cordapp project(':evm-bridge-workflows')
 }
