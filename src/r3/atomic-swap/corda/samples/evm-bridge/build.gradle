@@ -82,12 +82,12 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
 //        cordapp "io.reactivex.rxjava2:rxjava:2.2.2"
 //        cordapp "org.reactivestreams:reactive-streams:1.0.2"
 //
-//        // base evm-bridge flows and contracts
-//        cordapp project(':evm-bridge-contracts')
-//        cordapp project(':evm-bridge-workflows')
+//        // base evm-interop flows and contracts
+//        cordapp project(':evm-interop-contracts')
+//        cordapp project(':evm-interop-workflows')
 //
-//        // sample evm-bridge flows
-//        cordapp project(':samples:evm-bridge:bridge-workflows')
+//        // sample evm-interop flows
+//        cordapp project(':samples:evm-interop:bridge-workflows')
     }
 
     node {
@@ -115,12 +115,12 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
 //        cordapp "io.reactivex.rxjava2:rxjava:2.2.2"
 //        cordapp "org.reactivestreams:reactive-streams:1.0.2"
 //
-//        // base evm-bridge flows and contracts
-//        cordapp project(':evm-bridge-contracts')
-//        cordapp project(':evm-bridge-workflows')
+//        // base evm-interop flows and contracts
+//        cordapp project(':evm-interop-contracts')
+//        cordapp project(':evm-interop-workflows')
 //
-//        // sample evm-bridge flows
-//        cordapp project(':samples:evm-bridge:bridge-workflows')
+//        // sample evm-interop flows
+//        cordapp project(':samples:evm-interop:bridge-workflows')
     }
 
     node {
@@ -148,11 +148,11 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
 //        cordapp "io.reactivex.rxjava2:rxjava:2.2.2"
 //        cordapp "org.reactivestreams:reactive-streams:1.0.2"
 //
-//        // base evm-bridge flows and contracts
-//        cordapp project(':evm-bridge-contracts')
-//        cordapp project(':evm-bridge-workflows')
+//        // base evm-interop flows and contracts
+//        cordapp project(':evm-interop-contracts')
+//        cordapp project(':evm-interop-workflows')
 //
-//        // sample evm-bridge flows
-//        cordapp project(':samples:evm-bridge:bridge-workflows')
+//        // sample evm-interop flows
+//        cordapp project(':samples:evm-interop:bridge-workflows')
     }
 }

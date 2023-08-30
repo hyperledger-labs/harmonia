@@ -78,8 +78,8 @@ dependencies {
     cordaDriver("org.web3j:core:$web3jVersion") { transitive = true }
     cordaDriver "net.corda:corda-shell:4.9"
 
-    cordapp project(':evm-bridge-contracts')
-    cordapp project(':evm-bridge-workflows')
+    cordapp project(':evm-interop-contracts')
+    cordapp project(':evm-interop-workflows')
 }
 
 // Task to deploy the nodes in order to bootstrap a network
@@ -88,11 +88,11 @@ task deployNodes(type: Cordform, dependsOn: ['jar']) {
         runSchemaMigration = true
         notary = [validating: false]
         projectCordapp { deploy = false }
-        extraConfig = [ quasarExcludePackages: ["okhttp3**"] ]
+        extraConfig = [ 'devMode' : true, quasarExcludePackages: ["okhttp3**"] ]
         rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
 
-        cordapp project(':evm-bridge-contracts')
-        cordapp project(':evm-bridge-workflows')
+        cordapp project(':evm-interop-contracts')
+        cordapp project(':evm-interop-workflows')
     }
     node {
         name "O=Notary,L=London,C=GB"
