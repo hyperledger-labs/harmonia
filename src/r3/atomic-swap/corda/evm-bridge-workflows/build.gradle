@@ -41,6 +41,7 @@ dependencies {
     api "org.reactivestreams:reactive-streams:1.0.2"
 
     // Project dependencies
+    api project(':evm-interop-common')
     cordapp project(':evm-bridge-contracts')
 
     // test dependencies

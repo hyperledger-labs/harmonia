@@ -1,9 +1,10 @@
-group 'com.r3.corda.cno'
 apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'kotlin'
 
 repositories {
     mavenCentral()
+    maven { url 'https://download.corda.net/maven/corda-releases' }
+    maven { url 'https://download.corda.net/maven/corda-dependencies' }
 }
 
 cordapp {
@@ -21,20 +22,23 @@ cordapp {
 }
 
 dependencies {
-
-    cordaCompile "$corda_core_release_group:corda-core:$corda_core_release_version"
-
+    // Kotlin standard library
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    implementation "org.web3j:rlp:$web3jVersion"
-    implementation "org.web3j:core:$web3jVersion"
-    implementation "org.web3j:crypto:$web3jVersion"
-    implementation "org.web3j:abi:$web3jVersion"
-    implementation "org.web3j:utils:$web3jVersion"
-    implementation "org.web3j:tuples:$web3jVersion"
-    implementation "io.reactivex.rxjava2:rxjava:2.2.2"
-    implementation "org.reactivestreams:reactive-streams:1.0.2"
+    // Corda dependencies
+    cordaCompile "$corda_core_release_group:corda-core:$corda_core_release_version"
 
+    // Web3j dependencies
+    api "org.web3j:rlp:$web3jVersion"
+    api "org.web3j:core:$web3jVersion"
+    api "org.web3j:crypto:$web3jVersion"
+    api "org.web3j:abi:$web3jVersion"
+    api "org.web3j:utils:$web3jVersion"
+    api "org.web3j:tuples:$web3jVersion"
+    api "io.reactivex.rxjava2:rxjava:2.2.2"
+    api "org.reactivestreams:reactive-streams:1.0.2"
+
+    // test dependencies
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
