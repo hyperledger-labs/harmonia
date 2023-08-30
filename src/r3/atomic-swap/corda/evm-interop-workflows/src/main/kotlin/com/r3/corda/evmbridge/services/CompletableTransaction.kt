@@ -1,7 +1,7 @@
 package com.r3.corda.evminterop.services
 
-import com.r3.corda.evminterop.dto.Log
 import com.r3.corda.evminterop.dto.TransactionReceipt
+import com.r3.corda.evminterop.dto.TransactionReceiptLog
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
@@ -61,7 +61,7 @@ data class CompletableTransaction(
 }
 
 data class CompletableEvent(
-        private val future: CompletableFuture<Log>,
+        private val future: CompletableFuture<TransactionReceiptLog>,
         // NOTE: review timeout to be based on network configuration
         private val timeout: Duration = Duration.ofMinutes(5)
 ) {
@@ -82,7 +82,7 @@ data class CompletableEvent(
             return Instant.now().isAfter(expiresAt)
         }
 
-    fun complete(eventLog: Log) {
+    fun complete(eventLog: TransactionReceiptLog) {
         setForRemove()
         future.complete(eventLog)
     }

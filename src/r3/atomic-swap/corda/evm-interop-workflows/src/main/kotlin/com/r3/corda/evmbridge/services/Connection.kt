@@ -193,8 +193,8 @@ internal class Connection(private val connectionId: ConnectionId) {
         return future
     }
 
-    fun queueEventLogResponse(address: String): ResponseOperation<com.r3.corda.evminterop.dto.Log> {
-        val future = CompletableFuture<com.r3.corda.evminterop.dto.Log>()
+    fun queueEventLogResponse(address: String): ResponseOperation<com.r3.corda.evminterop.dto.TransactionReceiptLog> {
+        val future = CompletableFuture<com.r3.corda.evminterop.dto.TransactionReceiptLog>()
 
         var requireRegister = false
         eq.getOrPut(address) {
@@ -214,7 +214,7 @@ internal class Connection(private val connectionId: ConnectionId) {
         web3j.ethLogFlowable(filter).subscribe { log ->
             eq[address]!!.map { completableEvent ->
                 completableEvent.complete(
-                    com.r3.corda.evminterop.dto.Log(
+                    com.r3.corda.evminterop.dto.TransactionReceiptLog(
                         removed = log.isRemoved,
                         logIndex = log.logIndexRaw,
                         transactionIndex = log.transactionIndexRaw,

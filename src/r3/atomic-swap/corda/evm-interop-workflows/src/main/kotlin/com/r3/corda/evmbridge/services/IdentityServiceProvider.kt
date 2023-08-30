@@ -1,7 +1,6 @@
 package com.r3.corda.evminterop.services
 
 import com.r3.corda.evminterop.dto.*
-import com.r3.corda.evminterop.dto.Log
 import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.*
 import net.corda.core.flows.FlowExternalOperation
@@ -197,7 +196,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
             return connection(connectionId).queueRemoteFunctionCall(fn)
         }
 
-        fun queueRemoteEventLog(address: String): ResponseOperation<Log> {
+        fun queueRemoteEventLog(address: String): ResponseOperation<TransactionReceiptLog> {
             return connection(connectionId).queueEventLogResponse(address)
         }
 
@@ -486,7 +485,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
             }
         }
 
-        override fun getEvents(address: String) : FlowExternalOperation<Log> {
+        override fun getEvents(address: String) : FlowExternalOperation<TransactionReceiptLog> {
             return session.queueRemoteEventLog(address)
         }
 

@@ -1,9 +1,6 @@
 package com.r3.corda.evminterop.dto
 
 import net.corda.core.serialization.CordaSerializable
-import okio.Utf8
-import org.web3j.abi.FunctionEncoder
-import org.web3j.abi.datatypes.Utf8String
 import org.web3j.crypto.Hash
 import java.math.BigInteger
 
