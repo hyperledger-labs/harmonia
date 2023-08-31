@@ -17,6 +17,9 @@ import org.web3j.rlp.RlpString
 import org.web3j.utils.Numeric
 import java.security.PublicKey
 
+/**
+ * The [LockStateContract] defines the rules to lock, unlock, and revert an asset encumbered with this state.
+ */
 class LockStateContract : Contract {
     override fun verify(tx: LedgerTransaction) {
         val cmd = tx.commandsOfType<LockCommand>().singleOrNull()?.value
@@ -81,6 +84,9 @@ class LockStateContract : Contract {
     }
 }
 
+/**
+ * The [LockCommand] defines the available commands that apply to a [LockStateContract] state.
+ */
 sealed class LockCommand : CommandData {
     object Lock : LockCommand()
     class Revert(val proof: UnlockData) : LockCommand()

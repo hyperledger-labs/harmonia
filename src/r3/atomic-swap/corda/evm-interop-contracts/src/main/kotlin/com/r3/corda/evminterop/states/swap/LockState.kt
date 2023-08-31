@@ -7,6 +7,9 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 import java.security.PublicKey
 
+/**
+ * The [LockState] data structure allows to define the Unlock/Revert expectations
+ */
 @BelongsToContract(LockStateContract::class)
 class LockState(val assetSender: PublicKey,
                 val assetRecipient: PublicKey,
