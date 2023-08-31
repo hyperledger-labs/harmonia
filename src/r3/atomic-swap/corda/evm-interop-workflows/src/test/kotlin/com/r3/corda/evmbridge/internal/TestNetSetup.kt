@@ -116,12 +116,6 @@ abstract class TestNetSetup(
     protected fun <V : Any> FlowExternalOperation<V>.get(): V = this.execute(UUID.randomUUID().toString())
     protected fun StartedMockNode.toParty() = this.info.chooseIdentity()
 
-    //protected fun StartedMockNode.wrappedTokenBalances() = this.startFlow(GetWrappedTokensBalancesFlow()).getOrThrow()
-
-//    protected fun List<Amount<TokenType>>.gold(): BigInteger = this.singleOrNull {
-//        it.item.properties.tokenAddress().equals(goldTokenDeployAddress, ignoreCase = true)
-//    }?.quantity ?: BigInteger.ZERO
-
     internal fun setCordaClock(futureInstant: Instant){
         setOf(alice, bob, charlie).forEach {
             (it.services.clock as TestClock).setTo(futureInstant)
@@ -133,7 +127,6 @@ abstract class TestNetSetup(
     }
 
     protected fun <R> await(flow: CordaFuture<R>): R {
-        //if(network != null && network!!.networkSendManuallyPumped == false)
         network!!.runNetwork()
         return flow.getOrThrow()
     }

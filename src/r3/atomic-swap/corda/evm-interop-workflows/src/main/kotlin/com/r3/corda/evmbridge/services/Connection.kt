@@ -305,7 +305,7 @@ internal class Connection(private val connectionId: ConnectionId) {
             block.gasUsed,
             block.timestamp,
             block.transactions.map {
-                // TODO: when fullTransactionObject = false, the TransactionResult is the hash (String) of the
+                // NOTE: when fullTransactionObject = false, the TransactionResult is the hash (String) of the
                 //       transaction, not the transaction object! Implement support for both cases.
                 mapTransaction(it as EthBlock.TransactionObject)
             },

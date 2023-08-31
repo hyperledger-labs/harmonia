@@ -15,7 +15,10 @@ import java.math.BigInteger
 
 data class Indexed<T>(val indexedValue: T)
 
-class DefaultEventEncoder {
+object DefaultEventEncoder {
+
+    private val whitespaceRegex = Regex("\\s+")
+
     fun encodeEvent(contractAddress: String, eventSignature: String, vararg params: Any): EncodedEvent {
         val paramTypesString = eventSignature.substringAfter('(').substringBefore(')')
         val paramTypes = paramTypesString.split(',').map { it.trim() }
@@ -41,7 +44,7 @@ class DefaultEventEncoder {
         val indexedParams = web3jParamsWithIndexedInfo.filter { it.second }.map { it.first }
         val nonIndexedParams = web3jParamsWithIndexedInfo.filterNot { it.second }.map { it.first }
 
-        val topic0 = Hash.sha3String(eventSignature.replace("\\s+".toRegex(), ""))
+        val topic0 = Hash.sha3String(whitespaceRegex.replace(eventSignature, ""))
         val topics = listOf(topic0) + indexedParams.map { Numeric.prependHexPrefix(TypeEncoder.encode(it)) }
         val data = Numeric.prependHexPrefix(DefaultFunctionEncoder().encodeParameters(nonIndexedParams))
 

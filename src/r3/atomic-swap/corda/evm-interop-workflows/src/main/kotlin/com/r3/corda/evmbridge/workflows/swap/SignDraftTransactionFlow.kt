@@ -122,6 +122,6 @@ class SignDraftTransactionFlowResponder(val session: FlowSession) : FlowLogic<Un
 
         val stx = subFlow(receiveSignedTransactionFlow)
         txService.deleteDraftTx(stx.id)
-        // TODO: Initiate EVM asset transfer as a result of draft transaction being finalized
+        // NOTE: Initiate EVM asset transfer as a result of draft transaction being finalized
     }
 }

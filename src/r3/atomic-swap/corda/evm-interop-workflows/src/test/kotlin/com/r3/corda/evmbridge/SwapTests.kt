@@ -30,7 +30,7 @@ class SwapTests : TestNetSetup() {
     private val amount = 1.toBigInteger()
 
     // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Alice (signals success)
-    private val forwardTransferEvent = DefaultEventEncoder().encodeEvent(
+    private val forwardTransferEvent = DefaultEventEncoder.encodeEvent(
         goldTokenDeployAddress,
         "Transfer(address,address,uint256)",
         Indexed(aliceAddress),
@@ -39,7 +39,7 @@ class SwapTests : TestNetSetup() {
     )
 
     // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Bob himself (signals revert)
-    private val backwardTransferEvent = DefaultEventEncoder().encodeEvent(
+    private val backwardTransferEvent = DefaultEventEncoder.encodeEvent(
         goldTokenDeployAddress,
         "Transfer(address,address,uint256)",
         Indexed(aliceAddress),
@@ -258,7 +258,7 @@ class SwapTests : TestNetSetup() {
     }
 
     @Test
-    fun testtest() {
+    fun `expected event can unlock corda asset`() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob

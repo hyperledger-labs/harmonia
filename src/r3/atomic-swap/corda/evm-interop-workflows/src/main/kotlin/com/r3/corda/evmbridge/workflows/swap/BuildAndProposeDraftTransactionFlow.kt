@@ -111,7 +111,8 @@ class BuildAndProposeDraftTransactionFlowResponder(val session: FlowSession) : F
         verifyDraftTx(wireTx).also {
             if (it) {
                 serviceHub.cordaService(DraftTxService::class.java).saveDraftTx(wireTx)
-                // TODO: Upon validating the proposed transaction to lock the Corda asset, the intended receiver commits the EVM asset to the protocol
+                // NOTE: Upon validating the proposed transaction to lock the Corda asset,
+                //       the intended receiver commits the EVM asset to the protocol
             }
             session.send(it)
         }

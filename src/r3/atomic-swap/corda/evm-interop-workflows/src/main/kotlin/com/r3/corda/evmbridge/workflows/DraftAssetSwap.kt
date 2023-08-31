@@ -9,7 +9,6 @@ import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
-import net.corda.core.transactions.WireTransaction
 
 @StartableByRPC
 @InitiatingFlow
@@ -29,7 +28,6 @@ class DraftAssetSwapFlow(
         // Retrieve the input state (asset X) from the vault using the StateRef
         val inputStateAndRef = serviceHub.toStateAndRef<OwnableState>(inputStateRef)
 
-        // TODO: review
         val aliceAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
         val bobAddress = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
         val charlieAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
@@ -38,7 +36,7 @@ class DraftAssetSwapFlow(
         val amount = 1.toBigInteger()
 
         // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Alice (signals success)
-        val forwardTransferEvent = DefaultEventEncoder().encodeEvent(
+        val forwardTransferEvent = DefaultEventEncoder.encodeEvent(
             goldTokenDeployAddress,
             "Transfer(address,address,uint256)",
             Indexed(aliceAddress),
@@ -47,7 +45,7 @@ class DraftAssetSwapFlow(
         )
 
         // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Bob himself (signals revert)
-        val backwardTransferEvent = DefaultEventEncoder().encodeEvent(
+        val backwardTransferEvent = DefaultEventEncoder.encodeEvent(
             goldTokenDeployAddress,
             "Transfer(address,address,uint256)",
             Indexed(aliceAddress),

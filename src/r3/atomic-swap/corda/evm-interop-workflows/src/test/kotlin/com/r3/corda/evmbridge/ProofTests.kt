@@ -2,7 +2,6 @@ package com.r3.corda.evminterop
 
 import com.r3.corda.evminterop.dto.*
 import com.r3.corda.evminterop.internal.TestNetSetup
-import com.r3.corda.evminterop.DefaultEventEncoder
 import com.r3.corda.evminterop.workflows.*
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import net.corda.core.utilities.getOrThrow
@@ -79,7 +78,7 @@ class ProofTests : TestNetSetup() {
     fun `can prove inclusion of event in a block`() {
 
         // Event expectations are defined ahead of the transaction/event
-        val encodedEvent = DefaultEventEncoder().encodeEvent(
+        val encodedEvent = DefaultEventEncoder.encodeEvent(
             goldTokenDeployAddress,
             "Transfer(address,address,uint256)",
             Indexed(aliceAddress),

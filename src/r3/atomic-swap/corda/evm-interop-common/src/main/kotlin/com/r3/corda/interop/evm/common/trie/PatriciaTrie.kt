@@ -287,7 +287,7 @@ class PatriciaTrie {
         var key = nibblesKey
 
         while (true) {
-            if (node is EmptyNode) return ByteArray(0) // TODO: key not found ?
+            if (node is EmptyNode) return ByteArray(0)
 
             if (node is LeafNode) {
                 val matchingLength = node.path.prefixMatchingLength(key)
@@ -299,7 +299,7 @@ class PatriciaTrie {
 
             if (node is BranchNode) {
                 if (key.isEmpty()) {
-                    return node.value // TODO: should check if the node has a value?
+                    return node.value
                 }
 
                 node = node.branches[key[0].toInt()]
@@ -310,7 +310,7 @@ class PatriciaTrie {
             if (node is ExtensionNode) {
                 val matchingLength = node.path.prefixMatchingLength(key)
                 if (matchingLength < node.path.size) {
-                    return ByteArray(0) // TODO: key not found
+                    return ByteArray(0)
                 }
 
                 node = node.innerNode

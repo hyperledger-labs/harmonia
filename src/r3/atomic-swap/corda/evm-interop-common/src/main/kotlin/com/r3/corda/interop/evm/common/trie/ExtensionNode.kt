@@ -47,7 +47,7 @@ class ExtensionNode private constructor(
                     if (encodedInnerNode.size >= 32) {
                         RlpString.create(innerNode.hash)
                     } else {
-                        RlpDecoder.decode(encodedInnerNode) // TODO: review
+                        RlpDecoder.decode(encodedInnerNode) // NOTE: this may be optimized
                     }
                 )
             )
