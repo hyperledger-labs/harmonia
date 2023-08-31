@@ -4,8 +4,11 @@ import com.r3.corda.evminterop.dto.encoded
 import com.r3.corda.evminterop.states.swap.LockState
 import com.r3.corda.evminterop.states.swap.UnlockData
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
-import net.corda.core.contracts.*
+import net.corda.core.contracts.CommandData
+import net.corda.core.contracts.Contract
+import net.corda.core.contracts.OwnableState
 import net.corda.core.contracts.Requirements.using
+import net.corda.core.contracts.requireThat
 import net.corda.core.crypto.CompositeKey
 import net.corda.core.crypto.DigitalSignature
 import net.corda.core.transactions.LedgerTransaction

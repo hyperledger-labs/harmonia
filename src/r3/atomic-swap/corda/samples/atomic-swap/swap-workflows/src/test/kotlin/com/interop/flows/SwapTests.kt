@@ -1,10 +1,13 @@
 package com.r3.corda.evminterop
 
-import com.r3.corda.evminterop.dto.*
+import com.r3.corda.evminterop.dto.TransactionReceipt
+import com.r3.corda.evminterop.dto.encoded
 import com.r3.corda.evminterop.internal.TestNetSetup
 import com.r3.corda.evminterop.workflows.*
-import com.r3.corda.evminterop.workflows.swap.*
-import com.r3.corda.interop.evm.common.trie.*
+import com.r3.corda.evminterop.workflows.swap.SignDraftTransactionByIDFlow
+import com.r3.corda.evminterop.workflows.swap.UnlockAssetFlow
+import com.r3.corda.interop.evm.common.trie.PatriciaTrie
+import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.node.StartedMockNode
 import org.junit.Assert.assertEquals

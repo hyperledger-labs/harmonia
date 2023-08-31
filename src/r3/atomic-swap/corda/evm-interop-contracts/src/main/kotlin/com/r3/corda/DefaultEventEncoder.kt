@@ -4,11 +4,12 @@ import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.dto.TransactionReceiptLog
 import net.corda.core.serialization.CordaSerializable
 import org.web3j.abi.DefaultFunctionEncoder
-import org.web3j.crypto.Hash
 import org.web3j.abi.TypeEncoder
-import org.web3j.abi.datatypes.Type
 import org.web3j.abi.datatypes.*
-import org.web3j.abi.datatypes.generated.*
+import org.web3j.abi.datatypes.generated.Int256
+import org.web3j.abi.datatypes.generated.Uint256
+import org.web3j.abi.datatypes.generated.Uint8
+import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric
 import java.io.Serializable
 import java.math.BigInteger

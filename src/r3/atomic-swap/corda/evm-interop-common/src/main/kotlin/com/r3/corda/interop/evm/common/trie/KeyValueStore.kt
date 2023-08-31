@@ -16,8 +16,6 @@
 
 package com.r3.corda.interop.evm.common.trie
 
-import net.corda.core.serialization.CordaSerializable
-
 /**
  * An interface for a key-value store.
  *

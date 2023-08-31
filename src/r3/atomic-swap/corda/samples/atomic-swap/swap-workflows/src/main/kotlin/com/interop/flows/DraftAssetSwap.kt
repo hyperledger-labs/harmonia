@@ -5,9 +5,12 @@ import com.r3.corda.evminterop.DefaultEventEncoder
 import com.r3.corda.evminterop.Indexed
 import com.r3.corda.evminterop.states.swap.SwapTransactionDetails
 import com.r3.corda.evminterop.workflows.swap.BuildAndProposeDraftTransactionFlow
-import net.corda.core.contracts.*
+import net.corda.core.contracts.OwnableState
+import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
-import net.corda.core.flows.*
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.StartableByRPC
 import net.corda.core.identity.AbstractParty
 
 @StartableByRPC

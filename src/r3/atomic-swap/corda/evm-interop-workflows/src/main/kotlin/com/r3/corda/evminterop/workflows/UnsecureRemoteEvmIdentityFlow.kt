@@ -2,7 +2,9 @@ package com.r3.corda.evminterop.workflows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.services.BridgeIdentity
-import net.corda.core.flows.*
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.StartableByRPC
 import java.net.URI
 
 @InitiatingFlow

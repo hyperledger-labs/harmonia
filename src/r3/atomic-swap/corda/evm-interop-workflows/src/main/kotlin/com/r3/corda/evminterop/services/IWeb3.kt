@@ -1,6 +1,9 @@
 package com.r3.corda.evminterop
 
-import com.r3.corda.evminterop.dto.*
+import com.r3.corda.evminterop.dto.Block
+import com.r3.corda.evminterop.dto.Transaction
+import com.r3.corda.evminterop.dto.TransactionReceipt
+import com.r3.corda.evminterop.dto.TransactionReceiptLog
 import net.corda.core.flows.FlowExternalOperation
 import java.math.BigInteger
 

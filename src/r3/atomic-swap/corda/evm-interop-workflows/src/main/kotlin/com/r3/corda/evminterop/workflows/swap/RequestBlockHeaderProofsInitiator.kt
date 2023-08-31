@@ -3,7 +3,7 @@ package com.r3.corda.evminterop.workflows.swap
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.workflows.GetBlockFlow
-import net.corda.core.crypto.*
+import net.corda.core.crypto.DigitalSignature
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.utilities.unwrap

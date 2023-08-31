@@ -1,14 +1,19 @@
 package com.r3.corda.evminterop
 
-import com.r3.corda.evminterop.dto.*
+import com.r3.corda.evminterop.dto.TransactionReceipt
+import com.r3.corda.evminterop.dto.encoded
 import com.r3.corda.evminterop.internal.TestNetSetup
 import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.states.swap.LockState
 import com.r3.corda.evminterop.states.swap.SwapTransactionDetails
 import com.r3.corda.evminterop.states.swap.UnlockData
 import com.r3.corda.evminterop.workflows.*
-import com.r3.corda.evminterop.workflows.swap.*
-import com.r3.corda.interop.evm.common.trie.*
+import com.r3.corda.evminterop.workflows.swap.BuildAndProposeDraftTransactionFlow
+import com.r3.corda.evminterop.workflows.swap.RequestBlockHeaderProofsInitiator
+import com.r3.corda.evminterop.workflows.swap.SignDraftTransactionFlow
+import com.r3.corda.evminterop.workflows.swap.UnlockTransactionAndObtainAssetFlow
+import com.r3.corda.interop.evm.common.trie.PatriciaTrie
+import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.contracts.OwnableState
 import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.node.services.vault.QueryCriteria

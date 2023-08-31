@@ -1,7 +1,6 @@
 package com.r3.corda.evminterop.dto
 
 import net.corda.core.serialization.CordaSerializable
-import org.web3j.protocol.core.methods.response.AccessListObject
 import java.math.BigInteger
 
 /**

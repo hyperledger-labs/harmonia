@@ -7,7 +7,6 @@ import com.r3.corda.evminterop.states.swap.LockState
 import com.r3.corda.evminterop.states.swap.UnlockData
 import com.r3.corda.evminterop.workflows.GetBlockFlow
 import com.r3.corda.evminterop.workflows.GetBlockReceiptsFlow
-import com.r3.corda.evminterop.workflows.GetTransactionFlow
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.contracts.OwnableState

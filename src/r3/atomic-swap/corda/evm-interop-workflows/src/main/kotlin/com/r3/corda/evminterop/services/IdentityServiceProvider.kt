@@ -1,8 +1,8 @@
 package com.r3.corda.evminterop.services
 
+import com.r3.corda.evminterop.*
 import com.r3.corda.evminterop.dto.*
 import com.r3.corda.evminterop.dto.TransactionReceipt
-import com.r3.corda.evminterop.*
 import net.corda.core.flows.FlowExternalOperation
 import net.corda.core.flows.FlowLogic
 import net.corda.core.node.AppServiceHub
