@@ -9,7 +9,6 @@ import net.corda.core.concurrent.CordaFuture
 import net.corda.core.flows.FlowExternalOperation
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.utilities.getOrThrow
-import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.internal.chooseIdentity
 import net.corda.testing.node.*
 import org.junit.After

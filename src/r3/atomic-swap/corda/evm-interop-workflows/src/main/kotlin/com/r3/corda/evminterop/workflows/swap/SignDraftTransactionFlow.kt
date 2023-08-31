@@ -5,7 +5,6 @@ import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.states.swap.LockState
 import net.corda.core.contracts.requireThat
 import net.corda.core.crypto.Crypto
-import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.SignableData
 import net.corda.core.crypto.SignatureMetadata
 import net.corda.core.flows.*
@@ -60,24 +59,6 @@ val signedTx = await(bob.startFlow(SignDraftTransactionFlow(draftTx)))
 * */
 
 
-
-/**
- * Initiating flow which takes a draft transaction ID and attempts to sign and notarize it.
- */
-@StartableByRPC
-@InitiatingFlow
-class SignDraftTransactionByIDFlow(private val transactionId: SecureHash) : FlowLogic<SignedTransaction>() {
-
-    @Suspendable
-    override fun call(): SignedTransaction {
-
-        // REVIEW: should either mark as signed, or drop it
-        val wireTransaction = serviceHub.cordaService(DraftTxService::class.java).getDraftTx(transactionId)
-            ?: throw IllegalArgumentException("Draft Transaction $transactionId not found");
-
-        return subFlow(SignDraftTransactionFlow(wireTransaction))
-    }
-}
 
 /**
  * Initiating flow which takes a draft transaction and attempts to sign and notarize it.

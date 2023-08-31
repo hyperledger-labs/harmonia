@@ -256,24 +256,4 @@ class SwapTests : TestNetSetup() {
 
         return Triple(transactionReceipt, transferKey, transactionProof)
     }
-
-    @Test
-    fun `expected event can unlock corda asset`() {
-        val assetName = UUID.randomUUID().toString()
-
-        // Create Corda asset owned by Bob
-        val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
-
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(assetTx.txhash, assetTx.index, alice.toParty(), alice.toParty())))
-
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
-
-        val (txReceipt, leafKey, merkleProof) = transferAndProve(amount, alice, bobAddress)
-
-        val utx = await(bob.startFlow(UnlockAssetFlow(
-            stx.tx.id,
-            txReceipt.blockNumber.toInt(),
-            Numeric.toBigInt(txReceipt.transactionIndex!!).toInt()
-        )))
-    }
 }
