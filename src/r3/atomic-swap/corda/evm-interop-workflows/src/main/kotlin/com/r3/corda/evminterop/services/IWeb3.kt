@@ -1,4 +1,4 @@
-package com.r3.corda.evminterop
+package com.r3.corda.evminterop.services
 
 import com.r3.corda.evminterop.dto.Block
 import com.r3.corda.evminterop.dto.Transaction

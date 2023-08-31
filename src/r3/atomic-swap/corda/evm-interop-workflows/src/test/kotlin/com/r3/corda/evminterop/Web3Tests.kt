@@ -1,9 +1,9 @@
 package com.r3.corda.evminterop
 
 import com.r3.corda.evminterop.internal.TestNetSetup
-import com.r3.corda.evminterop.workflows.Erc20TokensApproveFlow
-import com.r3.corda.evminterop.workflows.GetBlockFlow
-import com.r3.corda.evminterop.workflows.GetTransactionFlow
+import com.r3.corda.evminterop.workflows.eth2eth.Erc20TokensApproveFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetTransactionFlow
 import net.corda.core.utilities.getOrThrow
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -1,4 +1,4 @@
-package com.r3.corda.evminterop.workflows
+package com.interop.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.DefaultEventEncoder

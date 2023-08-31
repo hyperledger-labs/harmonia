@@ -1,4 +1,4 @@
-package com.r3.corda.evminterop.workflows
+package com.r3.corda.evminterop.workflows.token
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.dto.TokenMetadata

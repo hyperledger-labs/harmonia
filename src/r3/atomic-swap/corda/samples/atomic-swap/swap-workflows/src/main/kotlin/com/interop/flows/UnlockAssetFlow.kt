@@ -1,12 +1,14 @@
-package com.r3.corda.evminterop.workflows.swap
+package com.interop.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.dto.encoded
 import com.r3.corda.evminterop.states.swap.LockState
 import com.r3.corda.evminterop.states.swap.UnlockData
-import com.r3.corda.evminterop.workflows.GetBlockFlow
-import com.r3.corda.evminterop.workflows.GetBlockReceiptsFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockReceiptsFlow
+import com.r3.corda.evminterop.workflows.swap.RequestBlockHeaderProofsInitiator
+import com.r3.corda.evminterop.workflows.swap.UnlockTransactionAndObtainAssetFlow
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.contracts.OwnableState

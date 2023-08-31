@@ -1,7 +1,8 @@
 package com.r3.corda.evminterop
 
 import com.r3.corda.evminterop.internal.TestNetSetup
-import com.r3.corda.evminterop.workflows.*
+import com.r3.corda.evminterop.workflows.eth2eth.*
+import com.r3.corda.evminterop.workflows.token.GetTokenMetadataByAddressFlow
 import net.corda.core.utilities.getOrThrow
 import org.junit.Test
 import java.math.BigInteger

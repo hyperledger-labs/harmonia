@@ -3,10 +3,10 @@ package com.r3.corda.evminterop
 import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.dto.encoded
 import com.r3.corda.evminterop.internal.TestNetSetup
-import com.r3.corda.evminterop.workflows.Erc20TransferFlow
-import com.r3.corda.evminterop.workflows.GetBlockFlow
-import com.r3.corda.evminterop.workflows.GetBlockReceiptsFlow
-import com.r3.corda.evminterop.workflows.GetTransactionFlow
+import com.r3.corda.evminterop.workflows.eth2eth.Erc20TransferFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockReceiptsFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetTransactionFlow
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import net.corda.core.utilities.getOrThrow
 import org.junit.Test

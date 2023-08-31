@@ -19,4 +19,5 @@ data class SwapTransactionDetails(val senderCordaName: Party,
                                   val approvedCordaValidators: List<Party>,
                                   val minimumNumberOfEventValidations: Int,
                                   val forwardEvent: EncodedEvent,
-                                  val backwardEvent: EncodedEvent)
+                                  val backwardEvent: EncodedEvent
+)

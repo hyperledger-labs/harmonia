@@ -1,11 +1,12 @@
-package com.r3.corda.evminterop
+package com.interop.flows
 
 import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.dto.encoded
-import com.r3.corda.evminterop.internal.TestNetSetup
+import com.interop.flows.internal.TestNetSetup
 import com.r3.corda.evminterop.workflows.*
-import com.r3.corda.evminterop.workflows.swap.SignDraftTransactionByIDFlow
-import com.r3.corda.evminterop.workflows.swap.UnlockAssetFlow
+import com.r3.corda.evminterop.workflows.eth2eth.Erc20TransferFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockReceiptsFlow
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.utilities.getOrThrow
@@ -35,11 +36,13 @@ class SwapTests : TestNetSetup() {
 
         val (txReceipt, leafKey, merkleProof) = transferAndProve(amount, alice, bobAddress)
 
-        val utx = await(bob.startFlow(UnlockAssetFlow(
+        val utx = await(bob.startFlow(
+            UnlockAssetFlow(
             stx.tx.id,
             txReceipt.blockNumber.toInt(),
             Numeric.toBigInt(txReceipt.transactionIndex!!).toInt()
-        )))
+        )
+        ))
     }
 
     // Helper function to transfer an EVM asset and produce a merkle proof from the transaction's receipt.

@@ -2,7 +2,7 @@ package com.r3.corda.evminterop.workflows.swap
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.dto.TransactionReceipt
-import com.r3.corda.evminterop.workflows.GetBlockFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
 import net.corda.core.crypto.DigitalSignature
 import net.corda.core.flows.*
 import net.corda.core.identity.Party

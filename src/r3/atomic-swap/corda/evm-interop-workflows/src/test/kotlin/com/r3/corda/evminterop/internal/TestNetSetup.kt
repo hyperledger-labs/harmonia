@@ -1,7 +1,7 @@
 package com.r3.corda.evminterop.internal
 
-import com.r3.corda.evminterop.IERC20
-import com.r3.corda.evminterop.IWeb3
+import com.r3.corda.evminterop.services.IERC20
+import com.r3.corda.evminterop.services.IWeb3
 import com.r3.corda.evminterop.services.IdentityServiceProvider
 import com.r3.corda.evminterop.services.evmInterop
 import com.r3.corda.evminterop.workflows.UnsecureRemoteEvmIdentityFlow

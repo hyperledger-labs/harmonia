@@ -1,7 +1,8 @@
-package com.r3.corda.evminterop.workflows.swap
+package com.interop.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.services.swap.DraftTxService
+import com.r3.corda.evminterop.workflows.swap.SignDraftTransactionFlow
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
