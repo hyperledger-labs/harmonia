@@ -47,7 +47,7 @@ contract ERC20I is Context, IERC20, IERC20Metadata, Initializable {
         _symbol = symbol_;
 
         for (uint256 i = 0; i < bearers.length; i++) {
-            address bearer = bearers[i]; // TODO: 1 must be deployer address who owns excess supply on mint/burn
+            address bearer = bearers[i]; // NOTE: 1 must be deployer address who owns excess supply on mint/burn
             uint256 bearerBalance = bearersBalance[i];
 
             if (bearer == address(0) || bearerBalance == 0) {

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,10 @@ import org.web3j.rlp.RlpString
  * @property path The path of the ExtensionNode, stored as a nibbles array.
  * @property innerNode The inner Node that the ExtensionNode points to.
  */
-class ExtensionNode(private val path: NibbleArray, private val innerNode: Node) : Node {
+class ExtensionNode private constructor(
+    val path: ByteArray,
+    var innerNode: Node
+) : Node() {
 
     /**
      * The RLP-encoded form of the ExtensionNode, which is an RLP-encoded list of the path and the inner node.
@@ -40,105 +43,47 @@ class ExtensionNode(private val path: NibbleArray, private val innerNode: Node) 
             val encodedInnerNode = innerNode.encoded
             return RlpEncoder.encode(
                 RlpList(
-                    RlpString.create(PatriciaTriePathType.EXTENSION.applyPrefix(path).toBytes()),
+                    RlpString.create(prefixedNibbles(path).fromPrefixedNibblesToBytes()),
                     if (encodedInnerNode.size >= 32) {
                         RlpString.create(innerNode.hash)
                     } else {
-                        RlpDecoder.decode(encodedInnerNode) // TODO: review
+                        RlpDecoder.decode(encodedInnerNode) // NOTE: this may be optimized
                     }
                 )
             )
         }
 
-    private fun extendIfNonEmpty(path: NibbleArray, innerNode: Node): Node =
-        if (path.isEmpty()) innerNode else ExtensionNode(path, innerNode)
+    /**
+     * Add prefix to the nibbles array depending on its size.
+     *
+     * @param nibbles The nibbles array to be prefixed.
+     * @return The prefixed nibbles array.
+     */
+    private fun prefixedNibbles(nibbles: ByteArray): ByteArray {
+        return (if (nibbles.size % 2 > 0) byteArrayOf(1) else byteArrayOf(0, 0)).plus(nibbles)
+    }
 
-    override fun put(key: NibbleArray, newValue: ByteArray): Node {
-        val prefixMatch = PathPrefixMatch.match(key, path)
-
-        return when (prefixMatch) {
-            is PathPrefixMatch.Equals -> ExtensionNode(path, innerNode.put(NibbleArray.empty, newValue))
-            is PathPrefixMatch.NoMatch -> BranchNode.from(
-                prefixMatch.pathHead to extendIfNonEmpty(prefixMatch.pathTail, innerNode),
-                prefixMatch.keyHead to LeafNode(prefixMatch.keyTail, newValue)
-            )
-
-            is PathPrefixMatch.PathPrefixesKey -> ExtensionNode(
-                path,
-                innerNode.put(prefixMatch.keyRemainder, newValue)
-            )
-
-            is PathPrefixMatch.KeyPrefixesPath -> extendIfNonEmpty(
-                key, BranchNode.from(
-                    prefixMatch.pathRemainderHead to extendIfNonEmpty(prefixMatch.pathRemainderTail, innerNode),
-                    value = newValue
-                )
-            )
-
-            is PathPrefixMatch.PartialMatch -> ExtensionNode(
-                prefixMatch.sharedPrefix, BranchNode.from(
-                    prefixMatch.pathRemainderHead to extendIfNonEmpty(prefixMatch.pathRemainderTail, innerNode),
-                    prefixMatch.keyRemainderHead to LeafNode(prefixMatch.keyRemainderTail, newValue)
-                )
-            )
-        }
-
-        /*
-        val matchingLength = path.prefixMatchingLength(key)
-
-        // Key (1, 2, 3...) contains entire path (1, 2, 3)
-        if (matchingLength == path.size) {
-            // Put the value into the inner node, at the remaining key
-            return ExtensionNode(path, innerNode.put(key.dropFirst(matchingLength), newValue))
-        }
-
-        // Key (1, 2, 3...) contains part of path (1, 2, 4, 5, 6)
-        val matchingPath = path.takeFirst(matchingLength)       // Nibbles where key and path agree (1, 2)
-        val pathIndex = path[matchingLength].toInt()            // Nibble where key and path diverge (4)
-        val remainingPath = path.remainingAfter(matchingLength) // Path nibbles after divergence (5, 6)
-
-        // Branch either to the inner node or to an extension terminating in the inner node
-        val firstBranch = if (remainingPath.isEmpty()) innerNode else ExtensionNode(remainingPath, innerNode)
-
-        val branchNode = if (matchingLength == key.size) {
-            // Path (1, 2, 3...) contains entire key (1, 2, 3)
-
-            // 3 -> firstBranch
-            BranchNode.from(listOf(pathIndex to firstBranch), newValue)
-        } else {
-            // Path (1, 2, 3...) contains part of key (1, 2, 4, 5, 6)
-            val keyIndex = key[matchingLength].toInt()            // Nibble where key and path diverge (4)
-            val remainingKey = key.remainingAfter(matchingLength) // Key nibbles after divergence (5, 6)
-
-            // 3 -> firstBranch
-            // 4 -> leaf((5, 6), newValue)
-            BranchNode.from(listOf(pathIndex to firstBranch, keyIndex to LeafNode(remainingKey, newValue)))
-        }
-
-        return if (matchingPath.isEmpty()) branchNode else ExtensionNode(matchingPath, branchNode)
-
+    companion object {
+        /**
+         * Factory function to create an ExtensionNode from bytes.
+         *
+         * @param key The key to be used for the path of the ExtensionNode.
+         * @param node The Node to be used as the inner node of the ExtensionNode.
+         * @return The created ExtensionNode.
          */
-    }
-
-    override fun get(key: NibbleArray): ByteArray {
-        val matchingLength = path.prefixMatchingLength(key)
-        if (matchingLength < path.size) {
-            return ByteArray(0) // TODO: key not found
+        fun createFromBytes(key: ByteArray, node: Node): ExtensionNode {
+            return ExtensionNode(key.toNibbles(), node)
         }
 
-        return innerNode.get(key.dropFirst(matchingLength))
+        /**
+         * Factory function to create an ExtensionNode from nibbles.
+         *
+         * @param nibblesKey The key to be used for the path of the ExtensionNode, in the form of a nibbles array.
+         * @param node The Node to be used as the inner node of the ExtensionNode.
+         * @return The created ExtensionNode.
+         */
+        fun createFromNibbles(nibblesKey: ByteArray, node: Node): ExtensionNode {
+            return ExtensionNode(nibblesKey, node)
+        }
     }
-
-    override fun generateMerkleProof(key: NibbleArray, store: WriteableKeyValueStore): KeyValueStore =
-            if (key.startsWith(path)) {
-                store.put(hash, encoded)
-                innerNode.generateMerkleProof(key.dropFirst(path.size), store)
-            } else {
-                throw IllegalArgumentException("Key is not part of the trie")
-            }
-
-    override fun verifyMerkleProof(key: NibbleArray, expectedValue: ByteArray, proof: KeyValueStore): Boolean =
-        if (key.startsWith(path)) proof.verify(innerNode.hash, key.dropFirst(path.size), expectedValue)
-        else throw IllegalArgumentException("Key is not part of the trie")
-
 }
