@@ -54,7 +54,7 @@ class UnlockTransactionAndObtainAssetFlow(
         val notary = serviceHub.identityService.partyFromKey(lockState.state.data.notary)
             ?: throw IllegalArgumentException("The specified notary does not resolve to a known Party")
         val newOwner = serviceHub.identityService.partyFromKey(lockState.state.data.assetRecipient)
-            ?: throw IllegalArgumentException("The specified recpient does not resolve to a known Party")
+            ?: throw IllegalArgumentException("The specified recipient does not resolve to a known Party")
 
         val unlockCommand = Command(LockCommand.Unlock(unlockData), listOf(ourIdentity.owningKey))
         val builder = TransactionBuilder(notary = notary)
