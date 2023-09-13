@@ -77,8 +77,8 @@ class SwapTests : TestNetSetup() {
             cordaAssetState = asset,
             approvedCordaValidators = listOf(charlie.toParty()),
             minimumNumberOfEventValidations = 1,
-            forwardEvent = forwardTransferEvent,
-            backwardEvent = backwardTransferEvent
+            unlockEvent = forwardTransferEvent,
+            revertEvent = backwardTransferEvent
         )
 
         // Build draft transaction and send it to counterparty for verification
@@ -160,8 +160,8 @@ class SwapTests : TestNetSetup() {
             cordaAssetState = asset,
             approvedCordaValidators = listOf(charlie.toParty()),
             minimumNumberOfEventValidations = 1,
-            forwardEvent = backwardTransferEvent,
-            backwardEvent = backwardTransferEvent
+            unlockEvent = backwardTransferEvent,
+            revertEvent = backwardTransferEvent
         )
 
         // Build draft transaction and send it to counterparty for verification

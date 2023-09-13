@@ -27,8 +27,9 @@ import net.corda.core.utilities.unwrap
  */
 @StartableByRPC
 @InitiatingFlow
-class BuildAndProposeDraftTransactionFlow(val swapTxDetails: SwapTransactionDetails,
-                                          val notary: Party) : FlowLogic<WireTransaction?>() {
+class BuildAndProposeDraftTransactionFlow(
+    private val swapTxDetails: SwapTransactionDetails,
+    private val notary: Party) : FlowLogic<WireTransaction?>() {
 
     @Suspendable
     override fun call(): WireTransaction? {
@@ -37,10 +38,11 @@ class BuildAndProposeDraftTransactionFlow(val swapTxDetails: SwapTransactionDeta
         val lockState = LockState(
             swapTxDetails.cordaAssetState.state.data.owner.owningKey,
             swapTxDetails.receiverCordaName.owningKey,
+            notary.owningKey,
             swapTxDetails.approvedCordaValidators.map { it.owningKey },
             swapTxDetails.minimumNumberOfEventValidations,
-            swapTxDetails.forwardEvent,
-            swapTxDetails.backwardEvent,
+            swapTxDetails.unlockEvent,
+            swapTxDetails.revertEvent,
             participants = listOf(ourIdentity, swapTxDetails.receiverCordaName)
         )
 
