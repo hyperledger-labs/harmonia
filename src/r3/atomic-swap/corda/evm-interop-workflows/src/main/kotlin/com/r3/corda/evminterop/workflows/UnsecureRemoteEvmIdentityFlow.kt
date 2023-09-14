@@ -7,6 +7,13 @@ import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
 import java.net.URI
 
+/**
+ * UnsecureRemoteEvmIdentityFlow associate an EVM identity to a Corda Identity and EVM RPC Endpoint
+ * Flows using the EVM service run by this Corda Identity will sign with the specified private key
+ * NOTE: This is a simplistic implementation where the private key is passed in plain text as a
+ * parameter. A safer implementation is recommended using HSM devices or protocols for offline
+ * signing.
+ */
 @InitiatingFlow
 @StartableByRPC
 class UnsecureRemoteEvmIdentityFlow(
