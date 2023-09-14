@@ -13,10 +13,9 @@ import java.security.PublicKey
 @BelongsToContract(LockStateContract::class)
 class LockState(val assetSender: PublicKey,
                 val assetRecipient: PublicKey,
+                val notary: PublicKey,
                 val approvedValidators: List<PublicKey>,
                 val signaturesThreshold: Int,
                 val forwardEvent: EncodedEvent,
                 val backwardEvent: EncodedEvent,
                 override val participants: List<AbstractParty> = emptyList()) : ContractState
-
-// REVIEW: add notary

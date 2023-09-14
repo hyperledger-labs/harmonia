@@ -15,6 +15,9 @@ import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.Table
 
+/**
+ * Definition of a Generic Asset Schema
+ */
 object GenericAssetSchema
 
 object GenericAssetSchemaV1 : MappedSchema(
@@ -30,6 +33,9 @@ object GenericAssetSchemaV1 : MappedSchema(
     ) : PersistentState()
 }
 
+/**
+ * Definition of a Generic Asset State
+ */
 @BelongsToContract(GenericAssetContract::class)
 class GenericAssetState (val assetName: String, override val owner: AbstractParty) : OwnableState, QueryableState {
     override val participants: List<AbstractParty>
@@ -55,6 +61,9 @@ class GenericAssetState (val assetName: String, override val owner: AbstractPart
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(GenericAssetSchemaV1)
 }
 
+/**
+ * Definition of a Generic Asset Contract
+ */
 class GenericAssetContract : Contract {
 
     companion object {
@@ -72,6 +81,9 @@ class GenericAssetContract : Contract {
     }
 }
 
+/**
+ * Helper flow to issue a Generic Asse
+ */
 @StartableByRPC
 @InitiatingFlow
 class IssueGenericAssetFlow(private val assetName: String) : FlowLogic<StateRef>() {
