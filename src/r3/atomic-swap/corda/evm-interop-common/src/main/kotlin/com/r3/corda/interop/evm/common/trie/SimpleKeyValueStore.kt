@@ -21,9 +21,6 @@ import org.web3j.utils.Numeric
 
 /**
  * Implementation of KeyValueStore using a simple hash map.
- *
- * This store utilizes a hash map to store and retrieve key-value pairings.
- * Keys are wrapped in an ArrayKey data class to allow for proper comparison of byte arrays.
  */
 @CordaSerializable
 class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray>) // : KeyValueStore

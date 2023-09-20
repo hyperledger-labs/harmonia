@@ -30,6 +30,7 @@ dependencies {
 
     cordapp project(':evm-interop-contracts')
     cordapp project(':evm-interop-workflows')
+    cordapp project(':samples:atomic-swap:swap-workflows')
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
@@ -43,6 +44,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
 
         cordapp project(':evm-interop-contracts')
         cordapp project(':evm-interop-workflows')
+        cordapp project(':samples:atomic-swap:swap-workflows')
     }
 
     node {

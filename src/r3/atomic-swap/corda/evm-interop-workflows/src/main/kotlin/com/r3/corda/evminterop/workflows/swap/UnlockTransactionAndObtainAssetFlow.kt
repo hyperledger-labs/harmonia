@@ -23,17 +23,16 @@ import net.corda.core.utilities.loggerFor
 class UnlockTransactionAndObtainAssetFlow(
     private val lockedAsset: StateAndRef<OwnableState>,
     private val lockState: StateAndRef<LockState>,
-    private val unlockData: UnlockData,
-    private val notary: Party
+    private val unlockData: UnlockData
 ) : FlowLogic<SignedTransaction>() {
 
 
     @Suppress("ClassName")
     companion object {
         object BUILD_TRANSACTION : ProgressTracker.Step("Build transaction.")
-        object VERIFY_TRANSACTION : ProgressTracker.Step("VERIFY_TRANSACTION")
-        object SIGN_TRANSACTION : ProgressTracker.Step("SIGN_TRANSACTION")
-        object NOTARIZE_TRANSACTION : ProgressTracker.Step("NOTARIZE_TRANSACTION")
+        object VERIFY_TRANSACTION : ProgressTracker.Step("Verify transaction.")
+        object SIGN_TRANSACTION : ProgressTracker.Step("Sign transaction.")
+        object NOTARIZE_TRANSACTION : ProgressTracker.Step("Notarize transaction")
 
         fun tracker() = ProgressTracker(
             BUILD_TRANSACTION,
@@ -52,8 +51,10 @@ class UnlockTransactionAndObtainAssetFlow(
 
         progressTracker.currentStep = BUILD_TRANSACTION
 
+        val notary = serviceHub.identityService.partyFromKey(lockState.state.data.notary)
+            ?: throw IllegalArgumentException("The specified notary does not resolve to a known Party")
         val newOwner = serviceHub.identityService.partyFromKey(lockState.state.data.assetRecipient)
-            ?: throw IllegalArgumentException("The specified recpient does not resolve to a known Party")
+            ?: throw IllegalArgumentException("The specified recipient does not resolve to a known Party")
 
         val unlockCommand = Command(LockCommand.Unlock(unlockData), listOf(ourIdentity.owningKey))
         val builder = TransactionBuilder(notary = notary)

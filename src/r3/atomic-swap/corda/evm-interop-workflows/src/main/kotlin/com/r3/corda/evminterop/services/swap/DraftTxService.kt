@@ -1,11 +1,13 @@
 package com.r3.corda.evminterop.services.swap
 
+import net.corda.core.crypto.DigitalSignature
 import net.corda.core.crypto.SecureHash
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
+import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -16,6 +18,18 @@ import java.util.concurrent.ConcurrentHashMap
 class DraftTxService(private val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
 
     private val transactions = ConcurrentHashMap<SecureHash, WireTransaction>()
+    private val signatures = ConcurrentHashMap<BigInteger, HashSet<DigitalSignature.WithKey>>()
+
+    fun saveBlockSignature(blockNumber: BigInteger, signature: DigitalSignature.WithKey): Unit {
+        signatures.compute(blockNumber) { _, transactionSignatures ->
+            transactionSignatures?.let {
+                it.add(signature)
+                it
+            } ?: hashSetOf(signature)
+        }
+    }
+
+    fun blockSignatures(blockNumber: BigInteger) = signatures[blockNumber]?.toList() ?: emptyList()
 
     fun saveDraftTx(tx: WireTransaction) {
         if (transactions.containsKey(tx.id))
@@ -37,5 +51,17 @@ class DraftTxService(private val serviceHub: AppServiceHub) : SingletonSerialize
         return  wireTxDependenciesHashes.mapNotNull {
             serviceHub.validatedTransactions.getTransaction(it)
         }.toList()
+    }
+
+    private val blockSignatures = ConcurrentHashMap<BigInteger, HashSet<DigitalSignature.WithKey>>()
+
+    fun saveBlockSignature(blockNumber: BigInteger, signature: DigitalSignature.WithKey) {
+        blockSignatures
+            .computeIfAbsent(blockNumber) { hashSetOf() }
+            .add(signature)
+    }
+
+    fun blockSignatures(blockNumber: BigInteger): List<DigitalSignature.WithKey> {
+        return blockSignatures[blockNumber]?.toList() ?: emptyList()
     }
 }

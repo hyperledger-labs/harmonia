@@ -1,40 +1,61 @@
 package com.interop.flows
 
-import com.r3.corda.evminterop.dto.TransactionReceipt
-import com.r3.corda.evminterop.dto.encoded
 import com.interop.flows.internal.TestNetSetup
+import com.r3.corda.evminterop.DefaultEventEncoder
+import com.r3.corda.evminterop.Indexed
 import com.r3.corda.evminterop.workflows.*
-import com.r3.corda.evminterop.workflows.eth2eth.Erc20TransferFlow
-import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
-import com.r3.corda.evminterop.workflows.eth2eth.GetBlockReceiptsFlow
-import com.r3.corda.interop.evm.common.trie.PatriciaTrie
-import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
-import net.corda.core.utilities.getOrThrow
-import net.corda.testing.node.StartedMockNode
-import org.junit.Assert.assertEquals
+import net.corda.core.identity.AbstractParty
 import org.junit.Test
-import org.web3j.rlp.RlpEncoder
-import org.web3j.rlp.RlpString
 import org.web3j.utils.Numeric
-import java.math.BigInteger
 import java.util.*
 
 class SwapTests : TestNetSetup() {
 
     private val amount = 1.toBigInteger()
 
+    // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Alice (signals success)
+    private val forwardTransferEvent = DefaultEventEncoder.encodeEvent(
+        goldTokenDeployAddress,
+        "Transfer(address,address,uint256)",
+        Indexed(aliceAddress),
+        Indexed(bobAddress),
+        amount
+    )
+
+    // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Bob himself (signals revert)
+    private val backwardTransferEvent = DefaultEventEncoder.encodeEvent(
+        goldTokenDeployAddress,
+        "Transfer(address,address,uint256)",
+        Indexed(aliceAddress),
+        Indexed(aliceAddress),
+        amount
+    )
+
     @Test
-    fun `expected event can unlock corda asset`() {
+    fun `can unlock corda asset by asynchronous collection of block signatures`() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
         val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(assetTx.txhash, assetTx.index, alice.toParty(), alice.toParty())))
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+            assetTx.txhash,
+            assetTx.index,
+            alice.toParty(),
+            alice.services.networkMapCache.notaryIdentities.first(),
+            listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
+            2,
+            forwardTransferEvent,
+            backwardTransferEvent
+        )))
 
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
 
         val (txReceipt, leafKey, merkleProof) = transferAndProve(amount, alice, bobAddress)
+
+        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, false)))
+
+        network?.waitQuiescent()
 
         val utx = await(bob.startFlow(
             UnlockAssetFlow(
@@ -43,6 +64,12 @@ class SwapTests : TestNetSetup() {
             Numeric.toBigInt(txReceipt.transactionIndex!!).toInt()
         )
         ))
+    }
+
+    @Test
+    fun `produce tx events that can be used during demo`() {
+        val (txReceipt1, leafKey1, merkleProof1) = transferAndProve(1.toBigInteger(), alice, bobAddress)
+        val (txReceipt2, leafKey2, merkleProof2) = transferAndProve(2.toBigInteger(), alice, bobAddress)
     }
 
     // Helper function to transfer an EVM asset and produce a merkle proof from the transaction's receipt.
@@ -70,13 +97,6 @@ class SwapTests : TestNetSetup() {
                 RlpEncoder.encode(RlpString.create(Numeric.toBigInt(receipt.transactionIndex!!).toLong())),
                 receipt.encoded()
             )
-        }
-        assertEquals(block.receiptsRoot, Numeric.toHexString(trie.root.hash))
-
-        // generate a proof for the transaction receipt that belong to the ERC20 transfer transaction
-        val transferKey = RlpEncoder.encode(RlpString.create(Numeric.toBigInt(transactionReceipt.transactionIndex!!).toLong()))
-        val transactionProof = trie.generateMerkleProof(transferKey) as SimpleKeyValueStore
-
-        return Triple(transactionReceipt, transferKey, transactionProof)
+        )
     }
 }

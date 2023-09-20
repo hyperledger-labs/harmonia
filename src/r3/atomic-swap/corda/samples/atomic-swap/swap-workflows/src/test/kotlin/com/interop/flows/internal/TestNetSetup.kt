@@ -1,10 +1,17 @@
 package com.interop.flows.internal
 
+import com.r3.corda.evminterop.dto.TransactionReceipt
+import com.r3.corda.evminterop.dto.encoded
 import com.r3.corda.evminterop.services.IERC20
 import com.r3.corda.evminterop.services.IWeb3
 import com.r3.corda.evminterop.services.IdentityServiceProvider
 import com.r3.corda.evminterop.services.evmInterop
 import com.r3.corda.evminterop.workflows.UnsecureRemoteEvmIdentityFlow
+import com.r3.corda.evminterop.workflows.eth2eth.Erc20TransferFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
+import com.r3.corda.evminterop.workflows.eth2eth.GetBlockReceiptsFlow
+import com.r3.corda.interop.evm.common.trie.PatriciaTrie
+import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.flows.FlowExternalOperation
 import net.corda.core.identity.CordaX500Name
@@ -12,7 +19,11 @@ import net.corda.core.utilities.getOrThrow
 import net.corda.testing.internal.chooseIdentity
 import net.corda.testing.node.*
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
+import org.web3j.rlp.RlpEncoder
+import org.web3j.rlp.RlpString
+import org.web3j.utils.Numeric
 import java.math.BigInteger
 import java.time.Instant
 import java.util.*
@@ -86,7 +97,19 @@ abstract class TestNetSetup(
     }
 
     private fun mockNetwork() : MockNetwork {
-        return MockNetwork(listOf("com.r3.corda.evminterop"),
+        return MockNetwork(
+            listOf(
+                "com.interop.flows",
+                "com.r3.corda.evminterop.services",
+                "com.r3.corda.evminterop.workflows",
+                "com.r3.corda.evminterop.workflows.eth2eth",
+                "com.r3.corda.evminterop.workflows.swap",
+                "com.r3.corda.evminterop.workflows.token",
+                "com.r3.corda.evminterop",
+                "com.r3.corda.evminterop.states.swap",
+                "com.r3.corda.evminterop.dto",
+                "com.r3.corda.evminterop.contracts.swap"
+            ),
             notarySpecs = listOf(
                 MockNetworkNotarySpec(CordaX500Name("Notary","London","GB"))
             ))
@@ -128,5 +151,40 @@ abstract class TestNetSetup(
     protected fun <R> await(flow: CordaFuture<R>): R {
         network!!.runNetwork()
         return flow.getOrThrow()
+    }
+
+    // Helper function to transfer an EVM asset and produce a merkle proof from the transaction's receipt.
+    protected fun transferAndProve(amount: BigInteger, senderNode: StartedMockNode, recipientAddress: String) : Triple<TransactionReceipt, ByteArray, SimpleKeyValueStore> {
+
+        // create an ERC20 Transaction from alice to bob that will emit a Transfer event for the given amount
+        val transactionReceipt: TransactionReceipt = senderNode.startFlow(
+            Erc20TransferFlow(goldTokenDeployAddress, recipientAddress, amount)
+        ).getOrThrow()
+
+        // get the block that mined the ERC20 `Transfer` Transaction
+        val block = senderNode.startFlow(
+            GetBlockFlow(transactionReceipt.blockNumber, true)
+        ).getOrThrow()
+
+        // get all transaction receipts from the block that mined the ERC20 `Transfer` Transaction
+        val receipts = senderNode.startFlow(
+            GetBlockReceiptsFlow(transactionReceipt.blockNumber)
+        ).getOrThrow()
+
+        // Build the Patricia Trie from the Block receipts and verify it's valid
+        val trie = PatriciaTrie()
+        for(receipt in receipts) {
+            trie.put(
+                RlpEncoder.encode(RlpString.create(Numeric.toBigInt(receipt.transactionIndex!!).toLong())),
+                receipt.encoded()
+            )
+        }
+        Assert.assertEquals(block.receiptsRoot, Numeric.toHexString(trie.root.hash))
+
+        // generate a proof for the transaction receipt that belong to the ERC20 transfer transaction
+        val transferKey = RlpEncoder.encode(RlpString.create(Numeric.toBigInt(transactionReceipt.transactionIndex!!).toLong()))
+        val transactionProof = trie.generateMerkleProof(transferKey) as SimpleKeyValueStore
+
+        return Triple(transactionReceipt, transferKey, transactionProof)
     }
 }
