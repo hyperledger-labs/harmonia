@@ -59,10 +59,10 @@ class SwapTests : TestNetSetup() {
 
         val utx = await(bob.startFlow(
             UnlockAssetFlow(
-            stx.tx.id,
-            txReceipt.blockNumber.toInt(),
-            Numeric.toBigInt(txReceipt.transactionIndex!!).toInt()
-        )
+                stx.tx.id,
+                txReceipt.blockNumber,
+                Numeric.toBigInt(txReceipt.transactionIndex!!)
+            )
         ))
     }
 
@@ -70,33 +70,5 @@ class SwapTests : TestNetSetup() {
     fun `produce tx events that can be used during demo`() {
         val (txReceipt1, leafKey1, merkleProof1) = transferAndProve(1.toBigInteger(), alice, bobAddress)
         val (txReceipt2, leafKey2, merkleProof2) = transferAndProve(2.toBigInteger(), alice, bobAddress)
-    }
-
-    // Helper function to transfer an EVM asset and produce a merkle proof from the transaction's receipt.
-    private fun transferAndProve(amount: BigInteger, senderNode: StartedMockNode, recipientAddress: String) : Triple<TransactionReceipt, ByteArray, SimpleKeyValueStore> {
-
-        // create an ERC20 Transaction from alice to bob that will emit a Transfer event for the given amount
-        val transactionReceipt: TransactionReceipt = senderNode.startFlow(
-            Erc20TransferFlow(goldTokenDeployAddress, recipientAddress, amount)
-        ).getOrThrow()
-
-        // get the block that mined the ERC20 `Transfer` Transaction
-        val block = senderNode.startFlow(
-            GetBlockFlow(transactionReceipt.blockNumber, true)
-        ).getOrThrow()
-
-        // get all transaction receipts from the block that mined the ERC20 `Transfer` Transaction
-        val receipts = senderNode.startFlow(
-            GetBlockReceiptsFlow(transactionReceipt.blockNumber)
-        ).getOrThrow()
-
-        // Build the Patricia Trie from the Block receipts and verify it's valid
-        val trie = PatriciaTrie()
-        for(receipt in receipts) {
-            trie.put(
-                RlpEncoder.encode(RlpString.create(Numeric.toBigInt(receipt.transactionIndex!!).toLong())),
-                receipt.encoded()
-            )
-        )
     }
 }
