@@ -52,16 +52,4 @@ class DraftTxService(private val serviceHub: AppServiceHub) : SingletonSerialize
             serviceHub.validatedTransactions.getTransaction(it)
         }.toList()
     }
-
-    private val blockSignatures = ConcurrentHashMap<BigInteger, HashSet<DigitalSignature.WithKey>>()
-
-    fun saveBlockSignature(blockNumber: BigInteger, signature: DigitalSignature.WithKey) {
-        blockSignatures
-            .computeIfAbsent(blockNumber) { hashSetOf() }
-            .add(signature)
-    }
-
-    fun blockSignatures(blockNumber: BigInteger): List<DigitalSignature.WithKey> {
-        return blockSignatures[blockNumber]?.toList() ?: emptyList()
-    }
 }
