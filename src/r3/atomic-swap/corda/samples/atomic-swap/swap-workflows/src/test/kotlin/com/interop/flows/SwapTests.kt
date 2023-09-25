@@ -58,12 +58,17 @@ class SwapTests : TestNetSetup() {
         network?.waitQuiescent()
 
         val utx = await(bob.startFlow(
-                UnlockAssetFlow(
-                    stx.tx.id,
-                    txReceipt.blockNumber,
-                    Numeric.toBigInt(txReceipt.transactionIndex!!)
-                )
+            UnlockAssetFlow(
+                stx.tx.id,
+                txReceipt.blockNumber,
+                Numeric.toBigInt(txReceipt.transactionIndex!!)
             )
-        )
+        ))
+    }
+
+    @Test
+    fun `produce tx events that can be used during demo`() {
+        val (txReceipt1, leafKey1, merkleProof1) = transferAndProve(1.toBigInteger(), alice, bobAddress)
+        val (txReceipt2, leafKey2, merkleProof2) = transferAndProve(2.toBigInteger(), alice, bobAddress)
     }
 }
