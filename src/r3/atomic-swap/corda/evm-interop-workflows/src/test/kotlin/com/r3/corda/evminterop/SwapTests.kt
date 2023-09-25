@@ -131,7 +131,7 @@ class SwapTests : TestNetSetup() {
         // Gather the data for the unlock command and create the unlock transaction that moves the asset from Alice
         // to the expected recipient Bob in response to the `forwardTransferEvent` event
         val unlockData = UnlockData(merkleProof, validatorSignatures, block.receiptsRoot, txReceipt)
-        val stx = await(alice.startFlow(UnlockTransactionAndObtainAssetFlow(lockedAsset, lockState, unlockData, notary.toParty())))
+        val stx = await(alice.startFlow(UnlockTransactionAndObtainAssetFlow(lockedAsset, lockState, unlockData)))
 
         // Verify the unlocked asset is now owned by Alice and not anymore from Bob
         assertEquals(alice.info.chooseIdentity().owningKey, (stx.tx.outputStates.single() as OwnableState).owner.owningKey)
@@ -216,7 +216,7 @@ class SwapTests : TestNetSetup() {
         // to the expected recipient Bob in response to the `forwardTransferEvent` event
         val unlockData = UnlockData(merkleProof, validatorSignatures, block.receiptsRoot, txReceipt)
         assertFailsWith<TransactionVerificationException.ContractRejection> {
-            await(alice.startFlow(UnlockTransactionAndObtainAssetFlow(lockedAsset, lockState, unlockData, notary.toParty())))
+            await(alice.startFlow(UnlockTransactionAndObtainAssetFlow(lockedAsset, lockState, unlockData)))
         }
     }
 
