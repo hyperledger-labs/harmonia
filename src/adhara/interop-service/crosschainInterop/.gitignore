@@ -1,0 +1,10 @@
+node_modules/
+target/
+bin/
+build/
+logs/
+fileDB/
+
+/test-integration/monitoring-bc-*/
+/test-integration/test-db-*/
+
