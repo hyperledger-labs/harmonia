@@ -1,0 +1,37 @@
+# Network
+# bootnodes=["enode://001@123:4567", "enode://002@123:4567", "enode://003@123:4567"]
+
+p2p-host="127.0.0.1"
+p2p-port=1234
+max-peers=42
+
+rpc-http-enabled=true
+rpc-http-api=["ETH","NET","IBFT","DEBUG","WEB3","TXPOOL","ADMIN"]
+
+host-whitelist=["*"]
+rpc-http-cors-origins=["all"]
+
+rpc-http-host="0.0.0.0"
+rpc-http-port=8545
+
+rpc-ws-enabled=false
+rpc-ws-host="0.0.0.0"
+rpc-ws-port=8546
+
+# Chain
+genesis-file="./genesis.json" # Path to the custom genesis file
+
+# Mining
+miner-enabled=true
+miner-coinbase="0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
+
+
+min-gas-price="0"
+
+revert-reason-enabled=true
+
+
+metrics-category=[ "ETHEREUM", "BLOCKCHAIN","EXECUTORS","JVM","NETWORK","PEERS","PROCESS","KVSTORE_ROCKSDB","KVSTORE_ROCKSDB_STATS","RPC","SYNCHRONIZER", "TRANSACTION_POOL" ]
+
+metrics-enabled=true
+metrics-host="0.0.0.0"

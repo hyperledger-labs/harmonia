@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "corda-network.fullname" . }}
+  labels:
+    {{- include "corda-network.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "corda-network.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "corda-network.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-{{ .Values.corda.containers.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: p2paddress
+              containerPort: {{ .Values.corda.containers.p2paddress }}
+              protocol: TCP
+            - name: rpcaddress
+              containerPort: {{ .Values.corda.containers.rpcaddress }}
+              protocol: TCP
+            - name: rpcadminaddress
+              containerPort: {{ .Values.corda.containers.rpcadminaddress }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - mountPath: /etc/corda/node.conf
+            name: {{ .Values.corda.volumes.name }}
+            subPath: node.conf
+          - mountPath: /opt/corda/node.conf
+            name: {{ .Values.corda.volumes.name }}
+            subPath: node.conf
+        {{- if or (eq .Release.Name "corda-network-partya") (eq .Release.Name "corda-network-partyb") }}
+        - name: {{ .Chart.Name }}-{{ .Values.corda_api_sidecar.name }}
+          image: "{{ .Values.corda_api_sidecar.image.repository }}:{{ .Values.corda_api_sidecar.image.tag }}"
+          imagePullPolicy: {{ .Values.corda_api_sidecar.image.pullPolicy }}
+          args:
+            - args
+            - --server.port={{ .Values.corda_api_sidecar.serverport }}
+            - --config.rpc.host={{ .Values.corda_api_sidecar.host }}
+            - --config.rpc.port={{ .Values.corda_api_sidecar.rpcport }} 
+            - --config.rpc.username={{ .Values.corda_api_sidecar.username }}
+            - --config.rpc.password={{ .Values.corda_api_sidecar.password }}
+          ports:
+            - name: serverport
+              containerPort: {{ .Values.corda_api_sidecar.corda_api_port.api_port }}
+              protocol: TCP
+        {{- end }}
+      volumes:
+      - name: {{ .Values.corda.volumes.name }}
+        configMap:
+          name: {{ .Values.corda.volumes.name }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
