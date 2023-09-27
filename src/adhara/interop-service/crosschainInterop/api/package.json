@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "start-admin": "node admin-v2/index.js",
+    "start-gendoc-admin": "node admin-v2/swagger.js",
+    "start-app": "node api-v2/index.js",
+    "start-gendoc-app": "node api-v2/swagger.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "express-openapi": "^12.0.1",
+    "swagger-ui-express": "^4.5.0",
+    "swagger-autogen": "^2.23.1"
+  }
+}

@@ -1,0 +1,205 @@
+# Default values for corda-network.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: adhara-docker.jfrog.io/adharaprojects/corda-node
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "main-d12b3c4"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: "internal"
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: corda.partya.k8s.dev.adhara.zone
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+notary:
+  config: |
+    dataSourceProperties {
+        dataSource {
+          url="jdbc:h2:file:./persistence/persistence;DB_CLOSE_ON_EXIT=FALSE;WRITE_DELAY=0;LOCK_TIMEOUT=10000;ACCESS_MODE_DATA=rws"
+      }
+    },
+    detectPublicIp=false,
+    devMode=true,
+    myLegalName="O=Notary,L=London,C=GB",
+    notary {
+      validating=false
+    },
+    p2pAddress="localhost:10002",
+    rpcSettings {
+      address="localhost:10003"
+      adminAddress="localhost:10043"
+    },
+    sshd {
+      port=22022
+    }
+
+partya:
+  config: |
+    dataSourceProperties {
+      dataSource {
+        url="jdbc:h2:file:./persistence/persistence;DB_CLOSE_ON_EXIT=FALSE;WRITE_DELAY=0;LOCK_TIMEOUT=10000;ACCESS_MODE_DATA=rws"
+      }
+    },
+    detectPublicIp=false,
+    devMode=true,
+    myLegalName="O=PartyA,L=London,C=GB",
+    p2pAddress="localhost:10005",
+    rpcSettings {
+      address="localhost:10006"
+      adminAddress="localhost:10046"
+    },
+    security {
+        authService {
+            dataSource {
+                type=INMEMORY
+                users=[
+                    {
+                        password=test
+                        permissions=[
+                            ALL
+                        ]
+                        user=user1
+                    }
+                ]
+            }
+        }
+    },
+    sshd {
+        port=22022
+    }
+
+partyb:
+  config: |
+    dataSourceProperties {
+        dataSource {
+            url="jdbc:h2:file:./persistence/persistence;DB_CLOSE_ON_EXIT=FALSE;WRITE_DELAY=0;LOCK_TIMEOUT=10000;ACCESS_MODE_DATA=rws"
+        }
+    },
+    detectPublicIp=false,
+    devMode=true,
+    myLegalName="O=PartyB,L=New York,C=US",
+    p2pAddress="localhost:10008",
+    rpcSettings {
+        address="localhost:10009"
+        adminAddress="localhost:10049"
+    },
+    security {
+        authService {
+            dataSource {
+                type=INMEMORY
+                users=[
+                    {
+                        password=test
+                        permissions=[
+                            ALL
+                        ]
+                        user=user1
+                    }
+                ]
+            }
+        }
+    },
+    sshd {
+        port=22022
+    }
+
+corda:
+  containers:
+    name: notary
+    p2paddress: 10002
+    rpcaddress: 10003
+    rpcadminaddress: 10043
+  partya:
+    p2paddress: 10005
+    rpcaddress: 10006
+    rpcadminaddress: 10046
+  partyb:
+    p2paddress: 10008
+    rpcaddress: 10009
+    rpcadminaddress: 10049
+  volumes:
+    name: configmap-notary
+  configMap:
+    notary: configmap-notary
+    partya: configmap-partya
+    partyb: configmap-partyb
+corda_api_sidecar:
+  name: sidecar-partya
+  image:
+    repository: adhara-docker.jfrog.io/adharaprojects/corda-api
+    tag: main-1155e79
+    pullPolicy: IfNotPresent
+  serverport: 50005
+  host: corda-network-partya
+  username: user1
+  password: test
+  rpcport: 10006
+  corda_api_port:
+    api_port: 50005
+    partya_service_port: 50005
+    partyb_service_port: 50006
+corda_api_ingress:
+  partya:
+    host: "corda.partya.k8s.dev.adhara.zone"
+    path: /
+    pathType: ImplementationSpecific
+  partyb:
+    host: "corda.partyb.k8s.dev.adhara.zone"
+    path: /
+    pathType: ImplementationSpecific
+    
+        
