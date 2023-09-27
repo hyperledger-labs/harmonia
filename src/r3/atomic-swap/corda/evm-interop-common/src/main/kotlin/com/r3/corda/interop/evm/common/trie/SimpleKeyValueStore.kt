@@ -16,36 +16,17 @@
 
 package com.r3.corda.interop.evm.common.trie
 
+import net.corda.core.serialization.CordaSerializable
 import org.web3j.utils.Numeric
 
 /**
  * Implementation of KeyValueStore using a simple hash map.
- *
- * This store utilizes a hash map to store and retrieve key-value pairings.
- * Keys are wrapped in an ArrayKey data class to allow for proper comparison of byte arrays.
  */
-class SimpleKeyValueStore : WriteableKeyValueStore {
+@CordaSerializable
+class SimpleKeyValueStore(val store: LinkedHashMap<Int, ByteArray>) // : KeyValueStore
+{
 
-    /**
-     * Data class to allow for proper comparison of byte array keys.
-     */
-    data class ArrayKey(val data: ByteArray) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as ArrayKey
-            return data.contentEquals(other.data)
-        }
-
-        override fun hashCode(): Int {
-            return data.contentHashCode()
-        }
-
-        override fun toString(): String = Numeric.toHexString(data)
-    }
-
-    private val store: HashMap<ArrayKey, ByteArray> = HashMap()
+    constructor() : this(LinkedHashMap<Int, ByteArray>())
 
     /**
      * Retrieves the value associated with a given key.
@@ -53,8 +34,8 @@ class SimpleKeyValueStore : WriteableKeyValueStore {
      * @param key The key for which the value is to be retrieved.
      * @return The value associated with the key, or null if the key is not present in the store.
      */
-    override fun get(key: ByteArray): ByteArray? {
-        return store[ArrayKey(key)]
+    fun get(key: ByteArray): ByteArray? {
+        return store[key.contentHashCode()]
     }
 
     /**
@@ -63,8 +44,8 @@ class SimpleKeyValueStore : WriteableKeyValueStore {
      * @param key The key to be associated with the given value.
      * @param value The value to be stored.
      */
-    override fun put(key: ByteArray, value: ByteArray) {
-        store[ArrayKey(key)] = value
+    fun put(key: ByteArray, value: ByteArray) {
+        store[key.contentHashCode()] = value
     }
 
     /**
@@ -72,7 +53,7 @@ class SimpleKeyValueStore : WriteableKeyValueStore {
      *
      * @return True if the store is empty, false otherwise.
      */
-    override fun isEmpty() = store.isEmpty()
+    fun isEmpty() = store.isEmpty()
 
     /**
      * Provides a string representation of the key-value pairings in the store.
@@ -81,6 +62,6 @@ class SimpleKeyValueStore : WriteableKeyValueStore {
      * @return A string representation of the store's contents.
      */
     override fun toString(): String {
-        return store.entries.joinToString("\n") { (key, value) -> "(Key: ${key}, Value: ${Numeric.toHexString(value)}" }
+        return store.entries.joinToString("\n") { (key, value) -> "(Key Hash: $key, Value: ${Numeric.toHexString(value)}" }
     }
 }

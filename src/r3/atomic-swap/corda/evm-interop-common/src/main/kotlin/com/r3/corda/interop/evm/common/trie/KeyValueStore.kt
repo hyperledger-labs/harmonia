@@ -22,30 +22,21 @@ package com.r3.corda.interop.evm.common.trie
  * This store provides methods to retrieve and inspect
  * key-value pairings stored within it.
  */
-interface KeyValueStore {
-
-    /**
-     * Retrieves the value associated with a given key.
-     *
-     * @param key The key for which the value is to be retrieved.
-     * @return The value associated with the key, or null if the key is not present in the store.
-     */
-    fun get(key: ByteArray): ByteArray?
-
-    /**
-     * Checks whether the store contains any key-value pairings.
-     *
-     * @return True if the store is empty, false otherwise.
-     */
-    fun isEmpty(): Boolean
-}
-
-interface WriteableKeyValueStore : KeyValueStore {
-    /**
-     * Inserts or updates a key-value pairing in the store.
-     *
-     * @param key The key to be associated with the given value.
-     * @param value The value to be stored.
-     */
-    fun put(key: ByteArray, value: ByteArray)
-}
+//@CordaSerializable
+//interface KeyValueStore {
+//
+//    /**
+//     * Retrieves the value associated with a given key.
+//     *
+//     * @param key The key for which the value is to be retrieved.
+//     * @return The value associated with the key, or null if the key is not present in the store.
+//     */
+//    fun get(key: ByteArray): ByteArray?
+//
+//    /**
+//     * Checks whether the store contains any key-value pairings.
+//     *
+//     * @return True if the store is empty, false otherwise.
+//     */
+//    fun isEmpty(): Boolean
+//}

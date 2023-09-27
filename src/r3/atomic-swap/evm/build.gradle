@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+    id 'org.web3j' version '4.9.4'
+}
+
+group 'org.web3j'
+version '0.2.0'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+web3j {
+    generatedPackageName = "org.web3j.generated.contracts"
+    generatedFilesBaseDir = "$projectDir/src"    
+    excludedContracts = []
+}
+
+ext {
+    web3jVersion = '4.9.4'
+}
+
+solidity {
+    executable = "/usr/local/bin/solc"
+    version = "0.8.17" // NOTE: without version gradle fails with "Cannot invoke method split() on null object"
+    pathRemappings = [ openzeppelin : "lib/openzeppelin-contracts/contracts" ]
+    evmVersion = "ISTANBUL"
+}
+
+sourceSets {
+    main {
+        solidity {
+            srcDir {
+                "src"
+            }
+        }
+    }
+}
