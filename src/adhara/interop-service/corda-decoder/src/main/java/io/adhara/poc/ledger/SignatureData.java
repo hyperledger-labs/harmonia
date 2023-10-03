@@ -3,12 +3,12 @@ package io.adhara.poc.ledger;
 import io.adhara.poc.utils.Utils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import net.i2p.crypto.eddsa.EdDSAPublicKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.*;
@@ -16,13 +16,12 @@ import java.util.Arrays;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 public class SignatureData {
-
-	private String by; 		// Hex-encoded public key (44 bytes) 88 characters -> compress to 32 bytes
-	private String bytes; // Hex-encoded signature (64 bytes) 128 characters -> split into R and S of 32 bytes each
-	private String data;  // Hex-encoded data (999 bytes) 1998 characters -> add as element in encoded info
-	private String meta;  // Hex-encoded meta data
+	private static final Logger logger = LoggerFactory.getLogger(SignatureData.class);
+	private final String by; 		// Hex-encoded public key (44 bytes) 88 characters -> compress to 32 bytes
+	private final String bytes; // Hex-encoded signature (64 bytes) 128 characters -> split into R and S of 32 bytes each
+	private final String data;  // Hex-encoded data (999 bytes) 1998 characters -> add as element in encoded info
+	private final String meta;  // Hex-encoded meta data
 	private byte[] compressedKey;
 
 	private static final byte UNCOMPRESSED_POINT_INDICATOR = 0x04;
@@ -34,14 +33,12 @@ public class SignatureData {
 	public static ECPublicKey fromUncompressedPoint(final byte[] uncompressedPoint, final ECParameterSpec params)	throws Exception {
 		int offset = 0;
 		if (uncompressedPoint[offset++] != UNCOMPRESSED_POINT_INDICATOR) {
-			throw new IllegalArgumentException(
-				"Invalid uncompressedPoint encoding, no uncompressed point indicator");
+			throw new IllegalArgumentException("Invalid uncompressedPoint encoding, no uncompressed point indicator");
 		}
 		int keySizeBytes = (params.getOrder().bitLength() + Byte.SIZE - 1) / Byte.SIZE;
 
 		if (uncompressedPoint.length != 1 + 2 * keySizeBytes) {
-			throw new IllegalArgumentException(
-				"Invalid uncompressedPoint encoding, not the correct size");
+			throw new IllegalArgumentException("Invalid uncompressedPoint encoding, not the correct size");
 		}
 
 		final BigInteger x = new BigInteger(1, Arrays.copyOfRange(uncompressedPoint, offset, offset + keySizeBytes));
@@ -65,7 +62,7 @@ public class SignatureData {
 		} else if (x.length == keySizeBytes + 1 && x[0] == 0) {
 			System.arraycopy(x, 1, uncompressedPoint, offset, keySizeBytes);
 		} else {
-			throw new IllegalStateException("x value is too large");
+			throw new IllegalStateException("The x value is too large");
 		}
 		offset += keySizeBytes;
 
@@ -75,13 +72,13 @@ public class SignatureData {
 		} else if (y.length == keySizeBytes + 1 && y[0] == 0) {
 			System.arraycopy(y, 1, uncompressedPoint, offset, keySizeBytes);
 		} else {
-			throw new IllegalStateException("y value is too large");
+			throw new IllegalStateException("The y value is too large");
 		}
 
 		return uncompressedPoint;
 	}
 
-	public byte[] getPublicKey() throws InvalidKeySpecException, NoSuchAlgorithmException {
+	public byte[] getPublicKey() throws InvalidKeySpecException {
 		int scheme = getSignatureScheme();
 		byte[] key = getCompressedPublicKey();
 		switch (scheme) {
@@ -206,7 +203,7 @@ public class SignatureData {
 					byte[] key = getCompressedPublicKey();
 					v[0] = key[0];
 				} catch (Exception e) {
-					e.printStackTrace();
+					logger.error(e.getMessage());
 				}
 			} break;
 			case ED25519SignatureSchemeId: {

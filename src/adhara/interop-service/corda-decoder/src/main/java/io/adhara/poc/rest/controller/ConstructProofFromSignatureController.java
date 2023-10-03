@@ -28,8 +28,6 @@ public class ConstructProofFromSignatureController {
 
 	@PostMapping(path = "/", consumes = "application/json", produces = "application/json")
 	public ResponseEntity<Object> constructProofFromSignature(
-		@RequestHeader(name = "X-COM-PERSIST", required = false) String headerPersist,
-		@RequestHeader(name = "X-COM-LOCATION", required = false, defaultValue = "ASIA") String headerLocation,
 		@RequestBody LedgerSignature ledgerSignature)
 		throws Exception {
 
@@ -132,7 +130,7 @@ public class ConstructProofFromSignatureController {
 			);
 
 			SignatureProof.Signatures signatures = SignatureProof.getSignatures(new SecureHash(Numeric.hexStringToByteArray(transactionHash), SecureHash.SHA_256), signedData);
-			//printSignatures(signatures);
+			logSignatures(signatures);
 			List<Type> sigs = new ArrayList<>();
 			for (SignatureProof.Signature sig : signatures.getSignatures().getValue()) {
 				sigs.add(sig.asDynamicStruct());
@@ -172,7 +170,7 @@ public class ConstructProofFromSignatureController {
 		return result;
 	}
 
-	public void printSignatures(SignatureProof.Signatures signatures) {
+	private void logSignatures(SignatureProof.Signatures signatures) {
 		int i = 0;
 		for (SignatureProof.Signature sig : signatures.getSignatures().getValue()) {
 			logger.debug("  [" +i+ "] by  : " + String.format("%064x", sig.getBy().getValue()).toUpperCase());

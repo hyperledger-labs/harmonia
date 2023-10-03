@@ -31,8 +31,6 @@ public class ConstructProofFromTransactionController {
 
 	@PostMapping(path = "/", consumes = "application/json", produces = "application/json")
 	public ResponseEntity<Object> constructProofFromTransaction(
-		@RequestHeader(name = "X-COM-PERSIST", required = false) String headerPersist,
-		@RequestHeader(name = "X-COM-LOCATION", required = false, defaultValue = "ASIA") String headerLocation,
 		@RequestBody LedgerTransaction ledgerTransaction)
 		throws Exception {
 
@@ -41,7 +39,7 @@ public class ConstructProofFromTransactionController {
 			ledgerTransaction.getContractAddress(),
 			ledgerTransaction.getFunctionName(),
 			ledgerTransaction.getEncodedInfo(),
-			Boolean.valueOf(ledgerTransaction.getWithHiddenAuthParams()),
+			Boolean.parseBoolean(ledgerTransaction.getWithHiddenAuthParams()),
 			ledgerTransaction.getAuthBlockchainId(),
 			ledgerTransaction.getAuthContractAddress());
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
@@ -55,10 +53,10 @@ public class ConstructProofFromTransactionController {
 	private static int EVENT_DATA_AMOUNT = 3;
 	private static int EVENT_DATA_CURRENCY = 4;
 
-	private static int PARTY_ISSUER_INDEX = 0;   // O=PartyA, L=London, C=GB
-	private static int PARTY_OWNER_INDEX = 1;    // O=PartyB, L=New York, C=US
+	private static int PARTY_ISSUER_INDEX = 0; // O=PartyA, L=London, C=GB
+	private static int PARTY_OWNER_INDEX = 1;  // O=PartyB, L=New York, C=US
 
-	private static int PARTY_SENDER_INDEX = 1;   // O=PartyA, L=London, C=GB
+	private static int PARTY_SENDER_INDEX = 1; // O=PartyA, L=London, C=GB
 	private static int PARTY_RECEIVER_INDEX = 0; // O=PartyB, L=New York, C=US
 
 	private Map<String, Object> constructFunctionCallData(String blockchainId, String controlContractAddress, String functionName, String signedTransaction, boolean withHiddenAuthParams, String authBlockchainId, String authContractAddress) {
@@ -208,7 +206,7 @@ public class ConstructProofFromTransactionController {
 			result.put("foreignNotional", proof.getAmount());
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage());
 		}
 		return result;
 	}

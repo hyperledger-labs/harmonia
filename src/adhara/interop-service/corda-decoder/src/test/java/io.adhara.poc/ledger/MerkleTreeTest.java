@@ -9,7 +9,7 @@ import java.util.List;
 
 public class MerkleTreeTest {
 
-	List<SecureHash> txLeaves = //Collections.singletonList(root.rehash());
+	List<SecureHash> txLeaves =
 		Arrays.asList(
 			new SecureHash(Numeric.hexStringToByteArray("0xA1CC0888DB4A7929C3C8089E5EB93E0207EE500C1DA49DF621DFD4671EFE67F0"), SecureHash.SHA_256),
 			new SecureHash(Numeric.hexStringToByteArray("0x9BE638965BFD84229960AF602AA414C548A08AEECCFDB8F3BDFF70439976D36E"), SecureHash.SHA_256),
@@ -61,18 +61,17 @@ public class MerkleTreeTest {
 	public void multiMerkleProofWithOneLeaf() throws Exception {
 		MerkleTree txTree = MerkleTree.getMerkleTree(txLeaves2);
 		assert txTree != null;
-		//System.out.println("Root: " + txTree.getHash().toString());
 
 		MerkleProof result = MerkleTree.generateMultiProof(txLeaves2,	Arrays.asList(
 			new SecureHash(Numeric.hexStringToByteArray("0x60601A16F49D0C6E8BD14415F466F8BD4B0981F58A15BDB06A1FA1E3DC49553F"), SecureHash.SHA_256)
 		));
-		boolean verifiedResult = MerkleTree.verifyMultiProof(root2, result.proof, result.flags, result.leaves);
+		boolean verifiedResult = MerkleTree.verifyMultiProof(root2, result.getProof(), result.getFlags(), result.getLeaves());
 		assert verifiedResult;
 		PartialMerkleTree parTree = PartialMerkleTree.build(txTree, Arrays.asList(
 			new SecureHash(Numeric.hexStringToByteArray("0x60601A16F49D0C6E8BD14415F466F8BD4B0981F58A15BDB06A1FA1E3DC49553F"), SecureHash.SHA_256)
 		));
 		MerkleProof proof = parTree.generateMultiProof();
-		boolean verifiedProof = MerkleTree.verifyMultiProof(root2, proof.proof, proof.flags, proof.leaves);
+		boolean verifiedProof = MerkleTree.verifyMultiProof(root2, proof.getProof(), proof.getFlags(), proof.getLeaves());
 		assert verifiedProof;
 
 		assert result.equals(proof);
@@ -82,20 +81,19 @@ public class MerkleTreeTest {
 	public void multiMerkleProofWithTwoLeaves() throws Exception {
 		MerkleTree txTree = MerkleTree.getMerkleTree(txLeaves2);
 		assert txTree != null;
-		//System.out.println("Root: " + txTree.getHash().toString());
 
 		MerkleProof result = MerkleTree.generateMultiProof(txLeaves2,	Arrays.asList(
 			new SecureHash(Numeric.hexStringToByteArray("0xD610601AB516421FF10B2EA9C2E5CBAFE46224BCCCF1A70BA8E05415E26745B3"), SecureHash.SHA_256),
 			new SecureHash(Numeric.hexStringToByteArray("0x3BCE67FBCD315211CC82B6A93B21AFFD925FA418C9989437A768A4B581DE04EB"), SecureHash.SHA_256)
 		));
-		boolean verifiedResult = MerkleTree.verifyMultiProof(root2, result.proof, result.flags, result.leaves);
+		boolean verifiedResult = MerkleTree.verifyMultiProof(root2, result.getProof(), result.getFlags(), result.getLeaves());
 		assert verifiedResult;
 		PartialMerkleTree parTree = PartialMerkleTree.build(txTree, Arrays.asList(
 			new SecureHash(Numeric.hexStringToByteArray("0xD610601AB516421FF10B2EA9C2E5CBAFE46224BCCCF1A70BA8E05415E26745B3"), SecureHash.SHA_256),
 			new SecureHash(Numeric.hexStringToByteArray("0x3BCE67FBCD315211CC82B6A93B21AFFD925FA418C9989437A768A4B581DE04EB"), SecureHash.SHA_256)
 		));
 		MerkleProof proof = parTree.generateMultiProof();
-		boolean verifiedProof = MerkleTree.verifyMultiProof(root2, proof.proof, proof.flags, proof.leaves);
+		boolean verifiedProof = MerkleTree.verifyMultiProof(root2, proof.getProof(), proof.getFlags(), proof.getLeaves());
 		assert verifiedProof;
 
 		assert result.equals(proof);
@@ -106,14 +104,13 @@ public class MerkleTreeTest {
 	public void multiMerkleProofWithJoinedLeaves() throws Exception {
 		MerkleTree txTree = MerkleTree.getMerkleTree(txLeaves);
 		assert txTree != null;
-		//System.out.println("Root: " + txTree.getHash().toString());
 
 		MerkleProof result = MerkleTree.generateMultiProof(txLeaves,	Arrays.asList(
 			new SecureHash(Numeric.hexStringToByteArray("0x0BC1C1F77397E822E622C079A5DA52C5269C62919A35DB9E5F14F47E13F21FF3"), SecureHash.SHA_256),
 			new SecureHash(Numeric.hexStringToByteArray("0xD3BA49D2572B288C03EC26B2DE83FEFA89EDEB2964C3D3D6F50272212C144F4B"), SecureHash.SHA_256),
 			new SecureHash(Numeric.hexStringToByteArray("0x9C1C3793A00629405E7660BEA3D2D62F65162A6A16E2A88B91E89E6F9D8391AD"), SecureHash.SHA_256)
 		));
-		boolean verifiedResult = MerkleTree.verifyMultiProof(root, result.proof, result.flags, result.leaves);
+		boolean verifiedResult = MerkleTree.verifyMultiProof(root, result.getProof(), result.getFlags(), result.getLeaves());
 		assert verifiedResult;
 		PartialMerkleTree parTree = PartialMerkleTree.build(txTree, Arrays.asList(
 			new SecureHash(Numeric.hexStringToByteArray("0x0BC1C1F77397E822E622C079A5DA52C5269C62919A35DB9E5F14F47E13F21FF3"), SecureHash.SHA_256),
@@ -121,7 +118,7 @@ public class MerkleTreeTest {
 			new SecureHash(Numeric.hexStringToByteArray("0x9C1C3793A00629405E7660BEA3D2D62F65162A6A16E2A88B91E89E6F9D8391AD"), SecureHash.SHA_256)
 		));
 		MerkleProof proof = parTree.generateMultiProof();
-		boolean verifiedProof = MerkleTree.verifyMultiProof(root, proof.proof, proof.flags, proof.leaves);
+		boolean verifiedProof = MerkleTree.verifyMultiProof(root, proof.getProof(), proof.getFlags(), proof.getLeaves());
 		assert verifiedProof;
 
 		assert result.equals(proof);
@@ -132,14 +129,13 @@ public class MerkleTreeTest {
 
 		MerkleTree txTree = MerkleTree.getMerkleTree(txLeaves);
 		assert txTree != null;
-		//System.out.println("Root: " + txTree.getHash().toString());
 
 		MerkleProof result = MerkleTree.generateMultiProof(txLeaves,	Arrays.asList(
 			new SecureHash(Numeric.hexStringToByteArray("0x0BC1C1F77397E822E622C079A5DA52C5269C62919A35DB9E5F14F47E13F21FF3"), SecureHash.SHA_256),
 			new SecureHash(Numeric.hexStringToByteArray("0x823576854AE3575BAD3F36CF6BE562C27C7E6E83F7F37E0CA3063C6C2F73B52E"), SecureHash.SHA_256),
 			new SecureHash(Numeric.hexStringToByteArray("0xB2FA4970666B850C1234ED618CC5E8A042C5C0C049048DD0797914AFEAEA924F"), SecureHash.SHA_256)
 		));
-		boolean verifiedResult = MerkleTree.verifyMultiProof(root, result.proof, result.flags, result.leaves);
+		boolean verifiedResult = MerkleTree.verifyMultiProof(root, result.getProof(), result.getFlags(), result.getLeaves());
 		assert verifiedResult;
 
 		PartialMerkleTree parTree = PartialMerkleTree.build(txTree, Arrays.asList(
@@ -148,7 +144,7 @@ public class MerkleTreeTest {
 			new SecureHash(Numeric.hexStringToByteArray("0xB2FA4970666B850C1234ED618CC5E8A042C5C0C049048DD0797914AFEAEA924F"), SecureHash.SHA_256)
 		));
 		MerkleProof proof = parTree.generateMultiProof();
-		boolean verifiedProof = MerkleTree.verifyMultiProof(root, proof.proof, proof.flags, proof.leaves);
+		boolean verifiedProof = MerkleTree.verifyMultiProof(root, proof.getProof(), proof.getFlags(), proof.getLeaves());
 		assert verifiedProof;
 
 		assert result.equals(proof);

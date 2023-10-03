@@ -9,18 +9,15 @@ import java.util.stream.Stream;
 
 @Data
 public class PartialMerkleTree {
-
-  private PartialTree root;
-
   private static final Logger logger = LoggerFactory.getLogger(PartialMerkleTree.class);
+  private final PartialTree root;
 
   public PartialMerkleTree(PartialTree root) {
     this.root = root;
   }
 
   public static PartialMerkleTree build(MerkleTree merkleRoot, List<SecureHash> includeHashes) throws Exception {
-    //require(includeHashes.none(SecureHash::isZero)) { "Zero hashes shouldn't be included in partial tree." }
-    checkFull(merkleRoot, 0); // Throws MerkleTreeException if it is not a full binary tree.
+    checkFull(merkleRoot, 0); // Throws if it is not a full binary tree.
     List<SecureHash> usedHashes = new ArrayList<>();
     PartialPair tree = buildPartialTree(merkleRoot, includeHashes, usedHashes);
     // Too many included hashes or different ones.
@@ -37,7 +34,7 @@ public class PartialMerkleTree {
     } else if (tree.isNode()) {
       int l1 = checkFull(tree.getLeft(), level + 1);
       int l2 = checkFull(tree.getRight(), level + 1);
-      if (l1 != l2) throw new Exception("Got not full binary tree.");
+      if (l1 != l2) throw new Exception("Expected a full binary tree.");
       return l1;
     }
     return -1;
@@ -162,7 +159,6 @@ public class PartialMerkleTree {
     while (!stack.empty())
     {
       node = stack.peek();
-      // System.out.print(node.getHash() + " ");
       if (node.isIncluded()) {
         leaves.add(node.getHash());
       } else if (node.isLeaf()) {
@@ -175,10 +171,10 @@ public class PartialMerkleTree {
           // Don't use proof at this index, both are included leaves
         } else if (isLeftLeaf) {
           // Use this value
-          flag |= (1 << 0);
+          flag |= 1;
         } else if (isRightLeaf) {
           // Use this value
-          flag |= (1 << 0);
+          flag |= 1;
           // Swap this value
           flag |= (1 << 1);
         } else {
@@ -188,12 +184,12 @@ public class PartialMerkleTree {
             // Don't use proof at this index. Should never happen
           } else if (isLeftWitness) {
             // Use this value
-            flag |= (1 << 0);
+            flag |= 1;
             // Swap this value
             flag |= (1 << 1);
           } else if (isRightWitness) {
             // Use this value
-            flag |= (1 << 0);
+            flag |= 1;
           } else {
             // Should never happen
           }

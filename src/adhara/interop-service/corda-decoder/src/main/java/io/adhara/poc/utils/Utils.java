@@ -185,7 +185,7 @@ public class Utils {
     return (byte) remainder;
   }
 
-  // Calculate checksum with a {@code rawData}.
+  // Calculate checksum.
   protected static byte[] calculateCheckSum(final byte[] rawData) {
     final SecureHash doubleHashed = SecureHash.getDoubleHashFor(rawData, SecureHash.SHA_256);
     return Arrays.copyOfRange(doubleHashed.getBytes(), 0, CHECKSUM_LEN);

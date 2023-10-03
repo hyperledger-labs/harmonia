@@ -11,14 +11,9 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 public class ComponentGroup {
-	private static final Logger logger = LoggerFactory.getLogger(ComponentGroup.class);
-
-	private byte[] opaqueBytes;
-	private int groupIndex;
-	private int internalIndex;
-	private SecureHash hash;
-
-
+	private final byte[] opaqueBytes;
+	private final int groupIndex;
+	private final int internalIndex;
+	private final SecureHash hash;
 }

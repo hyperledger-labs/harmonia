@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.i2p.crypto.eddsa.EdDSAPublicKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
@@ -17,6 +19,7 @@ import java.security.spec.X509EncodedKeySpec;
 import static io.adhara.poc.ledger.SignatureData.toUncompressedPoint;
 
 public class KeyData {
+	private static final Logger logger = LoggerFactory.getLogger(KeyData.class);
 
 	public static String getCompressedPublicKey(int scheme, String uncompressedKey) {
 		String compressedKey = "";
@@ -28,14 +31,14 @@ public class KeyData {
 					KeyFactory kf = KeyFactory.getInstance("EC");
 					PublicKey key = kf.generatePublic(keySpec);
 					ECPublicKey k = (ECPublicKey) key;
-					System.out.println("Encoded:   " + Utils.toHexString(k.getEncoded()));
-					System.out.println("Decoded:   " + Utils.toHexString(toUncompressedPoint(k)));
+					logger.debug("Encoded:   " + Utils.toHexString(k.getEncoded()));
+					logger.debug("Decoded:   " + Utils.toHexString(toUncompressedPoint(k)));
 					byte[] xArray = k.getW().getAffineX().toByteArray();
 					byte[] nKey = new byte[33];
 					int parity = k.getW().getAffineY().and(BigInteger.valueOf(1)).or(BigInteger.valueOf(2)).intValue();
 					nKey[0] = (byte) parity;
 					System.arraycopy(xArray, 0, nKey, 1, 32);
-					System.out.println("Compressed:" + Utils.toHexString(nKey));
+					logger.debug("Compressed:" + Utils.toHexString(nKey));
 					compressedKey = Utils.toHexString(nKey);
 				} break;
 				case SignatureData.ED25519SignatureSchemeId: {
@@ -44,7 +47,7 @@ public class KeyData {
 				} break;
 			}
 		} catch (Exception e) {
-
+			logger.error(e.getMessage());
 		}
 		return compressedKey;
 	}

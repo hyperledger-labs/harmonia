@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 public class SignedMeta {
 	private Integer platformVersion;
 	private Integer schemaNumber;

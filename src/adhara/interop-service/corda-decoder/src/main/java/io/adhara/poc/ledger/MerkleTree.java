@@ -12,14 +12,17 @@ import java.util.stream.Collectors;
 @Data
 public class MerkleTree {
 
-  private SecureHash hash;
-  private MerkleTree left;
-  private MerkleTree right;
+  private final SecureHash hash;
+  private final MerkleTree left;
+  private final MerkleTree right;
   
   private static final String digestAlgorithm = SecureHash.SHA_256;
   private static final Logger logger = LoggerFactory.getLogger(MerkleTree.class);
 
   public MerkleTree() {
+    this.hash = null;
+    this.left = null;
+    this.right = null;
   }
 
   public MerkleTree(SecureHash hash, MerkleTree left, MerkleTree right) {
@@ -30,6 +33,8 @@ public class MerkleTree {
 
   public MerkleTree(SecureHash hash) {
     this.hash = hash;
+    this.left = null;
+    this.right = null;
   }
 
   public static MerkleTree getMerkleTree(List<SecureHash> allLeavesHashes) {
@@ -37,8 +42,7 @@ public class MerkleTree {
       MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
       return (new MerkleTree()).getMerkleTree(allLeavesHashes, digest);
     } catch (Exception e) {
-      logger.error(e.toString());
-      e.printStackTrace();
+      logger.error(e.getMessage());
     }
     return null;
   }
@@ -54,10 +58,7 @@ public class MerkleTree {
     if (algorithms.size() != 1) {
       throw new Exception("Cannot build Merkle tree with multiple hash algorithms.");
     }
-    //printLeaves(allLeavesHashes);
     List<MerkleTree> leaves = padWithZeros(allLeavesHashes, digestService.getAlgorithm().equals(SecureHash.SHA_256)).stream().map(MerkleTree::new).collect(Collectors.toList());
-    //logger.info("---");
-    //printPadded(leaves);
     return buildMerkleTree(leaves, digestService);
   }
 
@@ -66,7 +67,7 @@ public class MerkleTree {
       PartialMerkleTree partial = PartialMerkleTree.build(this, includedHashes);
       return partial;
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.error(e.getMessage());
     }
     return null;
   }
@@ -112,7 +113,7 @@ public class MerkleTree {
     SecureHash rollingHash = value;
     int length = proof.size()/2;
     for (int i=0; i<length; ++i) {
-      if (!proof.get(i*2+0).isZero())
+      if (!proof.get(i*2).isZero())
         rollingHash = hashLeafPairs(rollingHash, proof.get(i*2+1));
       else
         rollingHash = hashLeafPairs(proof.get(i*2+1), rollingHash);
@@ -131,15 +132,15 @@ public class MerkleTree {
     treeLeaves.toArray(leaves);
     while (leaves.length > 1) {
       if (index % 2 == 1) {
-        result[pos*2+0] = SecureHash.getZero(SecureHash.SHA_256);
+        result[pos*2] = SecureHash.getZero(SecureHash.SHA_256);
         result[pos*2+1] = leaves[index - 1];
       }
       else if (index + 1 == leaves.length) {
-        result[pos*2+0] = SecureHash.getOnes(SecureHash.SHA_256);
+        result[pos*2] = SecureHash.getOnes(SecureHash.SHA_256);
         result[pos*2+1] = SecureHash.getZero(SecureHash.SHA_256);
       }
       else {
-        result[pos*2+0] = SecureHash.getOnes(SecureHash.SHA_256);
+        result[pos*2] = SecureHash.getOnes(SecureHash.SHA_256);
         result[pos*2+1] = leaves[index + 1];
       }
       ++pos;
@@ -200,7 +201,6 @@ public class MerkleTree {
       int idx = index;
       List<SecureHash> proof = hashes.get(i);
       int proofIdx = 0;
-      int hashIdx = 0;
       while (nl>1) {
         int globalIndex = translateIndex(d, idx); // Index we are calculating
         if (idx % 2 == 1) {
@@ -239,7 +239,7 @@ public class MerkleTree {
         if (idx % 2 == 1) { // a is on the left
           if (usedHashes.containsKey(translateIndex(h, j+1))) {
             // toggle flag to use the value
-            flags[i] |= (1 << 0);
+            flags[i] |= 1;
             proof.add(usedHashes.get(translateIndex(h, j+1)));
           }
         } else { // a is on the right
@@ -247,7 +247,7 @@ public class MerkleTree {
           flags[i] |= (1 << 1);
           if (usedHashes.containsKey(translateIndex(h, j-1))) {
             // toggle flag to use the value
-            flags[i] |= (1 << 0);
+            flags[i] |= 1;
             proof.add(usedHashes.get(translateIndex(h, j-1)));
           }
         }
@@ -259,28 +259,25 @@ public class MerkleTree {
         if (idx % 2 == 1) {
           // b must be on the right so don't toggle flag
           if (usedHashes.containsKey(idx+1)) {
-            flags[i] |= (1 << 0);
+            flags[i] |= 1;
             proof.add(usedHashes.get(idx+1));
           }
         } else {
           // b must be on the left so toggle flag to swap
           flags[i] |= (1 << 1);
           if (usedHashes.containsKey(idx-1)) {
-            flags[i] |= (1 << 0);
+            flags[i] |= 1;
             proof.add(usedHashes.get(idx-1));
           }
         }
       }
       // Toggle the flag if what we need here is not a leaf,
-      if ((flags[i] & (1 << 0)) != 1) {  // Don't use
-        //System.out.println("Don't use proof at index " +idx);
+      if ((flags[i] & 1) != 1) {  // Don't use
         if (leafPos < n) {
           leafPos++;
         } else {
           hashPos++;
         }
-      } else {
-        //System.out.println("Use proof at index " +idx);
       }
       idxes[i] = (idx-1)/2;
       if (idx < 1)
@@ -310,7 +307,7 @@ public class MerkleTree {
     //                                                          Depending on the flag, either another value from the main queue (merging branches) or an element from the proof array.
     for (int i = 0; i < totalHashes; i++) {
       SecureHash a = leafPos < leavesLen ? leaves[leafPos++] : hashes[hashPos++];
-      SecureHash b = (flags[i] & (1 << 0)) != 1 ? (leafPos < leavesLen ? leaves[leafPos++] : hashes[hashPos++]) : proof[proofPos++]; // First bit of flag is to indicate whether it should be used.
+      SecureHash b = (flags[i] & 1) != 1 ? (leafPos < leavesLen ? leaves[leafPos++] : hashes[hashPos++]) : proof[proofPos++]; // First bit of flag is to indicate whether it should be used.
       hashes[i] = (flags[i] & (1 << 1)) != 2 ? hashLeafPairs(a, b) : hashLeafPairs(b, a); // Second bit of flag is to indicate order in which to hash to cater for unsorted trees.
     }
     if (totalHashes > 0) {

@@ -21,8 +21,6 @@ public class DecodeAndVerifyTransactionController {
 
 	@PostMapping(path = "/", consumes = "application/json", produces = "application/json")
 	public ResponseEntity<Object> decodeAndVerifyEvent(
-		@RequestHeader(name = "X-COM-PERSIST", required = false) String headerPersist,
-		@RequestHeader(name = "X-COM-LOCATION", required = false, defaultValue = "ASIA") String headerLocation,
 		@RequestBody LedgerTransaction ledgerTransaction)
 		throws Exception {
 
@@ -33,7 +31,7 @@ public class DecodeAndVerifyTransactionController {
 			SignatureProof proof = new SignatureProof(ledgerTransaction.getEncodedInfo(), components);
 			result.put("result", proof.verify());
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage());
 		}
 
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();

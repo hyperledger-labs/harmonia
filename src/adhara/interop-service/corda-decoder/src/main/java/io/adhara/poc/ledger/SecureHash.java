@@ -16,16 +16,15 @@ import java.util.stream.IntStream;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 public class SecureHash {
 
   public static final String SHA_256 = "SHA-256";
   public static final String SHA_512 = "SHA-512";
-  private static final SecureHash NULL = new SecureHash();
+  private static final SecureHash NULL = new SecureHash(null, null);
   private static final Logger logger = LoggerFactory.getLogger(SecureHash.class);
 
-  private byte[] bytes;
-  private String algorithm;
+  private final byte[] bytes;
+  private final String algorithm;
 
   @NotNull
   public static SecureHash getZero(String algorithm) {
@@ -37,7 +36,6 @@ public class SecureHash {
       return new SecureHash(bytes, algorithm);
     } catch (NoSuchAlgorithmException e) {
       logger.error(e.getMessage());
-      e.printStackTrace();
     }
     return NULL;
   }
@@ -52,7 +50,6 @@ public class SecureHash {
       return new SecureHash(bytes, algorithm);
     } catch (NoSuchAlgorithmException e) {
       logger.error(e.getMessage());
-      e.printStackTrace();
     }
     return NULL;
   }
@@ -95,7 +92,6 @@ public class SecureHash {
       return new SecureHash(hashed, algorithm);
     } catch (NoSuchAlgorithmException e) {
       logger.error(e.getMessage());
-      e.printStackTrace();
     }
     return NULL;
   }
@@ -109,7 +105,6 @@ public class SecureHash {
       return new SecureHash(hashed, algorithm);
     } catch (NoSuchAlgorithmException e) {
       logger.error(e.getMessage());
-      e.printStackTrace();
     }
     return NULL;
   }

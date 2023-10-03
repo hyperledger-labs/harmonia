@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class PartialTree {
-
   private SecureHash hash;
   private PartialTree left;
   private PartialTree right;

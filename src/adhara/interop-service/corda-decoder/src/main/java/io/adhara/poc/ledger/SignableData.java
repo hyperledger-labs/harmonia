@@ -6,8 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 public class SignableData {
-	private SecureHash txId; 				  // Transaction's id or root of multi-transaction Merkle tree in case of multi-transaction signing
-	private SignedMeta signatureMeta; // Meta data required
+	private final SecureHash txId; 				  // Transaction's id or root of multi-transaction Merkle tree in case of multi-transaction signing
+	private final SignedMeta signatureMeta; // Meta data required
 }

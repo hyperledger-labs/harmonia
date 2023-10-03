@@ -21,8 +21,6 @@ public class DecodeAndVerifySignatureController {
 
 	@PostMapping(path = "/", consumes = "application/json", produces = "application/json")
 	public ResponseEntity<Object> decodeAndVerifySignature(
-		@RequestHeader(name = "X-COM-PERSIST", required = false) String headerPersist,
-		@RequestHeader(name = "X-COM-LOCATION", required = false, defaultValue = "ASIA") String headerLocation,
 		@RequestBody LedgerSignature ledgerSignature)
 		throws Exception {
 
@@ -38,7 +36,7 @@ public class DecodeAndVerifySignatureController {
 			byte[] tradeId = Utils.fromHexString(ledgerSignature.getEncodedId());
 			result.put("result", SignatureProof.verify(new SecureHash(tradeId, SecureHash.SHA_256), signedData));
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.debug(e.getMessage());
 		}
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
 

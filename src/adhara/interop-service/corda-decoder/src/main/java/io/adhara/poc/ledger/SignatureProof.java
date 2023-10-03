@@ -44,6 +44,10 @@ public class SignatureProof {
   private static final String DESCRIPTOR_ADHARA_DCR = "net.corda:DldW9yS4tBOze6qv6U4QTA==";
   private static final String DESCRIPTOR_ADHARA_XVP = "net.corda:9GdANdKRptKFtq6zQDfG+A==";
 
+  private static final String DESCRIPTOR_HQLAX_COMMAND = "net.corda:xW8RtS06zbreNWxv92ly4w=="; // "net.corda:MelVjkkQJGuWcRt/sNVptA==";
+	private static final String DESCRIPTOR_HQLAX_AMOUNT = "net.corda:EX8RRuprLshI1m51O4333A==";
+	private static final int LID_HQLAX_TRADEID_INDEX = 2;
+
 	private static final int NONCE_SIZE = 8;
 	public static final int COMPONENT_GROUP_OUTPUTS = 1;
 
@@ -64,13 +68,7 @@ public class SignatureProof {
 	public SignatureProof()	{
 	}
 
-	private void printLeaves(List<SecureHash> leaves) {
-		for (SecureHash leaf : leaves) {
-			logger.info(leaf.toString());
-		}
-	}
-
-	public SignatureProof(String encoded, List<Extracted<String, Object>> components) throws Exception {
+  public SignatureProof(String encoded, List<Extracted<String, Object>> components) throws Exception {
 		raw = encoded;
 		// These are Corda specific fingerprints, hard-coded for signed wire transactions
 		byte[] privacySalt = parseHexByFingerprint(components, DESCRIPTOR_SALT);
@@ -102,7 +100,8 @@ public class SignatureProof {
 				componentLeaves.add(ones);
 			}
 		}
-		//printLeaves(componentLeaves);
+		logLeaves(componentLeaves);
+
 		MerkleTree componentTree = MerkleTree.getMerkleTree(componentLeaves);
  	  assert componentTree != null;
 		root = componentTree.getHash();
@@ -110,9 +109,8 @@ public class SignatureProof {
 
 		List<SecureHash> paddedLeaves = MerkleTree.getPaddedLeaves(componentLeaves);
 		proof = MerkleTree.generateMultiProof(paddedLeaves, Collections.singletonList(hash));
-		//proof.print();
 		if (!MerkleTree.verifyMultiProof(root, proof.getProof(), proof.getFlags(), proof.getLeaves())) {
-		  logger.error("Proof did not verify correctly");
+			throw new IllegalArgumentException("Proof did not verify correctly");
 		}
 
 		List<SecureHash> txLeaves = Collections.singletonList(root.rehash());
@@ -120,20 +118,29 @@ public class SignatureProof {
 		PartialMerkleTree parTree = PartialMerkleTree.build(txTree, txLeaves);
 		for (SignedData signature : signatures) {
 			if (signature.hasPartialTree() && !signature.getPartialTree().equals(parTree.getRoot().getHash().toString())) {
-				logger.error("Partial trees are not fully supported yet");
+				throw new IllegalArgumentException("Partial trees are not fully supported yet");
 			}
 			SignedMeta signedMeta = new SignedMeta(signature.getPlatformVersion(), signature.getSchemaNumber());
 			String signableData = signature.hasPartialTree() ? getSignableData(root, signature.getPartialTreeRoot(root), signedMeta) : getSignableData(root, null, signedMeta);
 			String signatureMeta = String.format("%08X%08X%s", signature.getPlatformVersion(), signature.getSchemaNumber(), signature.hasPartialTree() ? signature.getPartialTree() : root.toString());
 			contents.add(new SignatureData(signature.getBy(), signature.getBytes(), signableData, signatureMeta,null));
 		}
-
-		printSignatures();
+		logSignatures();
 
 		// These are commonly used Corda fingerprints, not guaranteed to be there
 		contract = parseStringByFingerprint(components, DESCRIPTOR_CONTRACT);
 		List<Object> linearIds = parseOrderedListByFingerprint(components, DESCRIPTOR_LIDS); // 128 bits => 16 bytes
 		parties = parseCordaPartiesByFingerprint(components);
+
+		// These are HQLAx specific fingerprints, hard-coded for DCRs
+		command = parseStringByFingerprint(components, DESCRIPTOR_HQLAX_COMMAND);
+		amount = parseCurrencyAmountByFingerprint(components, DESCRIPTOR_HQLAX_AMOUNT);
+		if (amount != null) {
+			String[] split = amount.split(":");
+			amount = split[0];
+			currency = split[1];
+		}
+		id = linearIds.size() > LID_HQLAX_TRADEID_INDEX && linearIds.get(LID_HQLAX_TRADEID_INDEX) != null ? linearIds.get(LID_HQLAX_TRADEID_INDEX).toString() : "";
 
 		// These are Adhara PoC specific fingerprints, hardcoded for DCRs
 		List<Object> adharaDCRFields = parseOrderedListByFingerprint(components, DESCRIPTOR_ADHARA_DCR);
@@ -184,7 +191,13 @@ public class SignatureProof {
 		return true;
 	}
 
-	public void printSignatures() throws InvalidKeySpecException, NoSuchAlgorithmException {
+	private void logLeaves(List<SecureHash> leaves) {
+		for (SecureHash leaf : leaves) {
+			logger.debug(leaf.toString());
+		}
+	}
+
+	private void logSignatures() throws InvalidKeySpecException {
 		logger.debug("Recovered " + contents.size() + " signatures:");
 		int i = 0;
 		for (SignatureData signature : contents) {
@@ -300,7 +313,7 @@ public class SignatureProof {
 		return null;
 	}
 
-	private void print(List<Extracted<String, Object>> components) {
+	private void logExtracted(List<Extracted<String, Object>> components) {
 		for (Extracted<String, Object> item : components) {
 			if (item.getValue() == null) {
 				continue;
