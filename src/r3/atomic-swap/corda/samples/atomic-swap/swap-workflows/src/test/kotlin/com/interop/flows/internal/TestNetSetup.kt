@@ -10,9 +10,12 @@ import com.r3.corda.evminterop.workflows.UnsecureRemoteEvmIdentityFlow
 import com.r3.corda.evminterop.workflows.eth2eth.Erc20TransferFlow
 import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
 import com.r3.corda.evminterop.workflows.eth2eth.GetBlockReceiptsFlow
+import com.r3.corda.evminterop.workflows.swap.ClaimCommitment
+import com.r3.corda.evminterop.workflows.swap.CommitWithTokenFlow
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.concurrent.CordaFuture
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowExternalOperation
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.utilities.getOrThrow
@@ -51,7 +54,7 @@ abstract class TestNetSetup(
     private val charliePrivateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
     protected val evmDeployerAddress = "0x5067457698Fd6Fa1C6964e416b3f42713513B3dD"
-    protected val ethBridgeDeployAddress = "0xe8D2A1E88c91DCd5433208d4152Cc4F399a7e91d"
+    protected val protocolAddress = "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49"
     protected val goldTokenDeployAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
     protected val silverTokenDeployAddress = "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d"
 
@@ -80,9 +83,9 @@ abstract class TestNetSetup(
             bob = createNode(network!!, "O=Bob, L=San Francisco, C=US")
             charlie = createNode(network!!, "O=Charlie, L=Mumbai, C=IN")
 
-            alice.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, ethBridgeDeployAddress, evmDeployerAddress)).getOrThrow()
-            bob.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, ethBridgeDeployAddress, evmDeployerAddress)).getOrThrow()
-            charlie.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, ethBridgeDeployAddress, evmDeployerAddress)).getOrThrow()
+            alice.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)).getOrThrow()
+            bob.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)).getOrThrow()
+            charlie.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)).getOrThrow()
 
             aliceAddress = alice.services.evmInterop().signerAddress()
             bobAddress = bob.services.evmInterop().signerAddress()
@@ -186,5 +189,48 @@ abstract class TestNetSetup(
         val transactionProof = trie.generateMerkleProof(transferKey) as SimpleKeyValueStore
 
         return Triple(transactionReceipt, transferKey, transactionProof)
+    }
+
+    protected fun commitAndClaim(
+            transactionId: SecureHash,
+            amount: BigInteger,
+            senderNode: StartedMockNode,
+            recipientAddress: String,
+            threshold: BigInteger
+    ) : Triple<TransactionReceipt, ByteArray, SimpleKeyValueStore> {
+
+        val commitTxReceipt: TransactionReceipt = senderNode.startFlow(
+                CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, recipientAddress, threshold)
+        ).getOrThrow()
+
+        val claimTxReceipt: TransactionReceipt = senderNode.startFlow(
+                ClaimCommitment(transactionId)
+        ).getOrThrow()
+
+        // get the block that mined the ERC20 `Transfer` Transaction
+        val block = senderNode.startFlow(
+                GetBlockFlow(claimTxReceipt.blockNumber, true)
+        ).getOrThrow()
+
+        // get all transaction receipts from the block that mined the ERC20 `Transfer` Transaction
+        val receipts = senderNode.startFlow(
+                GetBlockReceiptsFlow(claimTxReceipt.blockNumber)
+        ).getOrThrow()
+
+        // Build the Patricia Trie from the Block receipts and verify it's valid
+        val trie = PatriciaTrie()
+        for(receipt in receipts) {
+            trie.put(
+                    RlpEncoder.encode(RlpString.create(Numeric.toBigInt(receipt.transactionIndex!!).toLong())),
+                    receipt.encoded()
+            )
+        }
+        Assert.assertEquals(block.receiptsRoot, Numeric.toHexString(trie.root.hash))
+
+        // generate a proof for the transaction receipt that belong to the ERC20 transfer transaction
+        val claimKey = RlpEncoder.encode(RlpString.create(Numeric.toBigInt(claimTxReceipt.transactionIndex!!).toLong()))
+        val transactionProof = trie.generateMerkleProof(claimKey) as SimpleKeyValueStore
+
+        return Triple(claimTxReceipt, claimKey, transactionProof)
     }
 }

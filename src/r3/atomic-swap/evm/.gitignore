@@ -22,5 +22,8 @@ out/
 # Web3j generated java wrappers
 src/main/java
 
+# Node
+node_modules/
+
 # Other
 .DS_Store

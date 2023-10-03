@@ -6,7 +6,15 @@ import com.r3.corda.evminterop.Indexed
 import com.r3.corda.evminterop.workflows.*
 import net.corda.core.identity.AbstractParty
 import org.junit.Test
+import org.web3j.abi.FunctionEncoder
+import org.web3j.abi.datatypes.Address
+import org.web3j.abi.datatypes.Function
+import org.web3j.abi.datatypes.Utf8String
+import org.web3j.abi.datatypes.generated.Bytes32
+import org.web3j.abi.datatypes.generated.Uint256
+import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric
+import java.math.BigInteger
 import java.util.*
 
 class SwapTests : TestNetSetup() {

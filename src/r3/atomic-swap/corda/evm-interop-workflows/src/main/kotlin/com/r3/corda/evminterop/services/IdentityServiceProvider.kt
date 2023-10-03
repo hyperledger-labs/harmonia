@@ -16,9 +16,7 @@ import org.web3j.abi.datatypes.DynamicArray
 import org.web3j.abi.datatypes.Utf8String
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.crypto.RawTransaction
-import org.web3j.generated.contracts.BridgeDeploy
-import org.web3j.generated.contracts.ERC20
-import org.web3j.generated.contracts.HashedTimelockBridge
+import org.web3j.generated.contracts.*
 import org.web3j.protocol.core.DefaultBlockParameter
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.RemoteFunctionCall
@@ -69,6 +67,14 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
         private fun loadToken(tokenAddress: String, connectionId: ConnectionId, txSignService: TxSignService) : ERC20 {
             val rawTransactionManager = loadTransactionManager(connection(connectionId), txSignService)
             return ERC20.load(tokenAddress, connection(connectionId).web3j, rawTransactionManager, DefaultGasProvider())
+        }
+
+        /**
+         * Load and initializes the contract instance for the ERC20 token
+         */
+        private fun loadSwapVault(contractAddress: String, connectionId: ConnectionId, txSignService: TxSignService) : SwapVault {
+            val rawTransactionManager = loadTransactionManager(connection(connectionId), txSignService)
+            return SwapVault.load(contractAddress, connection(connectionId).web3j, rawTransactionManager, DefaultGasProvider())
         }
 
         /**
@@ -123,10 +129,10 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     }
 
     /**
-     * Load the EVM bridge protocol for the given identity
+     * Load the [SwapVaultWrapper] for the given token and identity
      */
-    fun htlc(authorizedId: PublicKey) : IBridge {
-        return HtlcWrapper(session(authorizedId))
+    fun swap(authorizedId: PublicKey) : ISwapVault {
+        return SwapVaultWrapper(session(authorizedId))
     }
 
     /**
@@ -336,79 +342,60 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     }
 
     /**
-     * A wrapper to the [HashedTimelockBridge] - [IBridge] pair: exposes [IBridge] and maps [HashedTimelockBridge] calls
-     * to queueable [FlowExternalOperation]s
+     * A wrapper to the [SwapVault] - [ISwapVault] pair: exposes [ISwapVault] and maps [SwapVault] calls to queueable
+     * [FlowExternalOperation]s. Implements standard SwapVault interface:
+     * https://ethereum.org/it/developers/docs/standards/tokens/erc-20/
      */
-    private class HtlcWrapper(
+    private class SwapVaultWrapper(
         private val session: Session
-    ) : IBridge {
+    ) : ISwapVault {
 
-        private fun bridge() : HashedTimelockBridge {
-            return loadBridge(session.protocolAddress, session.connectionId, session as TxSignService)
+        override val contractAddress = session.protocolAddress
+
+        private fun swapVault() : SwapVault {
+            return loadSwapVault(session.protocolAddress, session.connectionId, session as TxSignService)
         }
 
-        override fun getHash(erc20Address: String, to: String, amount: BigInteger, hash: ByteArray): FlowExternalOperation<ByteArray> {
-            return session.simpleRemoteFunctionCall(bridge().getHash(erc20Address, to, amount, hash))
+        override fun claimCommitment(swapId: String): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().claimCommitment(swapId))
         }
 
-        override fun hashfn(secret: String): FlowExternalOperation<ByteArray> {
-            return session.simpleRemoteFunctionCall(bridge().hashfn(secret))
+        override fun revertCommitment(swapId: String): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().revertCommitment(swapId))
         }
 
-        /**
-         * Locks an amount of ERC20 tokens into the Bridge contract
-         */
-        override fun lock(tokenAddress: String, receiverAddress: String, amount: BigInteger, hash: ByteArray, timeout: BigInteger): ResponseOperation<TransactionReceipt> {
-            require(isValidAddress(tokenAddress)) { "Invalid token address $tokenAddress" }
-            require(isValidAddress(receiverAddress)) { "Invalid receiver address $receiverAddress" }
-            require(Instant.ofEpochSecond(timeout.toLong()) > Instant.now()) { "Timeout must be in the future" }
-
-            return session.queueRemoteFunctionCall(
-                bridge().lockTokens(tokenAddress, receiverAddress, amount, hash, timeout)
-            )
+        override fun commit(
+            swapId: String,
+            recipient: String,
+            signaturesThreshold: BigInteger
+        ): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().commit(swapId, recipient, signaturesThreshold))
         }
 
-        /**
-         * Revert an amount of ERC20 tokens previously locked into the Bridge contract
-         */
-        override fun revertTokens(tokenAddress: String, to: String, amount: BigInteger, hash: ByteArray): ResponseOperation<TransactionReceipt> {
-            return session.queueRemoteFunctionCall(bridge().revertTokens(tokenAddress, to, amount, hash))
+        override fun commitWithToken(
+            swapId: String,
+            tokenAddress: String,
+            tokenId: BigInteger,
+            amount: BigInteger,
+            recipient: String,
+            signaturesThreshold: BigInteger
+        ): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().commitWithToken(swapId, tokenAddress, tokenId, amount, recipient, signaturesThreshold))
         }
 
-        /**
-         * Query the payment status of ERC20 tokens eventually locked into the Bridge contract
-         */
-        override fun depositStatus(tokenAddress: String, receiver: String, amount: BigInteger, hash: ByteArray, timeout: BigInteger) : FlowExternalOperation<DepositStatus> {
-            val depositStatusTransform = fun(ws: Tuple5<BigInteger, Boolean, String, BigInteger, BigInteger>): DepositStatus {
-                return DepositStatus(DepositStates.fromBigInteger(ws.component1()), ws.component2(), ws.component3(), Instant.ofEpochSecond(ws.component4().toLong()), Instant.ofEpochSecond(ws.component5().toLong()))
-            }
-
-            return session.simpleRemoteFunctionCall(
-                bridge().depositStatus(tokenAddress, receiver, amount, hash, timeout), depositStatusTransform
-            )
+        override fun commitWithToken(
+            swapId: String,
+            tokenAddress: String,
+            amount: BigInteger,
+            recipient: String,
+            signaturesThreshold: BigInteger
+        ): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().commitWithToken(swapId, tokenAddress, amount, recipient, signaturesThreshold))
         }
 
-        /**
-         * Withdraw an amount of ERC20 tokens previously locked into the Bridge contract
-         */
-        override fun unlockTokens(tokenAddress: String, amount: BigInteger, secret: String): ResponseOperation<TransactionReceipt> {
-            return session.queueRemoteFunctionCall(bridge().unlockTokens(tokenAddress, amount, secret))
+        override fun commitmentHash(swapId: String): FlowExternalOperation<ByteArray> {
+            return session.simpleRemoteFunctionCall(swapVault().commitmentHash(swapId))
         }
-
-//        override fun deploy(chainId: BigInteger, salt: ByteArray, sourceCode: ByteArray, initCode: ByteArray) : ResponseOperation<TransactionReceipt> {
-//            return session.queueRemoteFunctionCall(bridge().deploy(chainId, salt, sourceCode, initCode))
-//        }
-//
-//        override fun deployReverseERC20(salt: ByteArray, initCode: ByteArray) : ResponseOperation<TransactionReceipt> {
-//            return session.queueRemoteFunctionCall(bridge().deployReverseERC20(salt, initCode))
-//        }
-//
-//        override fun getReverseERC20Address(salt: ByteArray): FlowExternalOperation<DeployStatus> {
-//            val statusTransform = fun(s: Tuple2<Boolean, String>): DeployStatus {
-//                return DeployStatus(s.component1(), s.component2())
-//            }
-//            return session.simpleRemoteFunctionCall(bridge().getReverseERC20Address(salt), statusTransform)
-//        }
     }
 
     /**
@@ -538,7 +525,7 @@ class EvmBridge(serviceHub: ServiceHub) {
 
     fun erc20Provider(tokenAddress: String): IERC20 = identityService.erc20(tokenAddress, owningKey)
 
-    fun htlcProvider(): IBridge = identityService.htlc(owningKey)
+    fun swapProvider(): ISwapVault = identityService.swap(owningKey)
 
     fun contractsProvider(): IContracts = identityService.contracts(owningKey)
 

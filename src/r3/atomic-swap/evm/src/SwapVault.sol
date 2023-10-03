@@ -26,18 +26,8 @@ import "openzeppelin/token/ERC1155/IERC1155.sol";
 import "openzeppelin/token/ERC721/utils/ERC721Holder.sol";
 import "openzeppelin/token/ERC1155/utils/ERC1155Holder.sol";
 
-library Utils {
-    function safeSupportsInterface(address addr, bytes4 interfaceId) external view returns (bool supported) {
-        (bool success, bytes memory result) = addr.staticcall(
-                abi.encodeWithSelector(IERC165.supportsInterface.selector, interfaceId)
-            );
-        
-        supported = success && result.length > 0 && abi.decode(result, (bool));
-    }
-}
-
-contract SwapVault is ERC721Holder, ERC1155Holder {
-
+contract SwapVault {
+    
     error ZERO_ADDRESS();
     error COMMIT_TO_SELF();
     error ALREADY_COMMITTED();
@@ -49,8 +39,6 @@ contract SwapVault is ERC721Holder, ERC1155Holder {
     event Commit(string indexed swapId, bytes32 holdHash);
     event Transfer(string indexed swapId, bytes32 holdHash);
     event Revert(string indexed swapId, bytes32 holdHash);
-
-    using Utils for address;
 
     struct Commitment {
         string swapId;
@@ -103,8 +91,6 @@ contract SwapVault is ERC721Holder, ERC1155Holder {
         emit Commit(swapId, commitmentHash(swapId));
     }
 
-
-
     function claimCommitment(string calldata swapId) external {
         Commitment storage commitment = _committmentState[swapId];
         
@@ -117,10 +103,10 @@ contract SwapVault is ERC721Holder, ERC1155Holder {
         //       he has proofs about swap id being notarised on Corda
         if(msg.sender != commitment.owner) revert INVALID_CLAIMER();
 
-        if(tokenAddress.safeSupportsInterface(0x80ac58cd)) { // ERC721
+        if(safeSupportsInterface(tokenAddress, 0x80ac58cd)) { // ERC721
             // 
             IERC721(tokenAddress).transferFrom(address(this), commitment.recipient, commitment.tokenId);
-        } else if(tokenAddress.safeSupportsInterface(0xd9b67a26)) { // ERC1155 
+        } else if(safeSupportsInterface(tokenAddress, 0xd9b67a26)) { // ERC1155 
             //
             IERC1155(tokenAddress).safeTransferFrom(address(this), commitment.recipient, commitment.tokenId, commitment.amount, bytes(""));
         } else {
@@ -138,10 +124,10 @@ contract SwapVault is ERC721Holder, ERC1155Holder {
         uint256 commitmentStatus = commitment.status++; // loads 1, stores 2
         if(commitmentStatus != 1) revert INVALID_STATUS();
 
-        if(tokenAddress.safeSupportsInterface(0x80ac58cd)) { // ERC721
+        if(safeSupportsInterface(tokenAddress, 0x80ac58cd)) { // ERC721
             // 
             IERC721(tokenAddress).transferFrom(address(this), commitment.owner, commitment.tokenId);
-        } else if(tokenAddress.safeSupportsInterface(0xd9b67a26)) { // ERC1155 
+        } else if(safeSupportsInterface(tokenAddress, 0xd9b67a26)) { // ERC1155 
             //
             IERC1155(tokenAddress).safeTransferFrom(address(this), commitment.owner, commitment.tokenId, commitment.amount, bytes(""));
         } else {
@@ -181,5 +167,12 @@ contract SwapVault is ERC721Holder, ERC1155Holder {
         commitment.signaturesThreshold = signaturesThreshold;
     }
     
+    function safeSupportsInterface(address addr, bytes4 interfaceId) internal view returns (bool supported) {
+        (bool success, bytes memory result) = addr.staticcall(
+                abi.encodeWithSelector(IERC165.supportsInterface.selector, interfaceId)
+            );
+        
+        supported = success && result.length > 0 && abi.decode(result, (bool));
+    }    
 }
 
