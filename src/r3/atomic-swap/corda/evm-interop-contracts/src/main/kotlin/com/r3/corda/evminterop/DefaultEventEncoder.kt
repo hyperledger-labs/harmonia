@@ -6,6 +6,7 @@ import net.corda.core.serialization.CordaSerializable
 import org.web3j.abi.DefaultFunctionEncoder
 import org.web3j.abi.TypeEncoder
 import org.web3j.abi.datatypes.*
+import org.web3j.abi.datatypes.generated.Bytes32
 import org.web3j.abi.datatypes.generated.Int256
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.abi.datatypes.generated.Uint8
@@ -50,6 +51,7 @@ object DefaultEventEncoder {
                 "address" -> Address(unwrappedValue as String)
                 "bool" -> Bool(unwrappedValue as Boolean)
                 "bytes" -> DynamicBytes(unwrappedValue as ByteArray)
+                "bytes32" -> unwrappedValue as Bytes32
                 else -> throw IllegalArgumentException("Unsupported type: $type")
             }, isIndexed)
         }
@@ -138,3 +140,9 @@ data class EncodedEvent(
     }
 }
 
+data class UnencodedEvent(
+    val data: List<Type<*>>
+) {
+    constructor(vararg args: Type<*>): this(args.toList()) {
+    }
+}

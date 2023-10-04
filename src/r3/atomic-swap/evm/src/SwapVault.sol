@@ -25,6 +25,7 @@ import "openzeppelin/token/ERC721/IERC721.sol";
 import "openzeppelin/token/ERC1155/IERC1155.sol";
 import "openzeppelin/token/ERC721/utils/ERC721Holder.sol";
 import "openzeppelin/token/ERC1155/utils/ERC1155Holder.sol";
+import "hardhat/console.sol";
 
 contract SwapVault {
     
@@ -143,6 +144,25 @@ contract SwapVault {
         if(commitment.status < 1) revert INVALID_STATUS(); // must be committed at least
 
         hash = keccak256(abi.encode(
+            block.chainid,
+            commitment.swapId,
+            commitment.owner,
+            commitment.recipient,
+            commitment.amount, 
+            commitment.tokenId,
+            commitment.tokenAddress,
+            commitment.signaturesThreshold
+        ));
+
+        console.log(block.chainid);
+        console.log(commitment.swapId);
+        console.log(commitment.owner);
+        console.log(commitment.recipient);
+        console.log(commitment.amount);
+        console.log(commitment.tokenId);
+        console.log(commitment.tokenAddress);
+        console.log(commitment.signaturesThreshold);
+        console.logBytes(abi.encode(
             block.chainid,
             commitment.swapId,
             commitment.owner,
