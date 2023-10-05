@@ -1,6 +1,7 @@
 package com.r3.corda.evminterop
 
 import net.corda.core.crypto.SecureHash
+import net.corda.core.serialization.CordaSerializable
 import org.web3j.abi.DefaultFunctionEncoder
 import org.web3j.abi.datatypes.Address
 import org.web3j.abi.datatypes.Type
@@ -10,10 +11,17 @@ import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
+@CordaSerializable
+interface IUnlockEventEncoder {
+    fun transferEvent(transactionId: SecureHash): EncodedEvent
+    fun revertEvent(transactionId: SecureHash): EncodedEvent
+}
+
+@CordaSerializable
 data class SwapVaultEventEncoder(
     private val protocolAddress: String,
     private val commitmentHash: ByteArray
-) {
+) : IUnlockEventEncoder {
     companion object {
         fun create(
             chainId: BigInteger,
@@ -70,8 +78,8 @@ data class SwapVaultEventEncoder(
     }
 
     public fun commitEvent(transactionId: SecureHash) = commitEvent(transactionId, Bytes32(commitmentHash))
-    public fun transferEvent(transactionId: SecureHash) = commitEvent(transactionId, Bytes32(commitmentHash))
-    public fun revertEvent(transactionId: SecureHash) = commitEvent(transactionId, Bytes32(commitmentHash))
+    override fun transferEvent(transactionId: SecureHash) = transferEvent(transactionId, Bytes32(commitmentHash))
+    override fun revertEvent(transactionId: SecureHash) = revertEvent(transactionId, Bytes32(commitmentHash))
 
     private fun commitEvent(transactionId: SecureHash, commitmentHash: Bytes32): EncodedEvent {
         return DefaultEventEncoder.encodeEvent(
@@ -99,4 +107,33 @@ data class SwapVaultEventEncoder(
             commitmentHash
         )
     }
+}
+
+@CordaSerializable
+data class Erc20TransferEventEncoder(
+    private val tokenAddress: String,
+    private val aliceAddress: String,
+    private val bobAddress: String,
+    private val amount: BigInteger
+) : IUnlockEventEncoder {
+    private val forwardTransferEvent = DefaultEventEncoder.encodeEvent(
+        tokenAddress,
+        "Transfer(address,address,uint256)",
+        Indexed(aliceAddress),
+        Indexed(bobAddress),
+        amount
+    )
+
+    // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Bob himself (signals revert)
+    private val backwardTransferEvent = DefaultEventEncoder.encodeEvent(
+        tokenAddress,
+        "Transfer(address,address,uint256)",
+        Indexed(aliceAddress),
+        Indexed(aliceAddress),
+        amount
+    )
+
+    override fun transferEvent(transactionId: SecureHash): EncodedEvent = forwardTransferEvent
+
+    override fun revertEvent(transactionId: SecureHash): EncodedEvent = backwardTransferEvent
 }

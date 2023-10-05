@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.DefaultEventEncoder
 import com.r3.corda.evminterop.EncodedEvent
 import com.r3.corda.evminterop.Indexed
+import com.r3.corda.evminterop.SwapVaultEventEncoder
 import com.r3.corda.evminterop.states.swap.SwapTransactionDetails
 import com.r3.corda.evminterop.workflows.swap.BuildAndProposeDraftTransactionFlow
 import net.corda.core.contracts.OwnableState
@@ -34,8 +35,7 @@ class DraftAssetSwapFlowNew(
     private val notary: AbstractParty,
     private val validators: List<AbstractParty>,
     private val signaturesThreshold: Int,
-    private val unlockEvent: EncodedEvent,
-    private val revertEvent: EncodedEvent
+    private val unlockEvent: SwapVaultEventEncoder
 ) : FlowLogic<SecureHash>() {
     @Suspendable
     override fun call(): SecureHash {
@@ -62,8 +62,7 @@ class DraftAssetSwapFlowNew(
             cordaAssetState = inputStateAndRef,
             approvedCordaValidators = knownValidators,
             minimumNumberOfEventValidations = signaturesThreshold,
-            unlockEvent = unlockEvent,
-            revertEvent = revertEvent
+            unlockEvent = unlockEvent
         )
 
         val wireTx = subFlow(BuildAndProposeDraftTransactionFlow(swapDetails, knownNotary))

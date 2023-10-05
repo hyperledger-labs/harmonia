@@ -51,7 +51,7 @@ class LockStateContract : Contract {
             "Only two input states can exist" using (tx.inputStates.size == 2)
             "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.assetRecipient)
             "EVM Transfer event has not been validated by the minimum number of validators" using (cmd.proof.validatorSignatures.size >= lockState.signaturesThreshold)
-            "The transaction receipt does not contain the expected unlock event" using (lockState.forwardEvent.isFoundIn(
+            "The transaction receipt does not contain the expected unlock event" using (lockState.unlockEvent.transferEvent(tx.id).isFoundIn(
                 cmd.proof.transactionReceipt
             ))
             "The transaction receipts merkle proof failed to validate" using (PatriciaTrie.verifyMerkleProof(
@@ -85,7 +85,7 @@ class LockStateContract : Contract {
         requireThat {
             "Only two input states can exist" using (tx.inputStates.size == 2)
             "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.assetSender)
-            "The transaction receipt does not contain the expected unlock event" using (lockState.backwardEvent.isFoundIn(
+            "The transaction receipt does not contain the expected unlock event" using (lockState.unlockEvent.revertEvent(tx.id).isFoundIn(
                 cmd.proof.transactionReceipt
             ))
             "The transaction receipts merkle proof failed to validate" using (PatriciaTrie.verifyMerkleProof(

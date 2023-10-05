@@ -1,9 +1,7 @@
 package com.interop.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.evminterop.DefaultEventEncoder
-import com.r3.corda.evminterop.EncodedEvent
-import com.r3.corda.evminterop.Indexed
+import com.r3.corda.evminterop.*
 import com.r3.corda.evminterop.states.swap.SwapTransactionDetails
 import com.r3.corda.evminterop.workflows.swap.BuildAndProposeDraftTransactionFlow
 import net.corda.core.contracts.OwnableState
@@ -34,8 +32,7 @@ class DraftAssetSwapFlow(
     private val notary: AbstractParty,
     private val validators: List<AbstractParty>,
     private val signaturesThreshold: Int,
-    private val unlockEvent: EncodedEvent,
-    private val revertEvent: EncodedEvent
+    private val unlockEvent: IUnlockEventEncoder
 ) : FlowLogic<SecureHash>() {
     @Suspendable
     override fun call(): SecureHash {
@@ -62,8 +59,7 @@ class DraftAssetSwapFlow(
             cordaAssetState = inputStateAndRef,
             approvedCordaValidators = knownValidators,
             minimumNumberOfEventValidations = signaturesThreshold,
-            unlockEvent = unlockEvent,
-            revertEvent = revertEvent
+            unlockEvent = unlockEvent
         )
 
         val wireTx = subFlow(BuildAndProposeDraftTransactionFlow(swapDetails, knownNotary))
@@ -91,24 +87,8 @@ class DemoDraftAssetSwapFlow(
         val bobAddress = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
         val goldTokenDeployAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 
-        val amount = 1.toBigInteger()
-
-        // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Alice (signals success)
-        val forwardTransferEvent = DefaultEventEncoder.encodeEvent(
-            goldTokenDeployAddress,
-            "Transfer(address,address,uint256)",
-            Indexed(aliceAddress),
-            Indexed(bobAddress),
-            amount
-        )
-
-        // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Bob himself (signals revert)
-        val backwardTransferEvent = DefaultEventEncoder.encodeEvent(
-            goldTokenDeployAddress,
-            "Transfer(address,address,uint256)",
-            Indexed(aliceAddress),
-            Indexed(aliceAddress),
-            amount
+        val transferEventEncoder = Erc20TransferEventEncoder(
+            goldTokenDeployAddress, aliceAddress, bobAddress, 1.toBigInteger()
         )
 
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
@@ -121,8 +101,7 @@ class DemoDraftAssetSwapFlow(
                 notary,
                 listOf(validator),
                 1,
-                forwardTransferEvent,
-                backwardTransferEvent
+                transferEventEncoder
             )
         )
     }

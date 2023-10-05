@@ -4,6 +4,7 @@ import com.interop.flows.internal.TestNetSetup
 import com.r3.corda.evminterop.DefaultEventEncoder
 import com.r3.corda.evminterop.EncodedEvent
 import com.r3.corda.evminterop.Indexed
+import com.r3.corda.evminterop.SwapVaultEventEncoder
 import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
 import com.r3.corda.evminterop.workflows.swap.CommitWithTokenFlow
@@ -110,6 +111,17 @@ class CommitClaimSwapTests : TestNetSetup() {
                 BigInteger.ONE
         ))
 
+        val swapVaultEventEncoder = SwapVaultEventEncoder.create(
+            BigInteger.valueOf(1337),
+            protocolAddress,
+            aliceAddress,
+            bobAddress,
+            amount,
+            BigInteger.ZERO,
+            goldTokenDeployAddress,
+            BigInteger.ONE
+        )
+
         val draftTxHashz = await(bob.startFlow(DraftAssetSwapFlowNew(
             assetTx.txhash,
             assetTx.index,
@@ -117,8 +129,7 @@ class CommitClaimSwapTests : TestNetSetup() {
             alice.services.networkMapCache.notaryIdentities.first(),
             listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
             2,
-            transferEventEncoded,
-            revertEventEncoded
+            swapVaultEventEncoder
         )))
 
         val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(

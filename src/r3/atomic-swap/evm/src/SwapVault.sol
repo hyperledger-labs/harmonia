@@ -145,7 +145,6 @@ contract SwapVault {
 
         hash = keccak256(abi.encode(
             block.chainid,
-            commitment.swapId,
             commitment.owner,
             commitment.recipient,
             commitment.amount, 
@@ -154,24 +153,24 @@ contract SwapVault {
             commitment.signaturesThreshold
         ));
 
-        console.log(block.chainid);
-        console.log(commitment.swapId);
-        console.log(commitment.owner);
-        console.log(commitment.recipient);
-        console.log(commitment.amount);
-        console.log(commitment.tokenId);
-        console.log(commitment.tokenAddress);
-        console.log(commitment.signaturesThreshold);
-        console.logBytes(abi.encode(
-            block.chainid,
-            commitment.swapId,
-            commitment.owner,
-            commitment.recipient,
-            commitment.amount, 
-            commitment.tokenId,
-            commitment.tokenAddress,
-            commitment.signaturesThreshold
-        ));
+        // console.log(block.chainid);
+        // console.log(commitment.swapId);
+        // console.log(commitment.owner);
+        // console.log(commitment.recipient);
+        // console.log(commitment.amount);
+        // console.log(commitment.tokenId);
+        // console.log(commitment.tokenAddress);
+        // console.log(commitment.signaturesThreshold);
+        // console.logBytes(abi.encode(
+        //     block.chainid,
+        //     commitment.swapId,
+        //     commitment.owner,
+        //     commitment.recipient,
+        //     commitment.amount, 
+        //     commitment.tokenId,
+        //     commitment.tokenAddress,
+        //     commitment.signaturesThreshold
+        // ));
     }
 
     function _commit(string calldata swapId, address recipient, uint256 signaturesThreshold) internal returns (Commitment storage commitment) {
