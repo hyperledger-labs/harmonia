@@ -27,7 +27,6 @@ class CommitClaimSwapTests : TestNetSetup() {
 
     private val amount = 1.toBigInteger()
 
-
     fun commitmentHash(
             chainId: BigInteger,
             owner: String,
@@ -57,59 +56,12 @@ class CommitClaimSwapTests : TestNetSetup() {
         return Bytes32(hash)
     }
 
-    private fun commitEvent(transactionId: SecureHash, commitmentHash: Bytes32) {
-        DefaultEventEncoder.encodeEvent(
-            protocolAddress,
-            "Commit(string,bytes32)",
-            Indexed(transactionId.toHexString()),
-            commitmentHash
-        )
-    }
-
-    private fun transferEvent(transactionId: SecureHash, commitmentHash: Bytes32): EncodedEvent {
-        return DefaultEventEncoder.encodeEvent(
-                protocolAddress,
-                "Transfer(string,bytes32)",
-                Indexed(transactionId.toHexString()),
-                commitmentHash
-        )
-    }
-
-    private fun revertEvent(transactionId: SecureHash, commitmentHash: Bytes32): EncodedEvent {
-        return DefaultEventEncoder.encodeEvent(
-                protocolAddress,
-                "Revert(string,bytes32)",
-                Indexed(transactionId.toHexString()),
-                commitmentHash
-        )
-    }
-
     @Test
     fun `can unlock corda asset by asynchronous collection of block signatures`() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
         val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
-
-        val transferEventEncoded = transferEvent(assetTx.txhash, commitmentHash(
-                BigInteger.valueOf(1337),
-                aliceAddress,
-                bobAddress,
-                amount,
-                BigInteger.ZERO,
-                goldTokenDeployAddress,
-                BigInteger.ONE
-        ))
-
-        val revertEventEncoded = revertEvent(assetTx.txhash, commitmentHash(
-                BigInteger.valueOf(1337),
-                aliceAddress,
-                bobAddress,
-                amount,
-                BigInteger.ZERO,
-                goldTokenDeployAddress,
-                BigInteger.ONE
-        ))
 
         val swapVaultEventEncoder = SwapVaultEventEncoder.create(
             BigInteger.valueOf(1337),
@@ -122,7 +74,7 @@ class CommitClaimSwapTests : TestNetSetup() {
             BigInteger.ONE
         )
 
-        val draftTxHashz = await(bob.startFlow(DraftAssetSwapFlowNew(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlowNew(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -130,17 +82,6 @@ class CommitClaimSwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
             2,
             swapVaultEventEncoder
-        )))
-
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
-            assetTx.txhash,
-            assetTx.index,
-            alice.toParty(),
-            alice.services.networkMapCache.notaryIdentities.first(),
-            listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
-            2,
-            transferEventEncoded,
-            revertEventEncoded
         )))
 
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
