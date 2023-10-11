@@ -25,7 +25,6 @@ import "openzeppelin/token/ERC721/IERC721.sol";
 import "openzeppelin/token/ERC1155/IERC1155.sol";
 import "openzeppelin/token/ERC721/utils/ERC721Holder.sol";
 import "openzeppelin/token/ERC1155/utils/ERC1155Holder.sol";
-import "hardhat/console.sol";
 
 contract SwapVault {
     
@@ -114,7 +113,6 @@ contract SwapVault {
             SafeERC20.safeTransfer(IERC20(commitment.tokenAddress), commitment.recipient, commitment.amount);
         }
 
-        console.log('Transfer event:', swapId, string(abi.encodePacked(commitmentHash(swapId))));
         emit Transfer(swapId, commitmentHash(swapId));
     }
 
@@ -153,25 +151,6 @@ contract SwapVault {
             commitment.tokenAddress,
             commitment.signaturesThreshold
         ));
-
-        // console.log(block.chainid);
-        // console.log(commitment.swapId);
-        // console.log(commitment.owner);
-        // console.log(commitment.recipient);
-        // console.log(commitment.amount);
-        // console.log(commitment.tokenId);
-        // console.log(commitment.tokenAddress);
-        // console.log(commitment.signaturesThreshold);
-        // console.logBytes(abi.encode(
-        //     block.chainid,
-        //     commitment.swapId,
-        //     commitment.owner,
-        //     commitment.recipient,
-        //     commitment.amount, 
-        //     commitment.tokenId,
-        //     commitment.tokenAddress,
-        //     commitment.signaturesThreshold
-        // ));
     }
 
     function _commit(string calldata swapId, address recipient, uint256 signaturesThreshold) internal returns (Commitment storage commitment) {
