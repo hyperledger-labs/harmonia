@@ -4,7 +4,6 @@ import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.dto.TransactionReceiptLog
 import net.corda.core.serialization.CordaSerializable
 import org.web3j.abi.DefaultFunctionEncoder
-import org.web3j.abi.TypeEncoder
 import org.web3j.abi.datatypes.*
 import org.web3j.abi.datatypes.generated.Bytes32
 import org.web3j.abi.datatypes.generated.Int256
@@ -62,7 +61,7 @@ object DefaultEventEncoder {
         val nonIndexedParams = web3jParamsWithIndexedInfo.filterNot { it.second }.map { it.first }
 
         val topic0 = Hash.sha3String(whitespaceRegex.replace(eventSignature, ""))
-        val topics = listOf(topic0) + indexedParams.map { Numeric.prependHexPrefix(TypeEncoder.encode(it)) }
+        val topics = listOf(topic0) + indexedParams.map { Hash.sha3String(it.toString()) }
         val data = Numeric.prependHexPrefix(DefaultFunctionEncoder().encodeParameters(nonIndexedParams))
 
         return EncodedEvent(contractAddress, topics, data)

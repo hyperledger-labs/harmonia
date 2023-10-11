@@ -37,6 +37,9 @@ class LockStateContract : Contract {
         tx: LedgerTransaction,
         cmd: LockCommand.Unlock
     ) {
+        val inputsTxHash = tx.inputs.map { it.ref.txhash }.distinct().singleOrNull()
+            ?: throw IllegalArgumentException("Inputs from multiple transactions is not supported")
+
         val unlockedAssetState = tx.outputStates.filterIsInstance<OwnableState>().single()
         val lockState = tx.inputStates.filterIsInstance<LockState>().single()
         val txIndexKey = RlpEncoder.encode(
@@ -51,7 +54,7 @@ class LockStateContract : Contract {
             "Only two input states can exist" using (tx.inputStates.size == 2)
             "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.assetRecipient)
             "EVM Transfer event has not been validated by the minimum number of validators" using (cmd.proof.validatorSignatures.size >= lockState.signaturesThreshold)
-            "The transaction receipt does not contain the expected unlock event" using (lockState.unlockEvent.transferEvent(tx.id).isFoundIn(
+            "The transaction receipt does not contain the expected unlock event" using (lockState.unlockEvent.transferEvent(inputsTxHash).isFoundIn(
                 cmd.proof.transactionReceipt
             ))
             "The transaction receipts merkle proof failed to validate" using (PatriciaTrie.verifyMerkleProof(
@@ -72,6 +75,9 @@ class LockStateContract : Contract {
         tx: LedgerTransaction,
         cmd: LockCommand.Revert
     ) {
+        val inputsTxHash = tx.inputs.map { it.ref.txhash }.distinct().singleOrNull()
+            ?: throw IllegalArgumentException("Inputs from multiple transactions is not supported")
+
         val unlockedAssetState = tx.outputStates.filterIsInstance<OwnableState>().single()
         val lockState = tx.inputStates.filterIsInstance<LockState>().single()
         val txIndexKey = RlpEncoder.encode(
@@ -85,7 +91,7 @@ class LockStateContract : Contract {
         requireThat {
             "Only two input states can exist" using (tx.inputStates.size == 2)
             "Invalid recipient for this command" using (unlockedAssetState.owner.owningKey == lockState.assetSender)
-            "The transaction receipt does not contain the expected unlock event" using (lockState.unlockEvent.revertEvent(tx.id).isFoundIn(
+            "The transaction receipt does not contain the expected unlock event" using (lockState.unlockEvent.revertEvent(inputsTxHash).isFoundIn(
                 cmd.proof.transactionReceipt
             ))
             "The transaction receipts merkle proof failed to validate" using (PatriciaTrie.verifyMerkleProof(

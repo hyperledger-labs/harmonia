@@ -114,6 +114,7 @@ contract SwapVault {
             SafeERC20.safeTransfer(IERC20(commitment.tokenAddress), commitment.recipient, commitment.amount);
         }
 
+        console.log('Transfer event:', swapId, string(abi.encodePacked(commitmentHash(swapId))));
         emit Transfer(swapId, commitmentHash(swapId));
     }
 

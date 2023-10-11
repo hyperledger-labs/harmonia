@@ -1,16 +1,12 @@
 package com.interop.flows
 
 import com.interop.flows.internal.TestNetSetup
-import com.r3.corda.evminterop.DefaultEventEncoder
-import com.r3.corda.evminterop.EncodedEvent
-import com.r3.corda.evminterop.Indexed
 import com.r3.corda.evminterop.SwapVaultEventEncoder
 import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
 import com.r3.corda.evminterop.workflows.swap.CommitWithTokenFlow
 import com.r3.corda.evminterop.workflows.swap.CommitmentHash
 import net.corda.core.contracts.StateRef
-import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.utilities.getOrThrow
 import org.junit.Test
@@ -22,6 +18,7 @@ import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 import java.util.*
+import kotlin.test.assertEquals
 
 class CommitClaimSwapTests : TestNetSetup() {
 
@@ -86,7 +83,7 @@ class CommitClaimSwapTests : TestNetSetup() {
 
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
 
-        val (txReceipt, leafKey, merkleProof) = commitAndClaim(assetTx.txhash, amount, alice, bobAddress, BigInteger.ONE)
+        val (txReceipt, leafKey, merkleProof) = commitAndClaim(draftTxHash, amount, alice, bobAddress, BigInteger.ONE)
 
         await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, false)))
 
@@ -125,6 +122,6 @@ class CommitClaimSwapTests : TestNetSetup() {
         )
 
         val eq = Numeric.hexStringToByteArray(commitmentHash1)
+        assertEquals(commitmentHash1, Numeric.toHexString(commitmentHash2.value))
     }
 }
-
