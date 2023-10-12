@@ -40,7 +40,7 @@ abstract class TestNetSetup(
     private val charliePrivateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
     protected val evmDeployerAddress = "0x5067457698Fd6Fa1C6964e416b3f42713513B3dD"
-    protected val ethBridgeDeployAddress = "0xe8D2A1E88c91DCd5433208d4152Cc4F399a7e91d"
+    protected val protocolAddress = "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49"
     protected val goldTokenDeployAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
     protected val silverTokenDeployAddress = "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d"
 
@@ -69,9 +69,9 @@ abstract class TestNetSetup(
             bob = createNode(network!!, "O=Bob, L=San Francisco, C=US")
             charlie = createNode(network!!, "O=Charlie, L=Mumbai, C=IN")
 
-            alice.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, ethBridgeDeployAddress, evmDeployerAddress)).getOrThrow()
-            bob.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, ethBridgeDeployAddress, evmDeployerAddress)).getOrThrow()
-            charlie.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, ethBridgeDeployAddress, evmDeployerAddress)).getOrThrow()
+            alice.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)).getOrThrow()
+            bob.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)).getOrThrow()
+            charlie.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)).getOrThrow()
 
             aliceAddress = alice.services.evmInterop().signerAddress()
             bobAddress = bob.services.evmInterop().signerAddress()

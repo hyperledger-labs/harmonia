@@ -1,0 +1,6 @@
+[submodule "src/r3/atomic-swap/evm/lib/forge-std"]
+	path = src/r3/atomic-swap/evm/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "src/r3/atomic-swap/evm/lib/openzeppelin-contracts"]
+	path = src/r3/atomic-swap/evm/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts

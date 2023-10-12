@@ -1,6 +1,6 @@
 package com.r3.corda.evminterop.states.swap
 
-import com.r3.corda.evminterop.EncodedEvent
+import com.r3.corda.evminterop.IUnlockEventEncoder
 import com.r3.corda.evminterop.contracts.swap.LockStateContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
@@ -16,6 +16,5 @@ class LockState(val assetSender: PublicKey,
                 val notary: PublicKey,
                 val approvedValidators: List<PublicKey>,
                 val signaturesThreshold: Int,
-                val forwardEvent: EncodedEvent,
-                val backwardEvent: EncodedEvent,
+                val unlockEvent: IUnlockEventEncoder,
                 override val participants: List<AbstractParty> = emptyList()) : ContractState

@@ -42,7 +42,6 @@ class BuildAndProposeDraftTransactionFlow(
             swapTxDetails.approvedCordaValidators.map { it.owningKey },
             swapTxDetails.minimumNumberOfEventValidations,
             swapTxDetails.unlockEvent,
-            swapTxDetails.revertEvent,
             participants = listOf(ourIdentity, swapTxDetails.receiverCordaName)
         )
 

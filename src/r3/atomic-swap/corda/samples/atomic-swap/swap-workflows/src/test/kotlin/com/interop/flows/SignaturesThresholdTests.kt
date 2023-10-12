@@ -2,6 +2,7 @@ package com.interop.flows
 
 import com.interop.flows.internal.TestNetSetup
 import com.r3.corda.evminterop.DefaultEventEncoder
+import com.r3.corda.evminterop.Erc20TransferEventEncoder
 import com.r3.corda.evminterop.Indexed
 import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
@@ -14,21 +15,8 @@ class SignaturesThresholdTests : TestNetSetup() {
     private val amount = 1.toBigInteger()
 
     // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Alice (signals success)
-    private val forwardTransferEvent = DefaultEventEncoder.encodeEvent(
-        goldTokenDeployAddress,
-        "Transfer(address,address,uint256)",
-        Indexed(aliceAddress),
-        Indexed(bobAddress),
-        amount
-    )
-
-    // Defines the encoding of an event that transfer an amount of 1 wei from Bob to Bob himself (signals revert)
-    private val backwardTransferEvent = DefaultEventEncoder.encodeEvent(
-        goldTokenDeployAddress,
-        "Transfer(address,address,uint256)",
-        Indexed(aliceAddress),
-        Indexed(aliceAddress),
-        amount
+    val transferEventEncoder = Erc20TransferEventEncoder(
+        goldTokenDeployAddress, aliceAddress, bobAddress, 1.toBigInteger()
     )
 
     @Test
@@ -69,8 +57,7 @@ class SignaturesThresholdTests : TestNetSetup() {
             alice.services.networkMapCache.notaryIdentities.first(),
             listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
             2,
-            forwardTransferEvent,
-            backwardTransferEvent
+            transferEventEncoder
         )))
 
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
