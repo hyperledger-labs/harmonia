@@ -1,0 +1,113 @@
+{{- if eq .Release.Name "corda-network-notary" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "corda-network.fullname" . }}
+  labels:
+    {{- include "corda-network.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.corda.containers.p2paddress }}
+      targetPort: {{ .Values.corda.containers.p2paddress }}
+      protocol: TCP
+      name: p2paddress
+    - port: {{ .Values.corda.containers.rpcaddress }}
+      targetPort: {{ .Values.corda.containers.rpcaddress }}
+      protocol: TCP
+      name: rpcaddress
+    - port: {{ .Values.corda.containers.rpcadminaddress }}
+      targetPort: {{ .Values.corda.containers.rpcadminaddress }}
+      name: rpcadminaddress
+  selector:
+    {{- include "corda-network.selectorLabels" . | nindent 4 }}
+{{- end }}
+---
+{{- if eq .Release.Name "corda-network-partya" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "corda-network.fullname" . }}
+  labels:
+    {{- include "corda-network.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.corda.partya.p2paddress }}
+      targetPort: {{ .Values.corda.partya.p2paddress }}
+      protocol: TCP
+      name: p2paddress
+    - port: {{ .Values.corda.partya.rpcaddress }}
+      targetPort: {{ .Values.corda.partya.rpcaddress }}
+      protocol: TCP
+      name: rpcaddress
+    - port: {{ .Values.corda.partya.rpcadminaddress }}
+      targetPort: {{ .Values.corda.partya.rpcadminaddress }}
+      name: rpcadminaddress
+  selector:
+    {{- include "corda-network.selectorLabels" . | nindent 4 }}
+{{- end }}
+---
+
+{{- if eq .Release.Name "corda-network-partyb" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "corda-network.fullname" . }}
+  labels:
+    {{- include "corda-network.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.corda.partyb.p2paddress }}
+      targetPort: {{ .Values.corda.partyb.p2paddress }}
+      protocol: TCP
+      name: p2paddress
+    - port: {{ .Values.corda.partyb.rpcaddress }}
+      targetPort: {{ .Values.corda.partyb.rpcaddress }}
+      protocol: TCP
+      name: rpcaddress
+    - port: {{ .Values.corda.partyb.rpcadminaddress }}
+      targetPort: {{ .Values.corda.partyb.rpcadminaddress }}
+      name: rpcadminaddress
+  selector:
+    {{- include "corda-network.selectorLabels" . | nindent 4 }}
+{{- end }}
+---
+
+{{- if eq .Release.Name "corda-network-partya" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "corda-network.fullname" . }}-api
+  labels:
+    {{- include "corda-network.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.corda_api_sidecar.corda_api_port.partya_service_port }}
+      targetPort: {{ .Values.corda_api_sidecar.corda_api_port.partya_service_port }}
+      protocol: TCP
+      name: partya-serverport
+  selector:
+    {{- include "corda-network.selectorLabels" . | nindent 4 }}
+{{- end }}
+---
+
+{{- if eq .Release.Name "corda-network-partyb" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "corda-network.fullname" . }}-api
+  labels:
+    {{- include "corda-network.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.corda_api_sidecar.corda_api_port.partyb_service_port }}
+      targetPort: {{ .Values.corda_api_sidecar.corda_api_port.partyb_service_port }}
+      protocol: TCP
+      name: partyb-serverport
+  selector:
+    {{- include "corda-network.selectorLabels" . | nindent 4 }}
+{{- end }}

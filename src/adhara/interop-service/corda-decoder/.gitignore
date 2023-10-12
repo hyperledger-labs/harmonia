@@ -1,0 +1,8 @@
+.idea/
+.vscode/
+.gradle/
+
+target/
+bin/
+build/
+logs/

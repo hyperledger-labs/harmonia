@@ -1,0 +1,6 @@
+# Local pantheon database
+database
+uploads
+caches
+besu.networks
+besu.ports

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: corda-network
+description: This chart will deploy a 3 node corda network 
+
+# This is an application chart that will deploy a corda network
+type: application
+
+# This is the version of the chart please be sure to follow Semantic Versioning (https://semver.org/)
+version: 0.1.0
+
+# This is the version of the application being deployed please use quotes
+appVersion: "1.0.0"

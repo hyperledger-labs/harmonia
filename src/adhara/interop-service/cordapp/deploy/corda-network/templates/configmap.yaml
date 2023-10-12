@@ -1,0 +1,29 @@
+{{- if eq .Release.Name "corda-network-notary" }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: {{ .Values.corda.configMap.notary }}
+data:
+  node.conf: |
+{{ .Values.notary.config | indent 4}}
+{{- end }}
+---
+{{- if eq .Release.Name "corda-network-partya" }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: {{ .Values.corda.configMap.partya }}
+data:
+  node.conf: |
+{{ .Values.partya.config | indent 4}}
+{{- end }}
+---
+{{- if eq .Release.Name "corda-network-partyb" }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: {{ .Values.corda.configMap.partyb }}
+data:
+  node.conf: |
+{{ .Values.partyb.config | indent 4}}
+{{- end }}
