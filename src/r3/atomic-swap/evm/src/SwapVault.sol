@@ -26,6 +26,9 @@ import "openzeppelin/token/ERC1155/IERC1155.sol";
 import "openzeppelin/token/ERC721/utils/ERC721Holder.sol";
 import "openzeppelin/token/ERC1155/utils/ERC1155Holder.sol";
 
+// TODO: change swapId to bytes32 ?
+// TODO: add and change notary to bytes32 ?
+
 contract SwapVault {
     
     error ZERO_ADDRESS();
@@ -33,8 +36,11 @@ contract SwapVault {
     error ALREADY_COMMITTED();
     error INVALID_AMOUNT();
     error INVALID_STATUS();
-    error INVALID_CLAIMER();
+    error INVALID_CLAIM();
     error UNSUPPORTED_INTERFACE();
+
+    error INVALID_THRESHOLD();
+    error INSUFFICIENT_SIGNERS();
 
     event Commit(string indexed swapId, bytes32 holdHash);
     event Transfer(string indexed swapId, bytes32 holdHash);
@@ -48,18 +54,50 @@ contract SwapVault {
         uint256 amount;
         uint256 tokenId;
         address tokenAddress;
-        uint256 signaturesThreshold;                
+        string notary;
+        uint256 signaturesThreshold;
         bytes32[] signatures;
+        address[] signers;
     }
 
     mapping(string => Commitment) _committmentState;
 
     function commit(string calldata swapId, address recipient, uint256 signaturesThreshold) external {
-        _commit(swapId, recipient, signaturesThreshold);
+        address[] memory signers = new address[](0);
+        _commit(swapId, recipient, signaturesThreshold, signers);
+    }
+
+    function commit(string calldata swapId, address recipient, uint256 signaturesThreshold, address[] calldata signers) external {
+        _commit(swapId, recipient, signaturesThreshold, signers);
+    }
+
+    function _commit(string calldata swapId, address recipient, uint256 signaturesThreshold, address[] memory signers) internal returns (Commitment storage commitment) {
+        commitment = _committmentState[swapId];
+        uint256 commitmentStatus = commitment.status++; // loads 0, stores 1
+        if(recipient == address(0)) revert ZERO_ADDRESS();
+        if(recipient == msg.sender) revert COMMIT_TO_SELF();
+        if(commitmentStatus != 0) revert ALREADY_COMMITTED(); // loaded must be 0
+        if(signaturesThreshold < 1) revert INVALID_THRESHOLD(); // at least on signer required, enforced only for Corda side unlock.
+                                                                // Signers array can be empty and only affect the EVM claim side.
+
+        commitment.swapId = swapId;
+        commitment.owner = msg.sender;
+        commitment.recipient = recipient;
+        commitment.signaturesThreshold = signaturesThreshold;
+        commitment.signers = signers;
     }
 
     function commitWithToken(string calldata swapId, address tokenAddress, uint256 amount, address recipient, uint256 signaturesThreshold) external {
-        Commitment storage commitment =  _commit(swapId, recipient, signaturesThreshold);
+        address[] memory signers = new address[](0);
+        _commitWithToken(swapId, tokenAddress, amount, recipient, signaturesThreshold, signers);
+    }
+
+    function commitWithToken(string calldata swapId, address tokenAddress, uint256 amount, address recipient, uint256 signaturesThreshold, address[] calldata signers) external {
+        _commitWithToken(swapId, tokenAddress, amount, recipient, signaturesThreshold, signers);
+    }
+
+    function _commitWithToken(string calldata swapId, address tokenAddress, uint256 amount, address recipient, uint256 signaturesThreshold, address[] memory signers) internal {
+        Commitment storage commitment =  _commit(swapId, recipient, signaturesThreshold, signers);
 
         commitment.amount = amount;
         commitment.tokenAddress = tokenAddress;
@@ -70,7 +108,16 @@ contract SwapVault {
     }
 
     function commitWithToken(string calldata swapId, address tokenAddress, uint256 tokenId, uint256 amount, address recipient, uint256 signaturesThreshold) external {
-        Commitment storage commitment = _commit(swapId, recipient, signaturesThreshold);
+        address[] memory signers = new address[](0);
+        _commitWithToken(swapId, tokenAddress, tokenId, amount, recipient, signaturesThreshold, signers);
+    }
+
+    function commitWithToken(string calldata swapId, address tokenAddress, uint256 tokenId, uint256 amount, address recipient, uint256 signaturesThreshold, address[] calldata signers) external {
+        _commitWithToken(swapId, tokenAddress, tokenId, amount, recipient, signaturesThreshold, signers);
+    }
+
+    function _commitWithToken(string calldata swapId, address tokenAddress, uint256 tokenId, uint256 amount, address recipient, uint256 signaturesThreshold, address[] memory signers) internal {
+        Commitment storage commitment = _commit(swapId, recipient, signaturesThreshold, signers);
 
         commitment.amount = amount;
         commitment.tokenId = tokenId;
@@ -92,6 +139,15 @@ contract SwapVault {
     }
 
     function claimCommitment(string calldata swapId) external {
+        bytes[] memory signatures = new bytes[](0);
+        _claimCommitment(swapId, signatures);
+    }
+
+    function claimCommitment(string calldata swapId, bytes[] calldata signatures) external {
+        _claimCommitment(swapId, signatures);
+    }
+
+    function _claimCommitment(string calldata swapId, bytes[] memory signatures) internal {
         Commitment storage commitment = _committmentState[swapId];
         
         address tokenAddress = commitment.tokenAddress;
@@ -99,9 +155,9 @@ contract SwapVault {
         uint256 commitmentStatus = commitment.status++; // loads 1, stores 2
         if(commitmentStatus != 1) revert INVALID_STATUS();
 
-        // TODO: Bob should not be able to transfer Alice-to-Bob commitment unless
-        //       he has proofs about swap id being notarised on Corda
-        if(msg.sender != commitment.owner) revert INVALID_CLAIMER();
+        if (msg.sender != commitment.owner && (msg.sender != commitment.recipient || !verifySignatureThreshold(swapId, signatures))) {
+            revert INVALID_CLAIM();
+        }
 
         if(safeSupportsInterface(tokenAddress, 0x80ac58cd)) { // ERC721
             // 
@@ -114,6 +170,49 @@ contract SwapVault {
         }
 
         emit Transfer(swapId, commitmentHash(swapId));
+    }
+
+    function verifySignatureThreshold(string calldata swapId, bytes[] memory signatures) internal view returns(bool success) {
+        Commitment memory commitment = _committmentState[swapId];
+        if(commitment.signatures.length < commitment.signaturesThreshold) revert INVALID_CLAIM();
+
+        string memory notaryPublicKey = ""; // TODO: add notary
+        bytes32 messageHash = keccak256(abi.encode(swapId, notaryPublicKey));
+
+        bool[] memory signers = new bool[](commitment.signers.length);
+        uint verifiedSignatures = 0;
+
+        for(uint256 i; i < signatures.length; i++) {
+            address signer = recoverSigner(messageHash, signatures[i]);
+            for (uint j = 0; j < signers.length; j++) {
+                if(signer == commitment.signers[j] && !signers[j]) {
+                    signers[j] = true;
+                    ++verifiedSignatures;
+                    break;
+                }
+            }
+        }
+
+        return verifiedSignatures >= commitment.signaturesThreshold;
+    }
+
+
+    function recoverSigner(bytes32 messageHash, bytes memory signature) public pure returns (address) {
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        assembly {
+            r := mload(add(signature, 32))
+            s := mload(add(signature, 64))
+            v := byte(0, mload(add(signature, 96)))
+        }
+
+        if (v != 27 && v != 28) {
+            return address(0);
+        }
+
+        return ecrecover(messageHash, v, r, s);
     }
 
     function revertCommitment(string calldata swapId) external {
@@ -149,22 +248,10 @@ contract SwapVault {
             commitment.amount, 
             commitment.tokenId,
             commitment.tokenAddress,
-            commitment.signaturesThreshold
+            commitment.signaturesThreshold,
+            commitment.signers // TODO: sort?
         ));
-    }
-
-    function _commit(string calldata swapId, address recipient, uint256 signaturesThreshold) internal returns (Commitment storage commitment) {
-        commitment = _committmentState[swapId];
-        uint256 commitmentStatus = commitment.status++; // loads 0, stores 1
-        if(recipient == address(0)) revert ZERO_ADDRESS();
-        if(recipient == msg.sender) revert COMMIT_TO_SELF();
-        if(commitmentStatus != 0) revert ALREADY_COMMITTED(); // loaded must be 0
-        
-        commitment.swapId = swapId;
-        commitment.owner = msg.sender;
-        commitment.recipient = recipient;
-        commitment.signaturesThreshold = signaturesThreshold;
-    }
+    }    
     
     function safeSupportsInterface(address addr, bytes4 interfaceId) internal view returns (bool supported) {
         (bool success, bytes memory result) = addr.staticcall(
@@ -174,4 +261,3 @@ contract SwapVault {
         supported = success && result.length > 0 && abi.decode(result, (bool));
     }    
 }
-
