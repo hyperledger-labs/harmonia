@@ -80,7 +80,8 @@ class DemoDraftAssetSwapFlowNew(
     private val transactionId: SecureHash,
     private val outputIndex: Int,
     private val recipient: AbstractParty,
-    private val validator: AbstractParty
+    private val validator: AbstractParty,
+    private val signer: String
 ) : FlowLogic<SecureHash>() {
     @Suspendable
     override fun call(): SecureHash {
@@ -98,7 +99,8 @@ class DemoDraftAssetSwapFlowNew(
             amount = 1.toBigInteger(),
             tokenId = BigInteger.ZERO,
             tokenAddress = goldTokenDeployAddress,
-            signaturesThreshold = BigInteger.ONE
+            signaturesThreshold = BigInteger.ONE,
+            signers = listOf(signer) // same as validators but the EVM identity instead
         )
 
         val notary = serviceHub.networkMapCache.notaryIdentities.first()

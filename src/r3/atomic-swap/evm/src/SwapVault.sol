@@ -28,6 +28,7 @@ import "openzeppelin/token/ERC1155/utils/ERC1155Holder.sol";
 
 // TODO: change swapId to bytes32 ?
 // TODO: add and change notary to bytes32 ?
+// TODO: optimize storage access
 
 contract SwapVault {
     
@@ -193,7 +194,7 @@ contract SwapVault {
             }
         }
 
-        return verifiedSignatures >= commitment.signaturesThreshold;
+        success = verifiedSignatures >= commitment.signaturesThreshold;
     }
 
 
@@ -251,7 +252,7 @@ contract SwapVault {
             commitment.signaturesThreshold,
             commitment.signers // TODO: sort?
         ));
-    }    
+    }
     
     function safeSupportsInterface(address addr, bytes4 interfaceId) internal view returns (bool supported) {
         (bool success, bytes memory result) = addr.staticcall(
@@ -259,5 +260,5 @@ contract SwapVault {
             );
         
         supported = success && result.length > 0 && abi.decode(result, (bool));
-    }    
+    }
 }

@@ -29,9 +29,28 @@ interface ISwapVault {
     fun commitWithToken(
         swapId: String,
         tokenAddress: String,
+        tokenId: BigInteger,
+        amount: BigInteger,
+        recipient: String,
+        signaturesThreshold: BigInteger,
+        signers: List<String>
+    ): FlowExternalOperation<com.r3.corda.evminterop.dto.TransactionReceipt>
+
+    fun commitWithToken(
+        swapId: String,
+        tokenAddress: String,
         amount: BigInteger,
         recipient: String,
         signaturesThreshold: BigInteger
+    ): FlowExternalOperation<com.r3.corda.evminterop.dto.TransactionReceipt>
+
+    fun commitWithToken(
+        swapId: String,
+        tokenAddress: String,
+        amount: BigInteger,
+        recipient: String,
+        signaturesThreshold: BigInteger,
+        signers: List<String>
     ): FlowExternalOperation<com.r3.corda.evminterop.dto.TransactionReceipt>
 
     fun commitmentHash(swapId: String): FlowExternalOperation<ByteArray>

@@ -18,7 +18,9 @@ import net.corda.testing.internal.chooseIdentity
 import org.junit.Assert
 import org.junit.Test
 import org.web3j.abi.DefaultFunctionEncoder
+import org.web3j.abi.Utils
 import org.web3j.abi.datatypes.Address
+import org.web3j.abi.datatypes.DynamicArray
 import org.web3j.abi.datatypes.generated.Bytes32
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.crypto.Hash
@@ -31,14 +33,15 @@ class CommitClaimSwapTests : TestNetSetup() {
 
     private val amount = 1.toBigInteger()
 
-    fun commitmentHash(
+    private fun commitmentHash(
             chainId: BigInteger,
             owner: String,
             recipient: String,
             amount: BigInteger,
             tokenId: BigInteger,
             tokenAddress: String,
-            signaturesThreshold: BigInteger
+            signaturesThreshold: BigInteger,
+            signers: List<String>
     ): Bytes32 {
         val parameters = listOf<org.web3j.abi.datatypes.Type<*>>(
             Uint256(chainId),
@@ -47,7 +50,8 @@ class CommitClaimSwapTests : TestNetSetup() {
             Uint256(amount),
             Uint256(tokenId),
             Address(tokenAddress),
-            Uint256(signaturesThreshold)
+            Uint256(signaturesThreshold),
+            DynamicArray<Address>(Address::class.java, Utils.typeMap(signers, Address::class.java))
         )
 
         // Encode parameters using the DefaultFunctionEncoder
@@ -80,7 +84,8 @@ class CommitClaimSwapTests : TestNetSetup() {
             amount = amount,
             tokenId = BigInteger.ZERO,
             tokenAddress = goldTokenDeployAddress,
-            signaturesThreshold = BigInteger.ONE
+            signaturesThreshold = BigInteger.ONE,
+            signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
@@ -102,7 +107,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
 
         // counterparty (alice, EVM) commits the asset and claims it in favour of the recipient (bob, EVM address)
-        val (txReceipt, leafKey, merkleProof) = commitAndClaim(draftTxHash, amount, alice, bobAddress, BigInteger.ONE)
+        val (txReceipt, leafKey, merkleProof) = commitAndClaim(draftTxHash, amount, alice, bobAddress, BigInteger.ONE, listOf(charlieAddress))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -149,7 +154,8 @@ class CommitClaimSwapTests : TestNetSetup() {
             amount = amount,
             tokenId = BigInteger.ZERO,
             tokenAddress = goldTokenDeployAddress,
-            signaturesThreshold = BigInteger.ONE
+            signaturesThreshold = BigInteger.ONE,
+            signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
@@ -171,7 +177,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
 
         // counterparty (alice, EVM) commits the asset and claims it in favour of the recipient (bob, EVM address)
-        val (txReceipt, leafKey, merkleProof) = commitAndClaim(draftTxHash, amount, alice, bobAddress, BigInteger.ONE)
+        val (txReceipt, leafKey, merkleProof) = commitAndClaim(draftTxHash, amount, alice, bobAddress, BigInteger.ONE, listOf(charlieAddress))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -206,7 +212,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
 
         val commitTxReceipt: TransactionReceipt = alice.startFlow(
-            CommitWithTokenFlow(assetTx.txhash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE)
+            CommitWithTokenFlow(assetTx.txhash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
         ).getOrThrow()
 
         val commitmentHash1 = alice.startFlow(CommitmentHash(assetTx.txhash)).getOrThrow()
@@ -218,7 +224,8 @@ class CommitClaimSwapTests : TestNetSetup() {
             amount,
             BigInteger.ZERO,
             goldTokenDeployAddress,
-            BigInteger.ONE
+            BigInteger.ONE,
+            listOf(charlieAddress)
         )
 
         val eq = Numeric.hexStringToByteArray(commitmentHash1)
