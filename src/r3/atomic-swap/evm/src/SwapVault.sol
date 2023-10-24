@@ -177,8 +177,9 @@ contract SwapVault {
         Commitment memory commitment = _committmentState[swapId];
         if(commitment.signatures.length < commitment.signaturesThreshold) revert INVALID_CLAIM();
 
-        string memory notaryPublicKey = ""; // TODO: add notary
-        bytes32 messageHash = keccak256(abi.encode(swapId, notaryPublicKey));
+        //string memory notaryPublicKey = ""; // TODO: add notary
+        //bytes32 messageHash = keccak256(abi.encode(swapId, notaryPublicKey));
+        bytes32 messageHash = keccak256(abi.encode(swapId));
 
         bool[] memory signers = new bool[](commitment.signers.length);
         uint verifiedSignatures = 0;

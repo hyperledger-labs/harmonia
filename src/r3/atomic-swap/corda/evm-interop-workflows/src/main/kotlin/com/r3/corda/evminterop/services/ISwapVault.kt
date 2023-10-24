@@ -9,6 +9,8 @@ interface ISwapVault {
 
     fun claimCommitment(swapId: String): FlowExternalOperation<com.r3.corda.evminterop.dto.TransactionReceipt>
 
+    fun claimCommitment(swapId: String, signatures: List<ByteArray>): FlowExternalOperation<com.r3.corda.evminterop.dto.TransactionReceipt>
+
     fun revertCommitment(swapId: String): FlowExternalOperation<com.r3.corda.evminterop.dto.TransactionReceipt>
 
     fun commit(

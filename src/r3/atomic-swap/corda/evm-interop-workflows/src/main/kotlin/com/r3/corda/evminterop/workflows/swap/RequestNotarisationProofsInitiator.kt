@@ -1,17 +1,15 @@
 package com.r3.corda.evminterop.workflows.swap
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.evminterop.dto.TransactionReceipt
-import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
-import net.corda.core.crypto.DigitalSignature
+import com.r3.corda.evminterop.services.evmInterop
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.utilities.unwrap
-import org.web3j.utils.Numeric
 
-typealias RequestBlockHeaderProofsInitiator = RequestBlockHeaderProofs.Initiator
+typealias RequestNotarizationProofsInitiator = RequestNotarizationProofs.Initiator
 
-object RequestBlockHeaderProofs {
+object RequestNotarizationProofs {
 
     /**
      * Initiating flow which requests validation and attestation of an EVM event from a pool of approved validators.
@@ -19,19 +17,19 @@ object RequestBlockHeaderProofs {
     @StartableByRPC
     @InitiatingFlow
     class Initiator(
-        val transactionReceipt: TransactionReceipt,
-        val validators: List<Party>
-    ) : FlowLogic<List<DigitalSignature.WithKey>>() {
+        val transactionId: SecureHash,
+        private val validators: List<Party>
+    ) : FlowLogic<List<ByteArray>>() {
 
         @Suspendable
-        override fun call(): List<DigitalSignature.WithKey> {
+        override fun call(): List<ByteArray> {
             return validators.map { validator ->
                 if(validator.owningKey == ourIdentity.owningKey) {
-                    signReceiptRoot(transactionReceipt)
+                    serviceHub.evmInterop().web3Provider().signData(transactionId.bytes)
                 } else {
                     val session = initiateFlow(validator)
-                    session.send(transactionReceipt)
-                    session.receive<DigitalSignature.WithKey>().unwrap { it }
+                    session.send(transactionId)
+                    session.receive<ByteArray>().unwrap { it }
                 }
             }
         }
@@ -45,22 +43,11 @@ object RequestBlockHeaderProofs {
 
         @Suspendable
         override fun call() {
-            // Receive swap transaction details required to gather EVM proof and validate it
-            val transactionReceipt = session.receive<TransactionReceipt>().unwrap { it }
+            val transactionId = session.receive<SecureHash>().unwrap { it }
 
-            val sig = this.signReceiptRoot(transactionReceipt)
+            val signature = serviceHub.evmInterop().web3Provider().signData(transactionId.bytes)
 
-            session.send(sig)
+            session.send(signature)
         }
-    }
-
-    @Suspendable
-    fun FlowLogic<*>.signReceiptRoot(transactionReceipt: TransactionReceipt): DigitalSignature.WithKey {
-        // get the block that requires signature over the receipts root
-        val block = this.subFlow(GetBlockFlow(transactionReceipt.blockNumber, true))
-
-        val receiptsRootHash = Numeric.hexStringToByteArray(block.receiptsRoot)
-
-        return this.serviceHub.keyManagementService.sign(receiptsRootHash, ourIdentity.owningKey)
     }
 }

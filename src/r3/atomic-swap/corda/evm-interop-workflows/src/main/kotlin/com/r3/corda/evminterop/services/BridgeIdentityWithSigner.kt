@@ -23,4 +23,8 @@ data class BridgeIdentityWithSigner(
     override fun getAddress(): String {
         throw NotImplementedError("Signer protocol not supported")
     }
+
+    override fun signData(data: ByteArray) : ByteArray {
+        throw NotImplementedError("Signer protocol not supported")
+    }
 }

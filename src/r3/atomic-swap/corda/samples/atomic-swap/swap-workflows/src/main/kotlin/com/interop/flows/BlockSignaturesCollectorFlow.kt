@@ -14,9 +14,9 @@ import net.corda.core.utilities.unwrap
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
-typealias CollectBlockSignaturesFlow = SignaturesCollectorFlow.CollectBlockSignaturesFlow
+typealias CollectBlockSignaturesFlow = BlockSignaturesCollectorFlow.CollectBlockSignaturesFlow
 
-object SignaturesCollectorFlow {
+object BlockSignaturesCollectorFlow {
 
     @CordaSerializable
     data class RequestParams(

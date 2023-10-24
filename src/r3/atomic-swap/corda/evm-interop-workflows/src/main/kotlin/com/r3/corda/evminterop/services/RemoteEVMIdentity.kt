@@ -33,5 +33,7 @@ interface RemoteEVMIdentity {
 
     fun getAddress() : String
 
+    fun signData(data: ByteArray) : ByteArray
+
     fun dispose()
 }

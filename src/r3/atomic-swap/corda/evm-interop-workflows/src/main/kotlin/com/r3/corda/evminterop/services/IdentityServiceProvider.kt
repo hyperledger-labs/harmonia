@@ -219,6 +219,13 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
         }
 
         /**
+         * Bridge session -> RemoteEVMIdentity function [signData]
+         */
+        fun signData(data: ByteArray) : ByteArray {
+            return remoteIdentity.signData(data)
+        }
+
+        /**
          * Bridge session -> RemoteEVMIdentity function [protocolAddress]
          */
         val protocolAddress = remoteIdentity.protocolAddress
@@ -356,6 +363,10 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
 
         override fun claimCommitment(swapId: String): FlowExternalOperation<TransactionReceipt> {
             return session.queueRemoteFunctionCall(swapVault().claimCommitment(swapId))
+        }
+
+        override fun claimCommitment(swapId: String, signatures: List<ByteArray>): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().claimCommitment(swapId, signatures))
         }
 
         override fun revertCommitment(swapId: String): FlowExternalOperation<TransactionReceipt> {
@@ -520,11 +531,14 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
             return ResponseOperation(transactionReceipt)
         }
 
-
         override fun getBlockReceipts(blockNumber: BigInteger) : FlowExternalOperation<List<com.r3.corda.evminterop.dto.TransactionReceipt>> {
             val transactionReceipts = session.getBlockReceipts(blockNumber)
 
             return ResponseOperation(transactionReceipts)
+        }
+
+        override fun signData(data: ByteArray) : ByteArray {
+            return session.signData(data)
         }
     }
 }
