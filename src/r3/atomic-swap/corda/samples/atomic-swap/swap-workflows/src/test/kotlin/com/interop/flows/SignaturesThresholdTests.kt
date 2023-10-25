@@ -1,13 +1,14 @@
 package com.interop.flows
 
 import com.interop.flows.internal.TestNetSetup
-import com.r3.corda.evminterop.DefaultEventEncoder
 import com.r3.corda.evminterop.Erc20TransferEventEncoder
-import com.r3.corda.evminterop.Indexed
 import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
 import net.corda.core.identity.AbstractParty
 import org.junit.Test
+import org.web3j.abi.datatypes.Address
+import org.web3j.crypto.Keys
+import org.web3j.crypto.Sign
 import java.util.*
 
 class SignaturesThresholdTests : TestNetSetup() {
@@ -51,13 +52,13 @@ class SignaturesThresholdTests : TestNetSetup() {
         val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
 
         val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
-            assetTx.txhash,
-            assetTx.index,
-            alice.toParty(),
-            alice.services.networkMapCache.notaryIdentities.first(),
-            listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
-            2,
-            transferEventEncoder
+            transactionId =  assetTx.txhash,
+            outputIndex = assetTx.index,
+            recipient = alice.toParty(),
+            notary = alice.services.networkMapCache.notaryIdentities.first(),
+            validators = listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
+            signaturesThreshold = 2,
+            unlockEvent = transferEventEncoder
         )))
 
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
@@ -71,5 +72,52 @@ class SignaturesThresholdTests : TestNetSetup() {
         val signatures = bob.services.cordaService(DraftTxService::class.java).blockSignatures(txReceipt.blockNumber)
 
         assert(signatures.count() == 2)
+    }
+
+    @Test
+    fun `flows can collect multiple notarisation proofs asynchronously`() {
+
+        val assetName = UUID.randomUUID().toString()
+
+        // Create Corda asset owned by Bob
+        val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+            transactionId =  assetTx.txhash,
+            outputIndex = assetTx.index,
+            recipient = alice.toParty(),
+            notary = alice.services.networkMapCache.notaryIdentities.first(),
+            validators = listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
+            signaturesThreshold = 2,
+            unlockEvent = transferEventEncoder
+        )))
+
+        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+
+        // alice collects evm signatures from bob and charlie
+        await(alice.startFlow(CollectNotarizationSignaturesFlow(draftTxHash, false)))
+
+        network?.waitQuiescent()
+
+        val signatures = alice.services.cordaService(DraftTxService::class.java).notarizationProofs(draftTxHash)
+
+        val signedData = draftTxHash.bytes
+        val addresses = signatures.map {
+            // Convert the signature bytes to a Sign.SignatureData object
+            val signatureData = Sign.SignatureData(
+                it[64], // V
+                it.copyOfRange(0, 32), // R
+                it.copyOfRange(32, 64)  // S
+            )
+
+            // Verify the signature and get the signer's address
+            val publicKey = Sign.signedMessageToKey(signedData, signatureData)
+            val signerAddress = Keys.getAddress(publicKey)
+
+            Address(signerAddress)
+        }.toHashSet()
+
+        assert(signatures.count() == 2)
+        assert(addresses.containsAll(listOf(Address(charlieAddress), Address(bobAddress))))
     }
 }

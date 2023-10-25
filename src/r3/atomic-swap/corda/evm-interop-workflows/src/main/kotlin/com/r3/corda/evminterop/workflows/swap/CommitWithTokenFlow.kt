@@ -20,7 +20,8 @@ class CommitWithTokenFlow(
         private val tokenId: BigInteger,
         private val amount: BigInteger,
         private val recipient: String,
-        private val signaturesThreshold: BigInteger
+        private val signaturesThreshold: BigInteger,
+        private val signers: List<String>
 ) : FlowLogic<TransactionReceipt>() {
 
     constructor(
@@ -29,7 +30,16 @@ class CommitWithTokenFlow(
         amount: BigInteger,
         recipient: String,
         signaturesThreshold: BigInteger
-    ) : this(transactionId, tokenAddress, BigInteger.ZERO, amount, recipient, signaturesThreshold)
+    ) : this(transactionId, tokenAddress, BigInteger.ZERO, amount, recipient, signaturesThreshold, emptyList())
+
+    constructor(
+        transactionId: SecureHash,
+        tokenAddress: String,
+        amount: BigInteger,
+        recipient: String,
+        signaturesThreshold: BigInteger,
+        signers: List<String>
+    ) : this(transactionId, tokenAddress, BigInteger.ZERO, amount, recipient, signaturesThreshold, signers)
 
     @Suspendable
     override fun call(): TransactionReceipt {
@@ -46,7 +56,8 @@ class CommitWithTokenFlow(
                             tokenAddress,
                             amount,
                             recipient,
-                            signaturesThreshold
+                            signaturesThreshold,
+                            signers
                     )
                 } else {
                     swapProvider.commitWithToken(
@@ -54,7 +65,8 @@ class CommitWithTokenFlow(
                             tokenAddress,
                             amount,
                             recipient,
-                            signaturesThreshold
+                            signaturesThreshold,
+                            signers
                     )
                 })
 

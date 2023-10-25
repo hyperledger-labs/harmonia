@@ -22,8 +22,22 @@ class ClaimCommitment(
 
         val swapProvider = evmInterop().swapProvider()
 
-        val txReceipt =  await(swapProvider.claimCommitment(transactionId.toString()))
+        return await(swapProvider.claimCommitment(transactionId.toString()))
+    }
+}
 
-        return txReceipt
+@StartableByRPC
+@InitiatingFlow
+class ClaimCommitmentWithSignatures(
+    private val transactionId: SecureHash,
+    private val signatures: List<ByteArray>
+) : FlowLogic<TransactionReceipt>() {
+
+    @Suspendable
+    override fun call(): TransactionReceipt {
+
+        val swapProvider = evmInterop().swapProvider()
+
+        return await(swapProvider.claimCommitment(transactionId.toString(), signatures))
     }
 }
