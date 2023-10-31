@@ -3,17 +3,29 @@ package com.r3.corda.evminterop
 import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.dto.encoded
 import com.r3.corda.evminterop.internal.TestNetSetup
+import com.r3.corda.evminterop.services.swap.DraftTxService
+import com.r3.corda.evminterop.states.swap.SwapTransactionDetails
+import com.r3.corda.evminterop.workflows.GenericAssetState
+import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
 import com.r3.corda.evminterop.workflows.eth2eth.Erc20TransferFlow
 import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
 import com.r3.corda.evminterop.workflows.eth2eth.GetBlockReceiptsFlow
 import com.r3.corda.evminterop.workflows.eth2eth.GetTransactionFlow
+import com.r3.corda.evminterop.workflows.swap.BuildAndProposeDraftTransactionFlow
+import com.r3.corda.evminterop.workflows.swap.RequestNotarizationProofsInitiator
+import com.r3.corda.evminterop.workflows.swap.SignDraftTransactionFlow
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import net.corda.core.utilities.getOrThrow
+import org.junit.Assert
 import org.junit.Test
+import org.web3j.abi.datatypes.Address
 import org.web3j.crypto.Hash
+import org.web3j.crypto.Keys
+import org.web3j.crypto.Sign
 import org.web3j.rlp.RlpEncoder
 import org.web3j.rlp.RlpString
 import org.web3j.utils.Numeric
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -133,5 +145,66 @@ class ProofTests : TestNetSetup() {
             transactionProof
         )
         assertTrue(verified)
+    }
+
+    @Test
+    fun `can prove notarisation of transaction with evm signature`() {
+
+        val assetName = UUID.randomUUID().toString()
+
+        // Create Corda asset owned by Bob
+        val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+
+        val asset =
+            bob.services.vaultService.queryBy(GenericAssetState::class.java, queryCriteria(assetName)).states.single()
+
+        // Generate swap transaction details. These details are shared by both swap parties and are used to coordinate
+        // and identify events
+        val swapDetails = SwapTransactionDetails(
+            senderCordaName = bob.toParty(),
+            receiverCordaName = alice.toParty(),
+            cordaAssetState = asset,
+            approvedCordaValidators = listOf(charlie.toParty()),
+            minimumNumberOfEventValidations = 1,
+            unlockEvent = transferEventEncoder
+        )
+
+        // Build draft transaction and send it to counterparty for verification
+        val draftTx = await(bob.startFlow(BuildAndProposeDraftTransactionFlow(swapDetails, notary.toParty())))
+        Assert.assertEquals(
+            draftTx!!.id,
+            alice.services.cordaService(DraftTxService::class.java).getDraftTx(draftTx.id)!!.id
+        )
+        Assert.assertEquals(
+            draftTx!!.id,
+            bob.services.cordaService(DraftTxService::class.java).getDraftTx(draftTx.id)!!.id
+        )
+
+        // We generate an EVM asset transfer on EVM from Alice to Bob and retrieve the transaction receipt with the event
+        // logs, and generate a merkle-proof form it (includes the proof's leaf key).
+        val (txReceipt, leafKey, merkleProof) = transferAndProve(1.toBigInteger(), alice, bobAddress)
+
+        // Bob receives the receipt/event confirming the EVM asset transfer, so it is safe to sign because the event can
+        // be used to unlock the asset.
+        val signedTx = await(bob.startFlow(SignDraftTransactionFlow(draftTx)))
+
+        val signatures = await(bob.startFlow(RequestNotarizationProofsInitiator(signedTx.tx.id, listOf(charlie.toParty()))))
+
+        val signatureBytes = assertNotNull(signatures.singleOrNull())
+
+        // Convert the signature bytes to a Sign.SignatureData object
+        val signatureData = Sign.SignatureData(
+            signatureBytes[64], // V
+            signatureBytes.copyOfRange(0, 32), // R
+            signatureBytes.copyOfRange(32, 64)  // S
+        )
+
+        val signedData = signedTx.tx.id.bytes
+
+        // Verify the signature and get the signer's address
+        val publicKey = Sign.signedMessageToKey(signedData, signatureData)
+        val signerAddress = Keys.getAddress(publicKey)
+
+        assertEquals(Address(signerAddress), Address(charlieAddress))
     }
 }

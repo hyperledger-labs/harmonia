@@ -196,11 +196,12 @@ abstract class TestNetSetup(
             amount: BigInteger,
             senderNode: StartedMockNode,
             recipientAddress: String,
-            threshold: BigInteger
+            threshold: BigInteger,
+            signers: List<String>
     ) : Triple<TransactionReceipt, ByteArray, SimpleKeyValueStore> {
 
         val commitTxReceipt: TransactionReceipt = senderNode.startFlow(
-                CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, recipientAddress, threshold)
+                CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, recipientAddress, threshold, signers)
         ).getOrThrow()
 
         val claimTxReceipt: TransactionReceipt = senderNode.startFlow(

@@ -21,4 +21,6 @@ interface IWeb3 {
     fun getTransactionReceiptByHash(hash: String) : FlowExternalOperation<TransactionReceipt>
 
     fun getBlockReceipts(blockNumber: BigInteger) : FlowExternalOperation<List<TransactionReceipt>>
+
+    fun signData(data: ByteArray) : ByteArray
 }

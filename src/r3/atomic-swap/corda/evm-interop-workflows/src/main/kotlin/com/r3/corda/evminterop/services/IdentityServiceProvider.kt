@@ -23,14 +23,12 @@ import org.web3j.protocol.core.RemoteFunctionCall
 import org.web3j.protocol.core.methods.response.*
 import org.web3j.service.TxSignService
 import org.web3j.tuples.generated.Tuple2
-import org.web3j.tuples.generated.Tuple5
 import org.web3j.tx.RawTransactionManager
 import org.web3j.tx.gas.DefaultGasProvider
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 import java.security.InvalidParameterException
 import java.security.PublicKey
-import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import kotlin.streams.toList
 
@@ -221,6 +219,13 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
         }
 
         /**
+         * Bridge session -> RemoteEVMIdentity function [signData]
+         */
+        fun signData(data: ByteArray) : ByteArray {
+            return remoteIdentity.signData(data)
+        }
+
+        /**
          * Bridge session -> RemoteEVMIdentity function [protocolAddress]
          */
         val protocolAddress = remoteIdentity.protocolAddress
@@ -360,6 +365,10 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
             return session.queueRemoteFunctionCall(swapVault().claimCommitment(swapId))
         }
 
+        override fun claimCommitment(swapId: String, signatures: List<ByteArray>): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().claimCommitment(swapId, signatures))
+        }
+
         override fun revertCommitment(swapId: String): FlowExternalOperation<TransactionReceipt> {
             return session.queueRemoteFunctionCall(swapVault().revertCommitment(swapId))
         }
@@ -386,6 +395,18 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
         override fun commitWithToken(
             swapId: String,
             tokenAddress: String,
+            tokenId: BigInteger,
+            amount: BigInteger,
+            recipient: String,
+            signaturesThreshold: BigInteger,
+            signers: List<String>
+        ): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().commitWithToken(swapId, tokenAddress, tokenId, amount, recipient, signaturesThreshold, signers))
+        }
+
+        override fun commitWithToken(
+            swapId: String,
+            tokenAddress: String,
             amount: BigInteger,
             recipient: String,
             signaturesThreshold: BigInteger
@@ -393,6 +414,16 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
             return session.queueRemoteFunctionCall(swapVault().commitWithToken(swapId, tokenAddress, amount, recipient, signaturesThreshold))
         }
 
+        override fun commitWithToken(
+            swapId: String,
+            tokenAddress: String,
+            amount: BigInteger,
+            recipient: String,
+            signaturesThreshold: BigInteger,
+            signers: List<String>
+        ): FlowExternalOperation<TransactionReceipt> {
+            return session.queueRemoteFunctionCall(swapVault().commitWithToken(swapId, tokenAddress, amount, recipient, signaturesThreshold, signers))
+        }
         override fun commitmentHash(swapId: String): FlowExternalOperation<ByteArray> {
             return session.simpleRemoteFunctionCall(swapVault().commitmentHash(swapId))
         }
@@ -500,11 +531,14 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
             return ResponseOperation(transactionReceipt)
         }
 
-
         override fun getBlockReceipts(blockNumber: BigInteger) : FlowExternalOperation<List<com.r3.corda.evminterop.dto.TransactionReceipt>> {
             val transactionReceipts = session.getBlockReceipts(blockNumber)
 
             return ResponseOperation(transactionReceipts)
+        }
+
+        override fun signData(data: ByteArray) : ByteArray {
+            return session.signData(data)
         }
     }
 }

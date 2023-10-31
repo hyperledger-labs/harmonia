@@ -1,14 +1,13 @@
 package com.r3.corda.evminterop
 
-import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.dto.encoded
 import com.r3.corda.evminterop.internal.TestNetSetup
 import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.states.swap.LockState
 import com.r3.corda.evminterop.states.swap.SwapTransactionDetails
 import com.r3.corda.evminterop.states.swap.UnlockData
-import com.r3.corda.evminterop.workflows.*
-import com.r3.corda.evminterop.workflows.eth2eth.Erc20TransferFlow
+import com.r3.corda.evminterop.workflows.GenericAssetState
+import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
 import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
 import com.r3.corda.evminterop.workflows.eth2eth.GetBlockReceiptsFlow
 import com.r3.corda.evminterop.workflows.swap.BuildAndProposeDraftTransactionFlow
@@ -16,34 +15,21 @@ import com.r3.corda.evminterop.workflows.swap.RequestBlockHeaderProofsInitiator
 import com.r3.corda.evminterop.workflows.swap.SignDraftTransactionFlow
 import com.r3.corda.evminterop.workflows.swap.UnlockTransactionAndObtainAssetFlow
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
-import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.contracts.OwnableState
 import net.corda.core.contracts.TransactionVerificationException
-import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.node.services.vault.builder
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.internal.chooseIdentity
-import net.corda.testing.node.StartedMockNode
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.web3j.rlp.RlpEncoder
 import org.web3j.rlp.RlpString
 import org.web3j.utils.Numeric
-import java.math.BigInteger
 import java.util.*
 import kotlin.test.assertFailsWith
 
 class SwapTests : TestNetSetup() {
 
     private val amount = 1.toBigInteger()
-
-    private val transferEventEncoder = Erc20TransferEventEncoder(
-        goldTokenDeployAddress, aliceAddress, bobAddress, 1.toBigInteger()
-    )
-
-    private val invalidTransferEventEncoder = Erc20TransferEventEncoder(
-        goldTokenDeployAddress, aliceAddress, bobAddress, 2.toBigInteger()
-    )
 
     @Test
     fun `can successfully unlock using the tx receipt matching the expected event`() {
@@ -206,50 +192,5 @@ class SwapTests : TestNetSetup() {
         assertFailsWith<TransactionVerificationException.ContractRejection> {
             await(alice.startFlow(UnlockTransactionAndObtainAssetFlow(lockedAsset, lockState, unlockData)))
         }
-    }
-
-    private fun queryCriteria(assetName: String): QueryCriteria.VaultCustomQueryCriteria<GenericAssetSchemaV1.PersistentGenericAsset> {
-        return builder {
-            QueryCriteria.VaultCustomQueryCriteria(
-                GenericAssetSchemaV1.PersistentGenericAsset::assetName.equal(
-                    assetName
-                )
-            )
-        }
-    }
-
-    // Helper function to transfer an EVM asset and produce a merkle proof from the transaction's receipt.
-    private fun transferAndProve(amount: BigInteger, senderNode: StartedMockNode, recipientAddress: String) : Triple<TransactionReceipt, ByteArray, SimpleKeyValueStore> {
-
-        // create an ERC20 Transaction from alice to bob that will emit a Transfer event for the given amount
-        val transactionReceipt: TransactionReceipt = senderNode.startFlow(
-            Erc20TransferFlow(goldTokenDeployAddress, recipientAddress, amount)
-        ).getOrThrow()
-
-        // get the block that mined the ERC20 `Transfer` Transaction
-        val block = senderNode.startFlow(
-            GetBlockFlow(transactionReceipt.blockNumber, true)
-        ).getOrThrow()
-
-        // get all transaction receipts from the block that mined the ERC20 `Transfer` Transaction
-        val receipts = senderNode.startFlow(
-            GetBlockReceiptsFlow(transactionReceipt.blockNumber)
-        ).getOrThrow()
-
-        // Build the Patricia Trie from the Block receipts and verify it's valid
-        val trie = PatriciaTrie()
-        for(receipt in receipts) {
-            trie.put(
-                RlpEncoder.encode(RlpString.create(Numeric.toBigInt(receipt.transactionIndex!!).toLong())),
-                receipt.encoded()
-            )
-        }
-        assertEquals(block.receiptsRoot, Numeric.toHexString(trie.root.hash))
-
-        // generate a proof for the transaction receipt that belong to the ERC20 transfer transaction
-        val transferKey = RlpEncoder.encode(RlpString.create(Numeric.toBigInt(transactionReceipt.transactionIndex!!).toLong()))
-        val transactionProof = trie.generateMerkleProof(transferKey) as SimpleKeyValueStore
-
-        return Triple(transactionReceipt, transferKey, transactionProof)
     }
 }

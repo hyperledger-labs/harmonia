@@ -3,7 +3,9 @@ package com.r3.corda.evminterop
 import net.corda.core.crypto.SecureHash
 import net.corda.core.serialization.CordaSerializable
 import org.web3j.abi.DefaultFunctionEncoder
+import org.web3j.abi.Utils.typeMap
 import org.web3j.abi.datatypes.Address
+import org.web3j.abi.datatypes.DynamicArray
 import org.web3j.abi.datatypes.Type
 import org.web3j.abi.datatypes.generated.Bytes32
 import org.web3j.abi.datatypes.generated.Uint256
@@ -31,7 +33,8 @@ data class SwapVaultEventEncoder(
             amount: BigInteger,
             tokenId: BigInteger,
             tokenAddress: String,
-            signaturesThreshold: BigInteger
+            signaturesThreshold: BigInteger,
+            signers: List<String>
         ) : SwapVaultEventEncoder {
             return SwapVaultEventEncoder(
                 protocolAddress,
@@ -42,7 +45,8 @@ data class SwapVaultEventEncoder(
                     amount,
                     tokenId,
                     tokenAddress,
-                    signaturesThreshold
+                    signaturesThreshold,
+                    signers
                 )
             )
         }
@@ -54,7 +58,8 @@ data class SwapVaultEventEncoder(
             amount: BigInteger,
             tokenId: BigInteger,
             tokenAddress: String,
-            signaturesThreshold: BigInteger
+            signaturesThreshold: BigInteger,
+            signers: List<String>
         ): ByteArray {
             val parameters = listOf<Type<*>>(
                 Uint256(chainId),
@@ -63,7 +68,8 @@ data class SwapVaultEventEncoder(
                 Uint256(amount),
                 Uint256(tokenId),
                 Address(tokenAddress),
-                Uint256(signaturesThreshold)
+                Uint256(signaturesThreshold),
+                DynamicArray<Address>(Address::class.java, typeMap(signers, Address::class.java))
             )
 
             // Encode parameters using the DefaultFunctionEncoder
@@ -71,9 +77,7 @@ data class SwapVaultEventEncoder(
 
             val bytes = Numeric.hexStringToByteArray(encodedParams)
 
-            val hash = Hash.sha3(bytes)
-
-            return hash
+            return Hash.sha3(bytes)
         }
     }
 

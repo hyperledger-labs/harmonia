@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/******************************************************************************
+/**
+ *
  * Copyright 2023 R3 LLC                                                      *
  *                                                                            *
  * Licensed under the Apache License, Version 2.0 (the "License");            *
@@ -14,8 +15,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   *
  * See the License for the specific language governing permissions and        *
  * limitations under the License.                                             *
- ******************************************************************************/
- 
+ *
+ */
+
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
@@ -34,33 +36,38 @@ contract MyERC20 is ERC20 {
 contract SwapVaultTest is Test {
     SwapVault public messages;
     MyERC20 myERC20;
-    
+
     uint256 bobPrivKey;
     address bobAddress;
     uint256 alicePrivKey;
     address aliceAddress;
 
-    bytes32 public constant EXECUTE_TYPEHASH = keccak256("Execute(uint256 transactionId,address sender,address recipient,Commitment command)");
+    bytes32 public constant EXECUTE_TYPEHASH =
+        keccak256("Execute(uint256 transactionId,address sender,address recipient,Commitment command)");
 
     event Setup();
 
     function setUp() public {
         messages = new SwapVault();
-        bobPrivKey = vm.deriveKey("mammal clap slam suspect crime proud acoustic baby gallery approve decrease kitchen brief defense life", 0);
-        alicePrivKey = vm.deriveKey("auction farm useless muffin eager zoo stadium indoor endless entire resist divert spin bundle foil", 0);
+        bobPrivKey = vm.deriveKey(
+            "mammal clap slam suspect crime proud acoustic baby gallery approve decrease kitchen brief defense life", 0
+        );
+        alicePrivKey = vm.deriveKey(
+            "auction farm useless muffin eager zoo stadium indoor endless entire resist divert spin bundle foil", 0
+        );
         bobAddress = vm.addr(bobPrivKey);
         aliceAddress = vm.addr(alicePrivKey);
 
         myERC20 = new MyERC20(aliceAddress, bobAddress);
         //myERC721 = new MyERC721(aliceAddress, bobAddress);
-        
+
         vm.startPrank(aliceAddress);
         myERC20.approve(address(messages), type(uint256).max);
         vm.stopPrank();
 
-        vm.startPrank(bobAddress);        
+        vm.startPrank(bobAddress);
         myERC20.approve(address(messages), type(uint256).max);
-        vm.stopPrank();    
+        vm.stopPrank();
 
         emit Setup();
     }
@@ -86,7 +93,7 @@ contract SwapVaultTest is Test {
 
         uint256 aliceBalanceAfter = myERC20.balanceOf(aliceAddress);
         uint256 bobBalanceAfter = myERC20.balanceOf(bobAddress);
-        
+
         require(aliceBalanceAfter == aliceBalanceBefore - 1);
         require(bobBalanceAfter == bobBalanceBefore + 1);
     }
@@ -104,15 +111,15 @@ contract SwapVaultTest is Test {
         // NOTE: Bob is the recipient of the asset, therefore he cannot claim the asset that
         //       Alice committed, by himself. He should provide proofs to show that the asset
         //       he had to lock, is now locked. Hence revert!
-        vm.expectRevert();        
+        vm.expectRevert();
 
-        vm.startPrank(bobAddress);        
+        vm.startPrank(bobAddress);
         messages.claimCommitment(transactionId);
         vm.stopPrank();
 
         uint256 aliceBalanceAfter = myERC20.balanceOf(aliceAddress);
         uint256 bobBalanceAfter = myERC20.balanceOf(bobAddress);
-        
+
         require(aliceBalanceAfter == aliceBalanceBefore - 1);
         require(bobBalanceAfter == bobBalanceBefore);
     }
@@ -130,10 +137,10 @@ contract SwapVaultTest is Test {
 
         uint256 aliceBalanceAfter = myERC20.balanceOf(aliceAddress);
         uint256 bobBalanceAfter = myERC20.balanceOf(bobAddress);
-        
+
         require(aliceBalanceAfter == aliceBalanceBefore);
         require(bobBalanceAfter == bobBalanceBefore);
-    }    
+    }
 
     function testERC20BobCanRevertCommitmentForOwner() public {
         string memory transactionId = string("0x1234");
@@ -151,7 +158,7 @@ contract SwapVaultTest is Test {
 
         uint256 aliceBalanceAfter = myERC20.balanceOf(aliceAddress);
         uint256 bobBalanceAfter = myERC20.balanceOf(bobAddress);
-        
+
         require(aliceBalanceAfter == aliceBalanceBefore);
         require(bobBalanceAfter == bobBalanceBefore);
     }

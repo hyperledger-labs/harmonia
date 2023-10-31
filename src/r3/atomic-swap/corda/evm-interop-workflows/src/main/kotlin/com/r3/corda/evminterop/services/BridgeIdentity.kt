@@ -1,9 +1,7 @@
 package com.r3.corda.evminterop.services
 
 import com.r3.corda.evminterop.services.internal.RemoteEVMIdentityImpl
-import org.web3j.crypto.Credentials
-import org.web3j.crypto.RawTransaction
-import org.web3j.crypto.TransactionEncoder
+import org.web3j.crypto.*
 import java.net.URI
 
 data class BridgeIdentity (
@@ -46,6 +44,22 @@ data class BridgeIdentity (
     }
 
     override fun getAddress() : String = credentials.address
+
+    override fun signData(data: ByteArray) : ByteArray {
+        val ecKeyPair = credentials.ecKeyPair
+        val signatureData = Sign.signMessage(data, ecKeyPair)
+
+        val signatureBytes = ByteArray(65)
+        System.arraycopy(signatureData.r, 0, signatureBytes, 0, 32)
+        System.arraycopy(signatureData.s, 0, signatureBytes, 32, 32)
+        System.arraycopy(signatureData.v, 0, signatureBytes, 64, 1)
+
+        val publicKey = Sign.signedMessageToKey(data, signatureData)
+        val addressString = Keys.getAddress(publicKey)
+        val address = org.web3j.abi.datatypes.Address(addressString)
+
+        return signatureBytes
+    }
 
     override fun dispose() {
     }
