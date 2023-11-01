@@ -70,14 +70,13 @@ object BlockSignaturesCollectorFlow {
                 serviceHub.identityService.partyFromKey(it)
             }
 
-            log.info("Validators: ${validators.first()}")
-
             val sessions = validators.map { initiateFlow(it) }
 
+            val receivableSessions = mutableListOf<FlowSession>()
             for(session in sessions) {
                 try {
-                    log.info("Sent request params $blockNumber $blocking")
                     session.send(RequestParams(blockNumber, blocking))
+                    receivableSessions.add(session)
                 } catch (e: Throwable) {
                     // NOTE: gather as many signatures as possible, ignoring single errors.
                     log.error("Error while sending response.\nError: $e")
@@ -85,11 +84,9 @@ object BlockSignaturesCollectorFlow {
             }
 
             if(blocking) {
-                for (session in sessions) {
+                for (session in receivableSessions) {
                     try {
-                        log.info("Receiving response")
                         session.receive<Boolean>()
-                        log.info("Received response")
                     } catch (e: Throwable) {
                         // NOTE: gather as many signatures as possible, ignoring single errors.
                         log.error("Error while receiving response.\nError: $e")
@@ -110,17 +107,12 @@ object BlockSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // 2. Validator[i] receives a request to sign
             val request = session.receive<RequestParams>().unwrap { it }
-            log.info("Received request params $request.blockNumber $request.blocking")
 
-            log.info("Initiating collector subflow")
             subFlow(CollectorInitiator(session.counterparty, request.blockNumber, request.blocking))
-            log.info("Initiated collector subflow")
 
             if(request.blocking) {
                 // send a dummy response to unblock the initiating flow
-                log.info("Sending dummy response")
                 try {
                     session.send(true)
                 } catch (e: Throwable) {
@@ -152,20 +144,14 @@ object BlockSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // 3. Validator[i] query the EVM, sign the block, and send the signature to the requesting party
-            log.info("Signing receipt root")
             val signature = signReceiptRoot(blockNumber)
-            log.info("Signed receipt root")
 
             val session = initiateFlow(recipient)
 
-            log.info("Sending request params with signature")
             session.send(RequestParamsWithSignature(blockNumber, blocking, signature))
-            log.info("Sent request params with signature")
 
             if(blocking) {
                 // wait for a dummy response before returning to the caller
-                log.info("Waiting dummy response")
                 try {
                     session.receive<Boolean>()
                 } catch (e: Throwable) {
@@ -195,7 +181,6 @@ object BlockSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // 4. The requesting party stores the signatures
             val params = try {
                 session.receive<RequestParamsWithSignature>().unwrap { it }
             } catch (e: Throwable) {
@@ -203,20 +188,14 @@ object BlockSignaturesCollectorFlow {
                 throw e
             }
 
-            log.info("Received request params with signature")
-
-            log.info("Saving block signature")
             serviceHub.cordaService(DraftTxService::class.java).saveBlockSignature(
                 params.blockNumber,
                 params.signature
             )
-            log.info("Saved block signature")
 
             if(params.blocking) {
                 // send a dummy response to unblock the initiating flow
-                log.info("Sending dummy response")
                 session.send(true)
-                log.info("Sending dummy response")
             }
         }
     }

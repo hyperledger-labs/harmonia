@@ -69,7 +69,6 @@ object NotarizationSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // NOTE -> ME
             val signedTransaction = serviceHub.validatedTransactions.getTransaction(transactionId)
                 ?: throw IllegalArgumentException("Transaction not found for ID: $transactionId")
 
@@ -90,6 +89,7 @@ object NotarizationSignaturesCollectorFlow {
                 it.by == notary
             } ?: throw IllegalArgumentException("Transaction $transactionId is not signed by the expected notary")
 
+            val receivableSessions = mutableListOf<FlowSession>()
             for (session in sessions) {
                 try {
                     session.send(
@@ -100,13 +100,14 @@ object NotarizationSignaturesCollectorFlow {
                             blocking
                         )
                     )
+                    receivableSessions.add(session)
                 } catch (e: Throwable) {
                     log.error("Error while sending request.\nError: $e")
                 }
             }
 
             if (blocking) {
-                for (session in sessions) {
+                for (session in receivableSessions) {
                     try {
                         session.receive<Boolean>()
                     } catch (e: Throwable) {
@@ -128,7 +129,6 @@ object NotarizationSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // NOTE -> COUNTERPARTY
             val request = session.receive<RequestParams>().unwrap { it }
 
             subFlow(CollectorInitiator(session.counterparty, request))
@@ -165,10 +165,7 @@ object NotarizationSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // NOTE -> COUNTERPARTY
-
-            if (requestParams.transactionSignature.isValid(requestParams.transactionId)
-            ) {
+            if (requestParams.transactionSignature.isValid(requestParams.transactionId)) {
                 // Notary signature validates for the transaction ID, therefore this validator signs
                 // with its EVM signature that will need to recover to an EVM validator address
                 val signature = serviceHub.evmInterop().web3Provider().signData(requestParams.transactionId.bytes)
@@ -205,7 +202,6 @@ object NotarizationSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // NOTE -> ME
             val params = try {
                 session.receive<StoreParams>().unwrap { it }
             } catch (e: Throwable) {

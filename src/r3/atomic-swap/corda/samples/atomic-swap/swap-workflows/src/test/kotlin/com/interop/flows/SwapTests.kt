@@ -48,9 +48,7 @@ class SwapTests : TestNetSetup() {
 
         val (txReceipt, leafKey, merkleProof) = transferAndProve(amount, alice, bobAddress)
 
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, false)))
-
-        network?.waitQuiescent()
+        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true)))
 
         val utx = await(bob.startFlow(
             UnlockAssetFlow(
