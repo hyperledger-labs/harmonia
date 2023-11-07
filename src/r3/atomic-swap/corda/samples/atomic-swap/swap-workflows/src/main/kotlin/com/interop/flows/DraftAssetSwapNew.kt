@@ -11,7 +11,6 @@ import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import java.math.BigInteger
 
-
 /**
  * DraftAssetSwapFlow sets up the initial swap agreement and stores the draft transaction for later access.
  * @param transactionId the transaction hash for a generic asset that will be spent through this new transaction
@@ -21,12 +20,12 @@ import java.math.BigInteger
  * @param validators the external entities that are trusted to collect and sign the block headers that can attest the
  *                   expected event once observed
  * @param signaturesThreshold the minimum number of validator signatures that will allow the locked asset to be released
- * @param unlockEvent the expected event that once received and proved will allow to unlock the asset to the recipient
- * @param revertEvent the expected event that once received and proved will allow to unlock the asset to the original owner
+ * @param unlockEvent the event encoder that generates the revert and unlock events that once received and proved, allow
+ *                    to revert or unlock the asset back to the owner or forward to recipient
  */
 @StartableByRPC
 @InitiatingFlow
-class DraftAssetSwapFlowNew(
+class DraftAssetSwapFlow(
     private val transactionId: SecureHash,
     private val outputIndex: Int,
     private val recipient: AbstractParty,
@@ -71,12 +70,12 @@ class DraftAssetSwapFlowNew(
 }
 
 /**
- * DemoDraftAssetSwapFlowNew has the same function as the DraftAssetSwapFlowNew, but includes some pre-defined, hardcoded
+ * DemoDraftAssetSwapFlow has the same function as the DraftAssetSwapFlow, but includes some pre-defined, hardcoded
  * events and data that are otherwise difficult to pass in a context like demoing from a command line shell.
  */
 @StartableByRPC
 @InitiatingFlow
-class DemoDraftAssetSwapFlowNew(
+class DemoDraftAssetSwapFlow(
     private val transactionId: SecureHash,
     private val outputIndex: Int,
     private val recipient: AbstractParty,
@@ -106,7 +105,7 @@ class DemoDraftAssetSwapFlowNew(
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
 
         return subFlow(
-            DraftAssetSwapFlowNew(
+            DraftAssetSwapFlow(
                 transactionId,
                 outputIndex,
                 recipient,

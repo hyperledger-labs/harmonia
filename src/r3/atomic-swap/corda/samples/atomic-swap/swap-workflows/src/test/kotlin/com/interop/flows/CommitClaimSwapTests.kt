@@ -67,7 +67,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
         // EVM event proofs are presented for the claim / revert transaction events from the expected protocol address
         // and draft transaction hash (swap id).
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlowNew(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -141,7 +141,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
         // EVM event proofs are presented for the claim / revert transaction events from the expected protocol address
         // and draft transaction hash (swap id).
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlowNew(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -216,7 +216,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
         // EVM event proofs are presented for the claim / revert transaction events from the expected protocol address
         // and draft transaction hash (swap id).
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlowNew(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -302,7 +302,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
         // EVM event proofs are presented for the claim / revert transaction events from the expected protocol address
         // and draft transaction hash (swap id).
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlowNew(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -396,7 +396,7 @@ class CommitClaimSwapTests : TestNetSetup() {
             signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlowNew(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -462,7 +462,7 @@ class CommitClaimSwapTests : TestNetSetup() {
             signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlowNew(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -528,7 +528,7 @@ class CommitClaimSwapTests : TestNetSetup() {
             signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlowNew(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),

@@ -47,8 +47,8 @@ object BlockSignaturesCollectorFlow {
     @InitiatingFlow
     class CollectBlockSignaturesFlow(
         val transactionId: SecureHash,
-        val blockNumber: BigInteger,
-        val blocking: Boolean
+        private val blockNumber: BigInteger,
+        private val blocking: Boolean
     ) : FlowLogic<Unit>() {
 
         companion object {
@@ -99,7 +99,7 @@ object BlockSignaturesCollectorFlow {
     @Suspendable
     @StartableByRPC
     @InitiatedBy(CollectBlockSignaturesFlow::class)
-    class CollectBlockSignaturesFlowResponder(val session: FlowSession) : FlowLogic<Unit>() {
+    class CollectBlockSignaturesFlowResponder(private val session: FlowSession) : FlowLogic<Unit>() {
 
         companion object {
             val log = loggerFor<CollectBlockSignaturesFlowResponder>()

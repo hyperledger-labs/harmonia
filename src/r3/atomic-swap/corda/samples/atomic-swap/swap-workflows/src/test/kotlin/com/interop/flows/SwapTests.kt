@@ -1,21 +1,11 @@
 package com.interop.flows
 
 import com.interop.flows.internal.TestNetSetup
-import com.r3.corda.evminterop.DefaultEventEncoder
 import com.r3.corda.evminterop.Erc20TransferEventEncoder
-import com.r3.corda.evminterop.Indexed
 import com.r3.corda.evminterop.workflows.*
 import net.corda.core.identity.AbstractParty
 import org.junit.Test
-import org.web3j.abi.FunctionEncoder
-import org.web3j.abi.datatypes.Address
-import org.web3j.abi.datatypes.Function
-import org.web3j.abi.datatypes.Utf8String
-import org.web3j.abi.datatypes.generated.Bytes32
-import org.web3j.abi.datatypes.generated.Uint256
-import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric
-import java.math.BigInteger
 import java.util.*
 
 class SwapTests : TestNetSetup() {
@@ -34,7 +24,7 @@ class SwapTests : TestNetSetup() {
         // Create Corda asset owned by Bob
         val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapBaseFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),

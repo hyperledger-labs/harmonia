@@ -59,6 +59,11 @@ allprojects { // Properties that you need to compile your project (The applicati
         }
     }
 
+    test {
+        maxParallelForks = 1
+        forkEvery = 0
+    }
+
     jar {
         preserveFileTimestamps = false
         reproducibleFileOrder = true

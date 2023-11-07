@@ -2,17 +2,13 @@ package com.interop.flows
 
 import com.interop.flows.internal.TestNetSetup
 import com.r3.corda.evminterop.Erc20TransferEventEncoder
-import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
-import com.r3.corda.evminterop.workflows.swap.CommitWithTokenFlow
 import net.corda.core.identity.AbstractParty
-import net.corda.core.utilities.getOrThrow
 import org.junit.Test
 import org.web3j.abi.datatypes.Address
 import org.web3j.crypto.Keys
 import org.web3j.crypto.Sign
-import java.math.BigInteger
 import java.util.*
 
 class SignaturesThresholdTests : TestNetSetup() {
@@ -32,7 +28,7 @@ class SignaturesThresholdTests : TestNetSetup() {
         // Create Corda asset owned by Bob
         val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
 
-        val draftTxHash = await(bob.startFlow(DemoDraftAssetSwapFlow(assetTx.txhash, assetTx.index, alice.toParty(), charlie.toParty())))
+        val draftTxHash = await(bob.startFlow(DemoDraftAssetSwapBaseFlow(assetTx.txhash, assetTx.index, alice.toParty(), charlie.toParty())))
 
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
 
@@ -53,7 +49,7 @@ class SignaturesThresholdTests : TestNetSetup() {
         // Create Corda asset owned by Bob
         val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapBaseFlow(
             transactionId =  assetTx.txhash,
             outputIndex = assetTx.index,
             recipient = alice.toParty(),
@@ -82,7 +78,7 @@ class SignaturesThresholdTests : TestNetSetup() {
         // Create Corda asset owned by Bob
         val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = await(bob.startFlow(DraftAssetSwapBaseFlow(
             transactionId =  assetTx.txhash,
             outputIndex = assetTx.index,
             recipient = alice.toParty(),
