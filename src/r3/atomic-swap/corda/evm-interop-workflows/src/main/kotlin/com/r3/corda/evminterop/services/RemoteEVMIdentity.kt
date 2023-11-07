@@ -27,13 +27,28 @@ interface RemoteEVMIdentity {
      */
     val deployerAddress: String
 
+    /**
+     * Initializes a RemoteEVMIdentity instance
+     */
     fun authorize(flowLogic: FlowLogic<*>, authorizedId: PublicKey)
 
+    /**
+     * Signs a raw transaction before sending it
+     */
     fun signMessage(rawTransaction: RawTransaction, chainId: Long) : ByteArray
 
+    /**
+     * Get currently configured identity's address
+     */
     fun getAddress() : String
 
+    /**
+     * Signs some data using the current EVM identity
+     */
     fun signData(data: ByteArray) : ByteArray
 
+    /**
+     * Dispose the current instance of RemoteEVMIdentity
+     */
     fun dispose()
 }
