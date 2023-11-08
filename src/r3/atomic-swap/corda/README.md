@@ -29,6 +29,23 @@ The following is a list of the main components included of this project. Some of
 
 7. **EVM / Solidity Project for Atomic Swap**: This project will implement atomic swap of EVM assets like ERC20, ERC721, ERC1155.
 
+## Known Issues and Limitations
+
+### Memory Storage / Persistence
+Some services required by the application use memory storage for simplicity rather than persistent storage. Persistent storage is necessary to retain references to transactions and associated data (e.g., signatures, identity) between distinct flows. For non-experimental use, persistent storage is required.
+
+### Nonce
+The EVM transaction model uses the account nonce to maintain the order and uniqueness of transactions originating from a specific Ethereum address. The nonce represents the number of transactions sent from that address and ensures that transactions are executed in the correct sequence and not replayed. While the EVM interface available from the flows handles the asynchronous model of EVM transactions and calls, it lacks a recovery function should any issue arise with the nonce that is not already handled by the underlying Web3j framework.
+
+### Checkpointing
+While some further testing and investigation are required, Corda flows' checkpointing may, in some cases, cause an EVM transaction to be repeated. For non-experimental use, proper deduplication of the EVM interface calls should be ensured.
+
+### EVM Events
+The EVM interface, implemented as a Corda service, has a very simplistic and incomplete event registration mechanism. It is not intended for use outside of highly experimental cases, and we recommend that events be registered, filtered, and handled outside of a Corda node functioning as a coordination mechanism used to trigger related flows on Corda nodes.
+
+### Tests and Test Network
+Integration tests rely on a local Hardhat node instance running and initialized with a deployment script that deploys the required contracts. This implies that accounts, keys, and addresses used by the integration tests are hardcoded in a base class used by all the tests.
+
 ## Integration Tests
 
 The integration tests in this project are currently hardcoded to a locally set up test EVM instance. Please refer to the EVM project's C for instructions in this regard before executing any Corda project test.
