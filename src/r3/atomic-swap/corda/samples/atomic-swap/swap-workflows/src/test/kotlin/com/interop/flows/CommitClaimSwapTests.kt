@@ -14,7 +14,6 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
-import net.corda.core.utilities.getOrThrow
 import net.corda.testing.internal.chooseIdentity
 import org.junit.Assert
 import org.junit.Test
@@ -227,9 +226,9 @@ class CommitClaimSwapTests : TestNetSetup() {
         )))
 
         // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, 2.toBigInteger(), listOf(charlieAddress, bobAddress))
-        ).getOrThrow()
+        ))
 
         // Sign the draft transaction.
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
@@ -241,9 +240,9 @@ class CommitClaimSwapTests : TestNetSetup() {
         val signatures = bob.services.cordaService(DraftTxService::class.java).notarizationProofs(draftTxHash)
 
         // Bob can claim Alice's EVM committed asset
-        val txReceipt: TransactionReceipt = bob.startFlow(
+        val txReceipt: TransactionReceipt = await(bob.startFlow(
             ClaimCommitmentWithSignatures(draftTxHash, signatures)
-        ).getOrThrow()
+        ))
 
         // alice collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -313,9 +312,9 @@ class CommitClaimSwapTests : TestNetSetup() {
         )))
 
         // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, 2.toBigInteger(), listOf(charlieAddress, bobAddress))
-        ).getOrThrow()
+        ))
 
         // Sign the draft transaction.
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
@@ -327,9 +326,9 @@ class CommitClaimSwapTests : TestNetSetup() {
         val signatures = bob.services.cordaService(DraftTxService::class.java).notarizationProofs(draftTxHash)
 
         // Bob can claim Alice's EVM committed asset
-        val txReceipt: TransactionReceipt = bob.startFlow(
+        val txReceipt: TransactionReceipt = await(bob.startFlow(
             ClaimCommitmentWithSignatures(draftTxHash, signatures)
-        ).getOrThrow()
+        ))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -360,15 +359,15 @@ class CommitClaimSwapTests : TestNetSetup() {
         val transactionId = SecureHash.randomSHA256()
         val balanceBefore = alice.goldToken().balanceOf(aliceAddress).get()
 
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, bobAddress, amount, emptyList())
-        ).getOrThrow()
+        ))
 
         val balanceAfterCommit = alice.goldToken().balanceOf(aliceAddress).get()
 
-        val revertTxReceipt: TransactionReceipt = alice.startFlow(
+        val revertTxReceipt: TransactionReceipt = await(alice.startFlow(
             RevertCommitment(transactionId)
-        ).getOrThrow()
+        ))
 
         val balanceAfterRevert = alice.goldToken().balanceOf(aliceAddress).get()
 
@@ -407,17 +406,17 @@ class CommitClaimSwapTests : TestNetSetup() {
         )))
 
         // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, sigsThreshold, listOf(charlieAddress))
-        ).getOrThrow()
+        ))
 
         // Sign the draft transaction.
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
 
         // Bob can claim Alice's EVM committed asset
-        val revertReceipt: TransactionReceipt = alice.startFlow(
+        val revertReceipt: TransactionReceipt = await(alice.startFlow(
             RevertCommitment(draftTxHash)
-        ).getOrThrow()
+        ))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -473,17 +472,17 @@ class CommitClaimSwapTests : TestNetSetup() {
         )))
 
         // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, sigsThreshold, listOf(charlieAddress))
-        ).getOrThrow()
+        ))
 
         // Sign the draft transaction.
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
 
         // Bob can claim Alice's EVM committed asset
-        val revertReceipt: TransactionReceipt = alice.startFlow(
+        val revertReceipt: TransactionReceipt = await(alice.startFlow(
             RevertCommitment(draftTxHash)
-        ).getOrThrow()
+        ))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -539,17 +538,17 @@ class CommitClaimSwapTests : TestNetSetup() {
         )))
 
         // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, sigsThreshold, listOf(charlieAddress))
-        ).getOrThrow()
+        ))
 
         // Sign the draft transaction.
         val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
 
         // Bob can claim Alice's EVM committed asset
-        val revertReceipt: TransactionReceipt = bob.startFlow(
+        val revertReceipt: TransactionReceipt = await(bob.startFlow(
             RevertCommitment(draftTxHash)
-        ).getOrThrow()
+        ))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -580,15 +579,15 @@ class CommitClaimSwapTests : TestNetSetup() {
         val transactionId = SecureHash.randomSHA256()
         val balanceBefore = alice.goldToken().balanceOf(aliceAddress).get()
 
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, bobAddress, amount, emptyList())
-        ).getOrThrow()
+        ))
 
         val balanceAfterCommit = alice.goldToken().balanceOf(aliceAddress).get()
 
-        val revertTxReceipt: TransactionReceipt = bob.startFlow(
+        val revertTxReceipt: TransactionReceipt = await(bob.startFlow(
             RevertCommitment(transactionId)
-        ).getOrThrow()
+        ))
 
         val balanceAfterRevert = alice.goldToken().balanceOf(aliceAddress).get()
 
@@ -603,11 +602,11 @@ class CommitClaimSwapTests : TestNetSetup() {
 
         val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
 
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(assetTx.txhash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
-        ).getOrThrow()
+        ))
 
-        val commitmentHash1 = alice.startFlow(CommitmentHash(assetTx.txhash)).getOrThrow()
+        val commitmentHash1 = await(alice.startFlow(CommitmentHash(assetTx.txhash)))
 
         val commitmentHash2 = commitmentHash(
             BigInteger.valueOf(1337),
@@ -626,9 +625,9 @@ class CommitClaimSwapTests : TestNetSetup() {
 
     @Test
     fun `alice can commit with token for bob`() {
-        val commitTxReceipt: TransactionReceipt = alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
             CommitWithTokenFlow(SecureHash.randomSHA256(), goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
-        ).getOrThrow()
+        ))
     }
 
     private fun queryCriteria(assetName: String): QueryCriteria.VaultCustomQueryCriteria<GenericAssetSchemaV1.PersistentGenericAsset> {
