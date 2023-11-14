@@ -35,8 +35,7 @@ internal class Connection(private val connectionId: ConnectionId) {
          * Provides a fixed pool of threads to handle network calls from the queue. The servicing of the network/ethereum
          * calls needs a review and a fixed pool of threads may not be the best solution.
          */
-        private val executors: ExecutorService = Executors.newFixedThreadPool(4)
-        //private val executors: ExecutorService = Executors.newCachedThreadPool()
+        private val executors: ExecutorService = Executors.newCachedThreadPool()
 
         /**
          * Logger instance for [Connection]
@@ -69,10 +68,9 @@ internal class Connection(private val connectionId: ConnectionId) {
      * A queue to receive future/completable remote network calls.
      * Ethereum network calls are queued here for the polling module to dequeue and check the transaction status.
      */
-    //private val queue = ConcurrentLinkedQueue<CompletableTransaction>()
     private val queue = LinkedList<CompletableTransaction>()
-    //private val eventQueue = ConcurrentLinkedQueue<CompletableEvent>()
-    //private val eq = ConcurrentHashMap<String, ConcurrentLinkedQueue<CompletableEvent>>()
+
+    private val lock = Any()
 
     /**
      * Initializes Web3j underlying network connection depending on the configuration which is currently provided
@@ -94,7 +92,6 @@ internal class Connection(private val connectionId: ConnectionId) {
      */
     private fun initWeb3jConnection(connection: Web3jService): Web3j {
         // NOTE: web3j.ethChainId() could be used to identify network and set associated confirmation blocks nr.
-
         return Web3j.build(connection)
     }
 
@@ -106,13 +103,14 @@ internal class Connection(private val connectionId: ConnectionId) {
         try {
             return HttpService(connectionId.rpcEndpoint.toURL().toString())
         } finally {
-            timer(period = 5000 /*for HTTP 5 seconds polling hardcoded for now*/) {
-                poll()
-            }
+            startPolling()
         }
     }
 
-    private val lock = Any()
+    private fun startPolling() {
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({ poll() }, 0, 5, TimeUnit.SECONDS)
+    }
+
     /**
      * Implements a polling module to query ethereum calls that are pending response form the network.
      */

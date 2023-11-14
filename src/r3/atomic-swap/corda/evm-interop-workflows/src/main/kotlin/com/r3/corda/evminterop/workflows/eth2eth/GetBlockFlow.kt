@@ -2,6 +2,7 @@ package com.r3.corda.evminterop.workflows.eth2eth
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.dto.Block
+import com.r3.corda.evminterop.services.IWeb3
 import com.r3.corda.evminterop.services.evmInterop
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
@@ -55,13 +56,20 @@ class GetBlockFlow(
         val web3 = evmInterop().web3Provider()
 
         progressTracker.currentStep = QUERY_BLOCK
-        val block = if(hash.isEmpty()) {
+
+        val block = internalGetBlockFlow(web3)
+
+        return block
+    }
+
+    private fun internalGetBlockFlow(web3: IWeb3): Block {
+        val block = if (hash.isEmpty()) {
             await(web3.getBlockByNumber(number, includeTransactions))
         } else {
             await(web3.getBlockByHash(hash, includeTransactions))
         }
-
         return block
     }
-}
 
+
+}

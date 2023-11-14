@@ -52,4 +52,3 @@ dependencies {
     testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
     testImplementation "$corda_release_group:corda-core-test-utils:$corda_release_version"
 }
-

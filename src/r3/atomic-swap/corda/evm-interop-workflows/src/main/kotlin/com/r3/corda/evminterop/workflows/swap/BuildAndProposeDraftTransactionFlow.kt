@@ -25,6 +25,7 @@ import net.corda.core.utilities.unwrap
  *
  * The draft transaction is sent to the counterparty together with its dependencies for verification.
  */
+@Suspendable
 @StartableByRPC
 @InitiatingFlow
 class BuildAndProposeDraftTransactionFlow(
@@ -61,7 +62,7 @@ class BuildAndProposeDraftTransactionFlow(
     }
 
     @Suspendable
-    private fun sendTransactionDetails(session: FlowSession, wireTx: WireTransaction) {
+    public fun sendTransactionDetails(session: FlowSession, wireTx: WireTransaction) {
         session.send(wireTx)
         val wireTxDependencies = wireTx.inputs.map { it.txhash }.toSet() + wireTx.references.map { it.txhash }.toSet()
         wireTxDependencies.forEach {
@@ -72,7 +73,7 @@ class BuildAndProposeDraftTransactionFlow(
     }
 
     @Suspendable
-    private fun handleVerificationResult(draftTxVerificationResult: Boolean, wireTx: WireTransaction): WireTransaction? {
+    public fun handleVerificationResult(draftTxVerificationResult: Boolean, wireTx: WireTransaction): WireTransaction? {
         return if (draftTxVerificationResult) {
             serviceHub.cordaService(DraftTxService::class.java).saveDraftTx(wireTx)
             wireTx
@@ -82,7 +83,7 @@ class BuildAndProposeDraftTransactionFlow(
     }
 
     @Suspendable
-    private fun constructLockedAsset(asset: OwnableState, newOwner: Party): OwnableState {
+    public fun constructLockedAsset(asset: OwnableState, newOwner: Party): OwnableState {
         // Build composite key
         val compositeKey =  CompositeKey.Builder()
             .addKey(asset.owner.owningKey, weight = 1)
@@ -96,6 +97,7 @@ class BuildAndProposeDraftTransactionFlow(
 /**
  * Responder flow which receives a draft transaction and verifies it before agreeing to it.
  */
+@Suspendable
 @InitiatedBy(BuildAndProposeDraftTransactionFlow::class)
 class BuildAndProposeDraftTransactionFlowResponder(val session: FlowSession) : FlowLogic<Unit?>() {
 

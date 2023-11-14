@@ -35,6 +35,7 @@ import java.math.BigInteger
  *                    claim function reverting the asset from the commit state back to the owner.
  * @param transactionIndex the transaction index of the transaction in the EVM block.
  */
+@Suspendable
 @StartableByRPC
 @InitiatingFlow
 class RevertAssetFlow(
@@ -43,31 +44,31 @@ class RevertAssetFlow(
     private val transactionIndex: BigInteger
 ) : FlowLogic<SignedTransaction>() {
 
-    @Suppress("ClassName")
-    companion object {
-        object RETRIEVE : ProgressTracker.Step("Retrieving transaction outputs.")
-        object QUERY_BLOCK_HEADER : ProgressTracker.Step("Querying block data.")
-        object QUERY_BLOCK_RECEIPTS : ProgressTracker.Step("Querying block receipts.")
-        object BUILD_UNLOCK_DATA : ProgressTracker.Step("Building unlock data.")
-        object UNLOCK_ASSET : ProgressTracker.Step("Unlocking asset.")
-
-        fun tracker() = ProgressTracker(
-            RETRIEVE,
-            QUERY_BLOCK_HEADER,
-            QUERY_BLOCK_RECEIPTS,
-            BUILD_UNLOCK_DATA,
-            UNLOCK_ASSET
-        )
-
-        val log = loggerFor<RevertAssetFlow>()
-    }
-
-    override val progressTracker: ProgressTracker = tracker()
+//    @Suppress("ClassName")
+//    companion object {
+//        object RETRIEVE : ProgressTracker.Step("Retrieving transaction outputs.")
+//        object QUERY_BLOCK_HEADER : ProgressTracker.Step("Querying block data.")
+//        object QUERY_BLOCK_RECEIPTS : ProgressTracker.Step("Querying block receipts.")
+//        object BUILD_UNLOCK_DATA : ProgressTracker.Step("Building unlock data.")
+//        object UNLOCK_ASSET : ProgressTracker.Step("Unlocking asset.")
+//
+//        fun tracker() = ProgressTracker(
+//            RETRIEVE,
+//            QUERY_BLOCK_HEADER,
+//            QUERY_BLOCK_RECEIPTS,
+//            BUILD_UNLOCK_DATA,
+//            UNLOCK_ASSET
+//        )
+//
+//        val log = loggerFor<RevertAssetFlow>()
+//    }
+//
+//    override val progressTracker: ProgressTracker = tracker()
 
     @Suspendable
     override fun call(): SignedTransaction {
 
-        progressTracker.currentStep = RETRIEVE
+        //progressTracker.currentStep = RETRIEVE
 
         val signedTransaction = serviceHub.validatedTransactions.getTransaction(transactionId)
             ?: throw IllegalArgumentException("Transaction not found for ID: $transactionId")
@@ -95,12 +96,12 @@ class RevertAssetFlow(
             "Insufficient signatures for this transaction"
         }
 
-        progressTracker.currentStep = QUERY_BLOCK_HEADER
+        //progressTracker.currentStep = QUERY_BLOCK_HEADER
 
         // Get the block that mined the transaction that generated the designated EVM event
         val block = subFlow(GetBlockFlow(blockNumber, true))
 
-        progressTracker.currentStep = QUERY_BLOCK_RECEIPTS
+        //progressTracker.currentStep = QUERY_BLOCK_RECEIPTS
 
         // Get all the transaction receipts from the block to build and verify the transaction receipts root
         val receipts = subFlow(GetBlockReceiptsFlow(blockNumber))
@@ -108,18 +109,19 @@ class RevertAssetFlow(
         // Get the receipt specifically associated with the transaction that generated the event
         val unlockReceipt = receipts[transactionIndex.toInt()]
 
-        progressTracker.currentStep = BUILD_UNLOCK_DATA
+        //progressTracker.currentStep = BUILD_UNLOCK_DATA
 
         val merkleProof = generateMerkleProof(receipts, unlockReceipt)
 
         val unlockData = UnlockData(merkleProof, signatures, block.receiptsRoot, unlockReceipt)
 
-        progressTracker.currentStep = UNLOCK_ASSET
+        //progressTracker.currentStep = UNLOCK_ASSET
 
         return subFlow(RevertTransactionAndReturnAssetFlow(assetState, lockState, unlockData))
     }
 
-    private fun generateMerkleProof(
+    @Suspendable
+    public fun generateMerkleProof(
         receipts: List<TransactionReceipt>,
         unlockReceipt: TransactionReceipt
     ): SimpleKeyValueStore {
@@ -135,6 +137,7 @@ class RevertAssetFlow(
         return trie.generateMerkleProof(encodeKey(unlockReceipt.transactionIndex))
     }
 
-    private fun encodeKey(key: String?) =
+    @Suspendable
+    public fun encodeKey(key: String?) =
         RlpEncoder.encode(RlpString.create(Numeric.toBigInt(key!!).toLong()))
 }

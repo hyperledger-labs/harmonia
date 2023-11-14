@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  * TODO: Current implementation is suitable only for testing. A more robust approach is needed
  */
 @CordaService
-class DraftTxService(private val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
+sealed class DraftTxService(private val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
 
     private val transactions = ConcurrentHashMap<SecureHash, WireTransaction>()
     private val signatures = ConcurrentHashMap<BigInteger, HashSet<DigitalSignature.WithKey>>()

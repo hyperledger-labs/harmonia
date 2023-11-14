@@ -39,7 +39,7 @@ import kotlin.streams.toList
 class IdentityServiceProvider(private val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
 
     private companion object {
-        val log = loggerFor<IdentityServiceProvider>()
+        private val log = loggerFor<IdentityServiceProvider>()
 
         private val remoteConnections : MutableMap<ConnectionId, Connection> = mutableMapOf()
         private val remoteIdentities : MutableMap<PublicKey, Session> = mutableMapOf()

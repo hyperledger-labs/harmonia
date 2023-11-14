@@ -5,17 +5,17 @@ import java.net.URI
 /**
  * [ConnectionId] is the key correlation between a [Session] and its [Connection]
  */
-data class ConnectionId(
-    val rpcEndpoint: URI,
-    val chainId: Long
+internal data class ConnectionId(
+    internal val rpcEndpoint: URI,
+    internal val chainId: Long
 ) {
     companion object {
-        val httpRegex = Regex("^https?$", RegexOption.IGNORE_CASE)
-        val wsRegex = Regex("^wss?$", RegexOption.IGNORE_CASE)
+        private val httpRegex = Regex("^https?$", RegexOption.IGNORE_CASE)
+        private val wsRegex = Regex("^wss?$", RegexOption.IGNORE_CASE)
     }
 
-    val isHttp: Boolean = httpRegex.matches(rpcEndpoint.scheme)
-    val isWebsocket: Boolean = wsRegex.matches(rpcEndpoint.scheme)
+    internal val isHttp: Boolean = httpRegex.matches(rpcEndpoint.scheme)
+    internal val isWebsocket: Boolean = wsRegex.matches(rpcEndpoint.scheme)
 
     init {
         require(isHttp || isWebsocket) {"Invalid rpcEndpoint URI: $rpcEndpoint"}
