@@ -16,6 +16,7 @@ import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.unwrap
+import kotlin.math.log
 
 /**
  * Initiating flow which builds a draft transaction which puts the Corda asset in a locked state.
@@ -36,6 +37,7 @@ class BuildAndProposeDraftTransactionFlow(
     override fun call(): WireTransaction? {
         val lockedAssetState = constructLockedAsset(swapTxDetails.cordaAssetState.state.data, swapTxDetails.receiverCordaName)
         val lockCommand = Command(LockCommand.Lock, listOf(ourIdentity.owningKey))
+        val session = initiateFlow(swapTxDetails.receiverCordaName)
         val lockState = LockState(
             swapTxDetails.cordaAssetState.state.data.owner.owningKey,
             swapTxDetails.receiverCordaName.owningKey,
@@ -53,7 +55,7 @@ class BuildAndProposeDraftTransactionFlow(
             .addCommand(lockCommand)
 
         builder.verify(serviceHub)
-        val session = initiateFlow(swapTxDetails.receiverCordaName)
+
         val wireTx = builder.toWireTransaction(serviceHub)
         sendTransactionDetails(session, wireTx)
 
@@ -63,7 +65,11 @@ class BuildAndProposeDraftTransactionFlow(
 
     @Suspendable
     public fun sendTransactionDetails(session: FlowSession, wireTx: WireTransaction) {
-        session.send(wireTx)
+        try {
+            session.send(wireTx)
+        } catch(e: Throwable) {
+            val x = e
+        }
         val wireTxDependencies = wireTx.inputs.map { it.txhash }.toSet() + wireTx.references.map { it.txhash }.toSet()
         wireTxDependencies.forEach {
             serviceHub.validatedTransactions.getTransaction(it)?.let { stx ->
@@ -99,7 +105,7 @@ class BuildAndProposeDraftTransactionFlow(
  */
 @Suspendable
 @InitiatedBy(BuildAndProposeDraftTransactionFlow::class)
-class BuildAndProposeDraftTransactionFlowResponder(val session: FlowSession) : FlowLogic<Unit?>() {
+class BuildAndProposeDraftTransactionFlowResponder(val session: FlowSession) : FlowLogic<Unit>() {
 
     @Suspendable
     override fun call() {
