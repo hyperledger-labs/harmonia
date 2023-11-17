@@ -1,8 +1,6 @@
 package com.r3.corda.evminterop.states.swap
 
-import com.r3.corda.evminterop.EncodedEvent
 import com.r3.corda.evminterop.IUnlockEventEncoder
-import com.r3.corda.evminterop.SwapVaultEventEncoder
 import net.corda.core.contracts.OwnableState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.Party
@@ -15,10 +13,10 @@ import net.corda.core.serialization.CordaSerializable
  * number of validations required for the atomics swap protocol to succeed.
  */
 @CordaSerializable
-data class SwapTransactionDetails(val senderCordaName: Party,
-                                  val receiverCordaName: Party,
-                                  val cordaAssetState: StateAndRef<OwnableState>,
-                                  val approvedCordaValidators: List<Party>,
-                                  val minimumNumberOfEventValidations: Int,
-                                  val unlockEvent: IUnlockEventEncoder
+class SwapTransactionDetails(val senderCordaName: Party,
+                              val receiverCordaName: Party,
+                              val cordaAssetState: StateAndRef<OwnableState>,
+                              val approvedCordaValidators: List<Party>,
+                              val minimumNumberOfEventValidations: Int,
+                              val unlockEvent: IUnlockEventEncoder
 )

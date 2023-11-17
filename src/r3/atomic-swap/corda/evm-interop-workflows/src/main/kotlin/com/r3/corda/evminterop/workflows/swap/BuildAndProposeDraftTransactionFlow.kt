@@ -65,11 +65,7 @@ class BuildAndProposeDraftTransactionFlow(
 
     @Suspendable
     public fun sendTransactionDetails(session: FlowSession, wireTx: WireTransaction) {
-        try {
-            session.send(wireTx)
-        } catch(e: Throwable) {
-            val x = e
-        }
+        session.send(wireTx)
         val wireTxDependencies = wireTx.inputs.map { it.txhash }.toSet() + wireTx.references.map { it.txhash }.toSet()
         wireTxDependencies.forEach {
             serviceHub.validatedTransactions.getTransaction(it)?.let { stx ->
