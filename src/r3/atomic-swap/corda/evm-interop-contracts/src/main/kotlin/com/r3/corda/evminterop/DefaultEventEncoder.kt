@@ -62,7 +62,7 @@ object DefaultEventEncoder {
 
         typesWithValues.filter { it.second }.forEach { (type, _, typeString) ->
             val topic = when {
-                typeString == "string" || typeString == "bytes" -> Hash.sha3(TypeEncoder.encode(type))
+                typeString == "string" || typeString == "bytes" -> if(typeString == "string") Hash.sha3String(type.toString()) else Hash.sha3(TypeEncoder.encode(type))
                 type is Address -> Numeric.toHexStringWithPrefixZeroPadded(Numeric.toBigInt(type.value), 64) // Ensures 32 bytes length with 0x prefix
                 type is BytesType -> Numeric.toHexStringWithPrefixZeroPadded(BigInteger(type.value), 64)
                 type is NumericType -> Numeric.toHexStringWithPrefixZeroPadded(type.value as BigInteger, 64)

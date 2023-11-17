@@ -111,6 +111,24 @@ data class SwapVaultEventEncoder(
             commitmentHash
         )
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SwapVaultEventEncoder
+
+        if (protocolAddress != other.protocolAddress) return false
+        if (!commitmentHash.contentEquals(other.commitmentHash)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = protocolAddress.hashCode()
+        result = 31 * result + commitmentHash.contentHashCode()
+        return result
+    }
 }
 
 @CordaSerializable
