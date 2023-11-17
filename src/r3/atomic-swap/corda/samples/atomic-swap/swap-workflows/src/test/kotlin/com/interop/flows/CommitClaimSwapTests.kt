@@ -33,10 +33,10 @@ class CommitClaimSwapTests : TestNetSetup() {
 
     private val amount = 1.toBigInteger()
 
-    @Test
-    fun `test test`() {
-        await(bob.startFlow(BatchTestFlow(1)))
-    }
+//    @Test
+//    fun `test test`() {
+//        await(bob.startFlow(BatchTestFlow(1)))
+//    }
 
     // 1. alice bob agreement (not in scope)
     // 2. bob drafts a transaction

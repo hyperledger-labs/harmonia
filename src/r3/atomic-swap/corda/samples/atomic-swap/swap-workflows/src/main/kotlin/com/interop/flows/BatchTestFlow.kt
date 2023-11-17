@@ -77,6 +77,7 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
 
     private val amount = 1.toBigInteger()
 
+    @Suspendable
     fun one() {
         val assetName = UUID.randomUUID().toString()
 
@@ -146,6 +147,7 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
         require(serviceHub.vaultService.queryBy(GenericAssetState::class.java, queryCriteria(assetName)).states.isEmpty())
     }
 
+    @Suspendable
     fun two() {
         val assetName = UUID.randomUUID().toString()
 
@@ -215,6 +217,7 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
         require(serviceHub.vaultService.queryBy(GenericAssetState::class.java, queryCriteria(assetName)).states.isEmpty())
     }
 
+    @Suspendable
     fun three() {
         val sigsThreshold = 2.toBigInteger()
         val assetName = UUID.randomUUID().toString()
@@ -296,6 +299,7 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
         require(serviceHub.vaultService.queryBy(GenericAssetState::class.java, queryCriteria(assetName)).states.isEmpty())
     }
 
+    @Suspendable
     private fun queryCriteria(assetName: String): QueryCriteria.VaultCustomQueryCriteria<GenericAssetSchemaV1.PersistentGenericAsset> {
         return builder {
             QueryCriteria.VaultCustomQueryCriteria(
@@ -306,6 +310,7 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
         }
     }
 
+    @Suspendable
     protected fun commitAndClaim(
         transactionId: SecureHash,
         amount: BigInteger,
