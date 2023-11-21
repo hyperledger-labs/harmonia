@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.contracts.swap.LockCommand
 import com.r3.corda.evminterop.states.swap.LockState
 import com.r3.corda.evminterop.states.swap.UnlockData
+import com.r3.corda.evminterop.workflows.internal.CollectSignaturesForComposites
 import net.corda.core.contracts.Command
 import net.corda.core.contracts.OwnableState
 import net.corda.core.contracts.StateAndRef
@@ -70,7 +71,7 @@ class RevertTransactionAndReturnAssetFlow(
         //progressTracker.currentStep = SIGN_TRANSACTION
 
         val ptx = serviceHub.signInitialTransaction(builder)
-        val stx = subFlow(CollectSignaturesFlow(ptx, emptySet()))
+        val stx = subFlow(CollectSignaturesForComposites(ptx, listOf()))
 
         //progressTracker.currentStep = NOTARIZE_TRANSACTION
 

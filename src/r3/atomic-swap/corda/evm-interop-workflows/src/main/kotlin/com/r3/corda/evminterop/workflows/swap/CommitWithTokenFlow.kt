@@ -7,6 +7,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
+import net.corda.core.utilities.loggerFor
 import java.math.BigInteger
 
 /**
@@ -41,11 +42,17 @@ class CommitWithTokenFlow(
         signers: List<String>
     ) : this(transactionId, tokenAddress, BigInteger.ZERO, amount, recipient, signaturesThreshold, signers)
 
+    companion object {
+        val log = loggerFor<CommitWithTokenFlow>()
+    }
+
     @Suspendable
     override fun call(): TransactionReceipt {
 
         val swapProvider = evmInterop().swapProvider()
         val ercProvider = evmInterop().erc20Provider(tokenAddress)
+
+        log.debug("Approving spend of {} token(s) for {}", amount, swapProvider.contractAddress)
 
         val txReceipt1 = await(ercProvider.approve(swapProvider.contractAddress, amount))
 

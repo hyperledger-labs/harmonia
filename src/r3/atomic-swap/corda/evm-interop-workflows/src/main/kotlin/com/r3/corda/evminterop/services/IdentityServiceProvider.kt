@@ -1,5 +1,6 @@
 package com.r3.corda.evminterop.services
 
+import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.evminterop.*
 import com.r3.corda.evminterop.dto.*
 import com.r3.corda.evminterop.dto.TransactionReceipt
@@ -35,6 +36,7 @@ import kotlin.streams.toList
 /**
  * Corda service implementing access to external EVM network functions.
  */
+@Suspendable
 @CordaService
 class IdentityServiceProvider(private val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
 
@@ -98,6 +100,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     /**
      * Initializes a RemoteEVMIdentity instance
      */
+    @Suspendable
     fun authorize(remoteIdentity: RemoteEVMIdentity, authorizedId: PublicKey) {
         require(!remoteIdentities.containsKey(authorizedId)) {
             "Authorization for identity $authorizedId was already requested"
@@ -122,6 +125,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     /**
      * Load the [ERC20Wrapper] for the given token and identity
      */
+    @Suspendable
     fun erc20(tokenAddress: String, authorizedId: PublicKey) : IERC20 {
         return ERC20Wrapper(tokenAddress, session(authorizedId))
     }
@@ -129,6 +133,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     /**
      * Load the [SwapVaultWrapper] for the given token and identity
      */
+    @Suspendable
     fun swap(authorizedId: PublicKey) : ISwapVault {
         return SwapVaultWrapper(session(authorizedId))
     }
@@ -136,6 +141,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     /**
      * Load the EVM contracts protocol for the given identity
      */
+    @Suspendable
     fun contracts(authorizedId: PublicKey) : IContracts {
         return ContractsWrapper(session(authorizedId))
     }
@@ -143,6 +149,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     /**
      * Load an EVM interface for the given identity that implements generic EVM functions as per interface [IEther]
      */
+    @Suspendable
     fun ethers(authorizedId: PublicKey) : IEther {
         return EtherImpl(session(authorizedId))
     }
@@ -151,6 +158,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
      * Exposes an interface to access Web3 interfaces. Currently only implements functions available on test network
      * and therefore should only be visible to test projects.
      */
+    @Suspendable
     fun web3(authorizedId: PublicKey): IWeb3 {
         return Web3Impl(session(authorizedId))
     }
@@ -158,6 +166,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     /**
      * The public key / address for the given identity / signer.
      */
+    @Suspendable
     fun signerAddress(authorizedId: PublicKey): String {
         return session(authorizedId).address
     }
@@ -165,6 +174,7 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     /**
      * The address for EVM network deployed bridge protocol contract
      */
+    @Suspendable
     fun protocolAddress(authorizedId: PublicKey): String {
         return session(authorizedId).protocolAddress
     }
@@ -543,31 +553,41 @@ class IdentityServiceProvider(private val serviceHub: AppServiceHub) : Singleton
     }
 }
 
+@Suspendable
 fun FlowLogic<*>.evmInterop() : EvmBridge {
     return EvmBridge(this)
 }
 
+@Suspendable
 fun ServiceHub.evmInterop() : EvmBridge {
     return EvmBridge(this)
 }
 
+@Suspendable
 class EvmBridge(serviceHub: ServiceHub) {
     constructor(flowLogic: FlowLogic<*>) : this(flowLogic.serviceHub)
 
     private val owningKey = serviceHub.myInfo.legalIdentities.first().owningKey
     private val identityService = serviceHub.cordaService(IdentityServiceProvider::class.java)
 
+    @Suspendable
     fun erc20Provider(tokenAddress: String): IERC20 = identityService.erc20(tokenAddress, owningKey)
 
+    @Suspendable
     fun swapProvider(): ISwapVault = identityService.swap(owningKey)
 
+    @Suspendable
     fun contractsProvider(): IContracts = identityService.contracts(owningKey)
 
+    @Suspendable
     fun etherProvider(): IEther = identityService.ethers(owningKey)
 
+    @Suspendable
     fun web3Provider(): IWeb3 = identityService.web3(owningKey)
 
+    @Suspendable
     fun signerAddress() = identityService.signerAddress(owningKey)
 
+    @Suspendable
     fun protocolAddress() = identityService.protocolAddress(owningKey)
 }

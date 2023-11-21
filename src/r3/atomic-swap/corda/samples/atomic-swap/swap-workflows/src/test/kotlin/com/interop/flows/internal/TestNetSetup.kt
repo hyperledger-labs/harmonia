@@ -60,14 +60,29 @@ abstract class TestNetSetup(
     protected val goldTokenDeployAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
     protected val silverTokenDeployAddress = "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d"
 
-    protected lateinit var alice: StartedMockNode
-    protected lateinit var bob: StartedMockNode
-    protected lateinit var charlie: StartedMockNode
-
     protected val network: MockNetwork by lazy {
         mockNetwork()
     }
-    protected lateinit var notary: StartedMockNode
+
+
+    protected val alice: StartedMockNode by lazy {
+        createNode(network, "O=Alice, L=London, C=GB").also {
+            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+        }
+    }
+    protected val bob: StartedMockNode by lazy {
+        createNode(network, "O=Bob, L=San Francisco, C=US").also {
+            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+        }
+    }
+    protected val charlie: StartedMockNode by lazy {
+        createNode(network, "O=Charlie, L=Mumbai, C=IN").also {
+            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+        }
+    }
+    protected val notary: StartedMockNode by lazy {
+        network.defaultNotaryNode
+    }
 
     private fun createNode(
         network: MockNetwork,
@@ -80,15 +95,6 @@ abstract class TestNetSetup(
 
     private fun networkSetup() {
         try {
-            notary = network.defaultNotaryNode
-            alice = createNode(network, "O=Alice, L=London, C=GB")
-            bob = createNode(network, "O=Bob, L=San Francisco, C=US")
-            charlie = createNode(network, "O=Charlie, L=Mumbai, C=IN")
-
-            await(alice.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
-            await(bob.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
-            await(charlie.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
-
             aliceAddress = alice.services.evmInterop().signerAddress()
             bobAddress = bob.services.evmInterop().signerAddress()
             charlieAddress = charlie.services.evmInterop().signerAddress()

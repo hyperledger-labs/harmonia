@@ -52,12 +52,12 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
 
         aliceParty = identityService.wellKnownPartyFromX500Name(CordaX500Name.parse(alice))!!
         bobParty = identityService.wellKnownPartyFromX500Name(CordaX500Name.parse(bob))!!
-        charlieParty = identityService.wellKnownPartyFromX500Name(CordaX500Name.parse(bob))!!
+        charlieParty = identityService.wellKnownPartyFromX500Name(CordaX500Name.parse(charlie))!!
 
         for (i in 0..count) {
-            one()
-            two()
-            three()
+            `bob can unlock corda asset by asynchronous collection of block signatures`()
+            `alice can unlock corda asset by asynchronous collection of block signatures`()
+            `bob can transfer evm asset by asynchronous collection of notarisation signatures`()
         }
     }
 
@@ -78,7 +78,7 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
     private val amount = 1.toBigInteger()
 
     @Suspendable
-    fun one() {
+    fun `bob can unlock corda asset by asynchronous collection of block signatures`() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
@@ -109,8 +109,8 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
             assetTx.index,
             aliceParty,
             serviceHub.networkMapCache.notaryIdentities.first(),
-            listOf(charlieParty as AbstractParty, bobParty as AbstractParty),
-            2,
+            listOf(charlieParty as AbstractParty),
+            1,
             swapVaultEventEncoder,
             bobParty
         ))
@@ -121,7 +121,9 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
         val stx = subFlow(RequestSignDraftTransactionByIDFlow(draftTxHash, bobParty))
 
         // counterparty (alice, EVM) commits the asset and claims it in favour of the recipient (bob, EVM address)
-        val (txReceipt, leafKey, merkleProof) = commitAndClaim(draftTxHash, amount, aliceParty, bobAddress, BigInteger.ONE, listOf(charlieAddress))
+        val (txReceipt, leafKey, merkleProof) = commitAndClaim(
+            draftTxHash, amount, aliceParty, bobAddress, BigInteger.ONE, listOf(charlieAddress)
+        )
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -148,7 +150,7 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
     }
 
     @Suspendable
-    fun two() {
+    fun `alice can unlock corda asset by asynchronous collection of block signatures`() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
@@ -179,8 +181,8 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
             assetTx.index,
             aliceParty,
             serviceHub.networkMapCache.notaryIdentities.first(),
-            listOf(charlieParty as AbstractParty, bobParty as AbstractParty),
-            2,
+            listOf(charlieParty as AbstractParty),
+            1,
             swapVaultEventEncoder,
             bobParty
         ))
@@ -191,7 +193,9 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
         val stx = subFlow(RequestSignDraftTransactionByIDFlow(draftTxHash, bobParty))
 
         // counterparty (alice, EVM) commits the asset and claims it in favour of the recipient (bob, EVM address)
-        val (txReceipt, leafKey, merkleProof) = commitAndClaim(draftTxHash, amount, aliceParty, bobAddress, BigInteger.ONE, listOf(charlieAddress))
+        val (txReceipt, leafKey, merkleProof) = commitAndClaim(
+            draftTxHash, amount, aliceParty, bobAddress, BigInteger.ONE, listOf(charlieAddress)
+        )
 
         // alice collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
@@ -218,8 +222,7 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
     }
 
     @Suspendable
-    fun three() {
-        val sigsThreshold = 2.toBigInteger()
+    fun `bob can transfer evm asset by asynchronous collection of notarisation signatures`() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
@@ -238,8 +241,8 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
             amount = amount,
             tokenId = BigInteger.ZERO,
             tokenAddress = goldTokenDeployAddress,
-            signaturesThreshold = sigsThreshold,
-            signers = listOf(charlieAddress, bobAddress) // same as validators but the EVM identity instead
+            signaturesThreshold = BigInteger.ONE,
+            signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
@@ -250,21 +253,21 @@ class BatchTestFlow(private val count: Int) : FlowLogic<Unit>() {
             assetTx.index,
             aliceParty,
             serviceHub.networkMapCache.notaryIdentities.first(),
-            listOf(charlieParty as AbstractParty, bobParty as AbstractParty),
-            2,
+            listOf(charlieParty as AbstractParty),
+            1,
             swapVaultEventEncoder,
             bobParty
         ))
 
         // Alice commits her asset to the protocol contract
         val commitTxReceipt: TransactionReceipt = subFlow(
-            RequestCommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, 2.toBigInteger(), listOf(charlieAddress, bobAddress), aliceParty)
+            RequestCommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress), aliceParty)
         )
 
         // Sign the draft transaction.
         val stx = subFlow(RequestSignDraftTransactionByIDFlow(draftTxHash, bobParty))
 
-        // bob collects evm signatures from bob and charlie
+        // bob collects evm signatures from charlie
         subFlow(RequestCollectNotarizationSignaturesFlow(draftTxHash, true, bobParty))
 
         // collect the EVM verifiable signatures that attest that the draft transaction was signed by the notary
@@ -544,12 +547,14 @@ class RequestCollectBlockSignaturesFlow(
             session.send(transactionId)
             session.send(blockNumber)
             session.send(blocking)
+
+            if(blocking) session.receive<Boolean>()
         }
     }
 }
 
 @InitiatedBy(RequestCollectBlockSignaturesFlow::class)
-class RespondToCollectBlockSignaturesFlow(private val session: FlowSession) : FlowLogic<Unit>() {
+class RespondToCollectBlockSignaturesFlow(val session: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val transactionId = session.receive<SecureHash>().unwrap { it }
@@ -800,5 +805,17 @@ class RequestClaimCommitmentFlow(
             session.send(transactionId)
             return session.receive<TransactionReceipt>().unwrap { it }
         }
+    }
+}
+
+@InitiatedBy(RequestClaimCommitmentFlow::class)
+class RequestClaimCommitmentFlowResponder(
+    val session: FlowSession
+) : FlowLogic<Unit>() {
+    @Suspendable
+    override fun call() {
+        val transactionId = session.receive<SecureHash>().unwrap { it }
+        val receipt = subFlow(ClaimCommitment(transactionId))
+        session.send(receipt)
     }
 }

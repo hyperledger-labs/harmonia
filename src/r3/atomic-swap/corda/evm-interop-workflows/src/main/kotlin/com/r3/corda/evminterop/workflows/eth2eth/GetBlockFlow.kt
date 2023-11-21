@@ -19,6 +19,7 @@ import java.math.BigInteger
  */
 @StartableByRPC
 @InitiatingFlow
+@Suspendable
 class GetBlockFlow(
     private val hash: String,
     private val includeTransactions: Boolean
@@ -57,12 +58,6 @@ class GetBlockFlow(
 
         progressTracker.currentStep = QUERY_BLOCK
 
-        val block = internalGetBlockFlow(web3)
-
-        return block
-    }
-
-    private fun internalGetBlockFlow(web3: IWeb3): Block {
         val block = if (hash.isEmpty()) {
             await(web3.getBlockByNumber(number, includeTransactions))
         } else {
@@ -70,6 +65,4 @@ class GetBlockFlow(
         }
         return block
     }
-
-
 }

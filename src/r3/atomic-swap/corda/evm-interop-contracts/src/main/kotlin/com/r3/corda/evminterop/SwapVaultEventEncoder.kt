@@ -89,7 +89,8 @@ data class SwapVaultEventEncoder(
         return DefaultEventEncoder.encodeEvent(
             protocolAddress,
             "Commit(string,bytes32)",
-            Indexed(transactionId.toHexString()),
+            //Indexed(transactionId.toHexString()),
+            Indexed(transactionId.toString()),
             commitmentHash
         )
     }
@@ -98,7 +99,8 @@ data class SwapVaultEventEncoder(
         return DefaultEventEncoder.encodeEvent(
             protocolAddress,
             "Transfer(string,bytes32)",
-            Indexed(transactionId.toHexString()),
+            //Indexed(transactionId.toHexString()),
+            Indexed(transactionId.toString()),
             commitmentHash
         )
     }
@@ -107,7 +109,8 @@ data class SwapVaultEventEncoder(
         return DefaultEventEncoder.encodeEvent(
             protocolAddress,
             "Revert(string,bytes32)",
-            Indexed(transactionId.toHexString()),
+            //Indexed(transactionId.toHexString()),
+            Indexed(transactionId.toString()),
             commitmentHash
         )
     }

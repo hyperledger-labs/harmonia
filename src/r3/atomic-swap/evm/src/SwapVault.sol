@@ -191,6 +191,7 @@ contract SwapVault {
             revert UNSUPPORTED_INTERFACE();
         }
 
+        console.log("%s", swapId);
         emit Commit(swapId, commitmentHash(swapId));
     }
 
@@ -253,7 +254,10 @@ contract SwapVault {
 
         for (uint256 i; i < signatures.length; i++) {
             address signer = recoverSigner(messageHash, signatures[i]);
+console.logBytes(signatures[i]);            
             for (uint256 j = 0; j < signers.length; j++) {
+console.log("Address:", signer);
+    
                 if (signer == commitment.signers[j] && !signers[j]) {
                     signers[j] = true;
                     ++verifiedSignatures;

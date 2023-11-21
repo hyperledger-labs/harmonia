@@ -1,6 +1,7 @@
 package com.r3.corda.evminterop.workflows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.evminterop.workflows.internal.CollectSignaturesForComposites
 import net.corda.core.contracts.*
 import net.corda.core.crypto.CompositeKey
 import net.corda.core.flows.*
@@ -98,7 +99,7 @@ class IssueGenericAssetFlow(private val assetName: String) : FlowLogic<StateRef>
         val outputIndex = txBuilder.outputStates().size - 1
 
         val ptx = serviceHub.signInitialTransaction(txBuilder)
-        val stx = subFlow(CollectSignaturesFlow(ptx, emptyList()))
+        val stx = subFlow(CollectSignaturesForComposites(ptx, emptyList()))
         val notarizedTx = subFlow(FinalityFlow(stx, emptyList()))
         return StateRef(notarizedTx.id, outputIndex)
     }

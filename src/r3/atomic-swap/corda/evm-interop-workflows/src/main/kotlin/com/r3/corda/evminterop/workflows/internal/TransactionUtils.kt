@@ -67,6 +67,12 @@ fun ServiceHub.registerCompositeKey(ourParty: Party, otherParty: Party): PublicK
     return compositeKey
 }
 
+@Suspendable
+fun ServiceHub.registerCompositeKey(ourParty: Party, compositeKey: PublicKey): PublicKey {
+    identityService.registerKey(compositeKey, ourParty)
+    return compositeKey
+}
+
 /**
  * Collect signatures for the provided [SignedTransaction], from the list of [Party] provided.
  * This is an initiating flow, and is used where some required signatures are from [CompositeKey]s.

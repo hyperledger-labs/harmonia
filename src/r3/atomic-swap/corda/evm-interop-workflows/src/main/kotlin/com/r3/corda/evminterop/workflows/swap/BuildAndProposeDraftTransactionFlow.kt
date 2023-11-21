@@ -5,6 +5,7 @@ import com.r3.corda.evminterop.contracts.swap.LockCommand
 import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.states.swap.LockState
 import com.r3.corda.evminterop.states.swap.SwapTransactionDetails
+import com.r3.corda.evminterop.workflows.internal.registerCompositeKey
 import net.corda.core.contracts.Command
 import net.corda.core.contracts.OwnableState
 import net.corda.core.contracts.TransactionVerificationException
@@ -92,6 +93,8 @@ class BuildAndProposeDraftTransactionFlow(
             .addKey(newOwner.owningKey, weight = 1)
             .build(1)
 
+        serviceHub.identityService.registerKey(compositeKey, ourIdentity)
+
         return asset.withNewOwner(AnonymousParty(compositeKey)).ownableState
     }
 }
@@ -107,6 +110,9 @@ class BuildAndProposeDraftTransactionFlowResponder(val session: FlowSession) : F
     override fun call() {
         // Receive draft transaction
         val wireTx = session.receive<WireTransaction>().unwrap { it }
+
+        serviceHub.registerCompositeKey(ourIdentity, session.counterparty)
+
         // Receive (and validate) draft transaction dependencies
         repeat(wireTx.inputs.size + wireTx.references.size) {
             subFlow(ReceiveTransactionFlow(session, checkSufficientSignatures = true, statesToRecord = StatesToRecord.ALL_VISIBLE))
