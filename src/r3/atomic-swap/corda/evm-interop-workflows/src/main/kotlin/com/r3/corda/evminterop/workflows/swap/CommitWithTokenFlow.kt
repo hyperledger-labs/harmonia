@@ -9,6 +9,15 @@ import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
 import java.math.BigInteger
 
+@StartableByRPC
+@InitiatingFlow
+class GetBalanceFlow(private val tokenAddress: String, private val address: String) : FlowLogic<BigInteger>() {
+    @Suspendable
+    override fun call(): BigInteger {
+        return await(evmInterop().erc20Provider(tokenAddress).balanceOf(address))
+    }
+}
+
 /**
  *
  */
@@ -47,30 +56,15 @@ class CommitWithTokenFlow(
         val swapProvider = evmInterop().swapProvider()
         val ercProvider = evmInterop().erc20Provider(tokenAddress)
 
-        val txReceipt1 = await(ercProvider.approve(swapProvider.contractAddress, amount))
+        await(ercProvider.approve(swapProvider.contractAddress, amount))
 
-        val txReceipt2 = await(
-                if(tokenId == BigInteger.ZERO) {
-                    swapProvider.commitWithToken(
+        return await(swapProvider.commitWithToken(
                             transactionId.toString(),
                             tokenAddress,
                             amount,
                             recipient,
                             signaturesThreshold,
                             signers
-                    )
-                } else {
-                    swapProvider.commitWithToken(
-                            transactionId.toString(),
-                            tokenAddress,
-                            amount,
-                            recipient,
-                            signaturesThreshold,
-                            signers
-                    )
-                })
-
-
-        return txReceipt2
+                    ))
     }
 }

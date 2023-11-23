@@ -81,7 +81,7 @@ data class SwapVaultEventEncoder(
         }
     }
 
-    public fun commitEvent(transactionId: SecureHash) = commitEvent(transactionId, Bytes32(commitmentHash))
+    fun commitEvent(transactionId: SecureHash) = commitEvent(transactionId, Bytes32(commitmentHash))
     override fun transferEvent(transactionId: SecureHash) = transferEvent(transactionId, Bytes32(commitmentHash))
     override fun revertEvent(transactionId: SecureHash) = revertEvent(transactionId, Bytes32(commitmentHash))
 

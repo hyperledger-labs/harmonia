@@ -19,7 +19,6 @@ class ClaimCommitment(
 
     @Suspendable
     override fun call(): TransactionReceipt {
-
         val swapProvider = evmInterop().swapProvider()
 
         return await(swapProvider.claimCommitment(transactionId.toString()))
