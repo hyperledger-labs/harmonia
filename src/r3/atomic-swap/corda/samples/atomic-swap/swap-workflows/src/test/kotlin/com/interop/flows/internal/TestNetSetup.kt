@@ -29,9 +29,13 @@ import org.junit.Before
 import org.web3j.rlp.RlpEncoder
 import org.web3j.rlp.RlpString
 import org.web3j.utils.Numeric
+import java.lang.management.ManagementFactory
 import java.math.BigInteger
+import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
 /**
  * ~/evm-interop-workflows testnet setup
@@ -60,14 +64,29 @@ abstract class TestNetSetup(
     protected val goldTokenDeployAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
     protected val silverTokenDeployAddress = "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d"
 
-    protected lateinit var alice: StartedMockNode
-    protected lateinit var bob: StartedMockNode
-    protected lateinit var charlie: StartedMockNode
-
     protected val network: MockNetwork by lazy {
         mockNetwork()
     }
-    protected lateinit var notary: StartedMockNode
+
+
+    protected val alice: StartedMockNode by lazy {
+        createNode(network, "O=Alice, L=London, C=GB").also {
+            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+        }
+    }
+    protected val bob: StartedMockNode by lazy {
+        createNode(network, "O=Bob, L=San Francisco, C=US").also {
+            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+        }
+    }
+    protected val charlie: StartedMockNode by lazy {
+        createNode(network, "O=Charlie, L=Mumbai, C=IN").also {
+            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+        }
+    }
+    protected val notary: StartedMockNode by lazy {
+        network.defaultNotaryNode
+    }
 
     private fun createNode(
         network: MockNetwork,
@@ -80,23 +99,9 @@ abstract class TestNetSetup(
 
     private fun networkSetup() {
         try {
-            notary = network.defaultNotaryNode
-            alice = createNode(network, "O=Alice, L=London, C=GB")
-            bob = createNode(network, "O=Bob, L=San Francisco, C=US")
-            charlie = createNode(network, "O=Charlie, L=Mumbai, C=IN")
-
-            await(alice.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
-            await(bob.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
-            await(charlie.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
-
             aliceAddress = alice.services.evmInterop().signerAddress()
             bobAddress = bob.services.evmInterop().signerAddress()
             charlieAddress = charlie.services.evmInterop().signerAddress()
-
-//            listOf(alice, bob, charlie).forEach {
-//                it.registerInitiatedFlow(UnlockTransactionAndObtainAssetFlowResponder::class.java)
-//                //it.registerInitiatedFlow(UnlockTransactionAndObtainAssetFlowResponder::class.java)
-//            }
 
         } catch (ex: Exception) {
             println("Failed to start nodes, error:\n\n$ex")
@@ -164,7 +169,13 @@ abstract class TestNetSetup(
 
     protected fun <R> await(flow: CordaFuture<R>): R {
         network.runNetwork()
-        return flow.getOrThrow()
+        try {
+            return flow.getOrThrow(Duration.ofSeconds(90))
+        } catch (e: Throwable) {
+            val threadInfo = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true)
+            threadInfo.forEach { println(it) }
+            throw e
+        }
     }
 
     // Helper function to transfer an EVM asset and produce a merkle proof from the transaction's receipt.

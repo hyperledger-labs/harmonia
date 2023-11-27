@@ -4,6 +4,7 @@ import com.r3.corda.evminterop.dto.TransactionReceipt
 import com.r3.corda.evminterop.dto.TransactionReceiptLog
 import net.corda.core.serialization.CordaSerializable
 import org.web3j.abi.DefaultFunctionEncoder
+import org.web3j.abi.TypeEncoder
 import org.web3j.abi.datatypes.*
 import org.web3j.abi.datatypes.generated.Bytes32
 import org.web3j.abi.datatypes.generated.Int256
@@ -35,36 +36,46 @@ object DefaultEventEncoder {
      *         expected address.
      */
     fun encodeEvent(contractAddress: String, eventSignature: String, vararg params: Any): EncodedEvent {
-        val paramTypesString = eventSignature.substringAfter('(').substringBefore(')')
-        val paramTypes = paramTypesString.split(',').map { it.trim() }
+        val paramTypes = eventSignature.substringAfter('(').substringBefore(')').split(",")
 
-        fun toWeb3jType(value: Any, type: String): Pair<Type<out Serializable>, Boolean> {
+        val typesWithValues = params.zip(paramTypes).map { (value, typeString) ->
             val isIndexed = value is Indexed<*>
-            val unwrappedValue = if (isIndexed) (value as Indexed<*>).indexedValue else value
+            val actualValue = if (isIndexed) (value as Indexed<*>).indexedValue else value
 
-            return Pair(when (type) {
-                "string" -> Utf8String(unwrappedValue as String)
-                "uint256" -> Uint256(unwrappedValue as BigInteger)
-                "uint8" -> Uint8(unwrappedValue as BigInteger)
-                "int256" -> Int256(unwrappedValue as BigInteger)
-                "address" -> Address(unwrappedValue as String)
-                "bool" -> Bool(unwrappedValue as Boolean)
-                "bytes" -> DynamicBytes(unwrappedValue as ByteArray)
-                "bytes32" -> unwrappedValue as Bytes32
-                else -> throw IllegalArgumentException("Unsupported type: $type")
-            }, isIndexed)
+            val type = when (typeString.trim()) {
+                "string" -> Utf8String(actualValue as String)
+                "uint256" -> Uint256(actualValue as BigInteger)
+                "uint8" -> Uint8(actualValue as BigInteger)
+                "int256" -> Int256(actualValue as BigInteger)
+                "address" -> Address(actualValue as String)
+                "bool" -> Bool(actualValue as Boolean)
+                "bytes" -> DynamicBytes(actualValue as ByteArray)
+                "bytes32" -> actualValue as Bytes32//StaticBytes32(actualValue as ByteArray)
+                else -> throw IllegalArgumentException("Unsupported type: $typeString")
         }
 
-        val web3jParamsWithIndexedInfo = params.zip(paramTypes).map { (value, type) -> toWeb3jType(value, type) }
+            Triple(type, isIndexed, typeString.trim())
+        }
 
-        val indexedParams = web3jParamsWithIndexedInfo.filter { it.second }.map { it.first }
-        val nonIndexedParams = web3jParamsWithIndexedInfo.filterNot { it.second }.map { it.first }
+        val topic0 = Hash.sha3String(eventSignature)
+        val topics = mutableListOf(topic0)
 
-        val topic0 = Hash.sha3String(whitespaceRegex.replace(eventSignature, ""))
-        val topics = listOf(topic0) + indexedParams.map { Hash.sha3String(it.toString()) }
-        val data = Numeric.prependHexPrefix(DefaultFunctionEncoder().encodeParameters(nonIndexedParams))
+        typesWithValues.filter { it.second }.forEach { (type, _, typeString) ->
+            val topic = when {
+                typeString == "string" || typeString == "bytes" -> if(typeString == "string") Hash.sha3String(type.toString()) else Hash.sha3(
+                    TypeEncoder.encode(type))
+                type is Address -> Numeric.toHexStringWithPrefixZeroPadded(Numeric.toBigInt(type.value), 64) // Ensures 32 bytes length with 0x prefix
+                type is BytesType -> Numeric.toHexStringWithPrefixZeroPadded(BigInteger(type.value), 64)
+                type is NumericType -> Numeric.toHexStringWithPrefixZeroPadded(type.value as BigInteger, 64)
+                else -> throw IllegalArgumentException("Unsupported indexed type: $typeString")
+            }
+            topics.add(topic)
+        }
 
-        return EncodedEvent(contractAddress, topics, data)
+        val data = typesWithValues.filterNot { it.second }
+            .joinToString("") { TypeEncoder.encode(it.first) }
+
+        return EncodedEvent(contractAddress, topics, Numeric.prependHexPrefix(data))
     }
 }
 

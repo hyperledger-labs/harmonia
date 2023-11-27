@@ -167,19 +167,19 @@ abstract class TestNetSetup(
     protected fun transferAndProve(amount: BigInteger, senderNode: StartedMockNode, recipientAddress: String) : Triple<TransactionReceipt, ByteArray, SimpleKeyValueStore> {
 
         // create an ERC20 Transaction from alice to bob that will emit a Transfer event for the given amount
-        val transactionReceipt: TransactionReceipt = senderNode.startFlow(
+        val transactionReceipt: TransactionReceipt = await(senderNode.startFlow(
             Erc20TransferFlow(goldTokenDeployAddress, recipientAddress, amount)
-        ).getOrThrow()
+        ))
 
         // get the block that mined the ERC20 `Transfer` Transaction
-        val block = senderNode.startFlow(
+        val block = await(senderNode.startFlow(
             GetBlockFlow(transactionReceipt.blockNumber, true)
-        ).getOrThrow()
+        ))
 
         // get all transaction receipts from the block that mined the ERC20 `Transfer` Transaction
-        val receipts = senderNode.startFlow(
+        val receipts = await(senderNode.startFlow(
             GetBlockReceiptsFlow(transactionReceipt.blockNumber)
-        ).getOrThrow()
+        ))
 
         // Build the Patricia Trie from the Block receipts and verify it's valid
         val trie = PatriciaTrie()

@@ -25,7 +25,6 @@ import "openzeppelin/token/ERC721/IERC721.sol";
 import "openzeppelin/token/ERC1155/IERC1155.sol";
 import "openzeppelin/token/ERC721/utils/ERC721Holder.sol";
 import "openzeppelin/token/ERC1155/utils/ERC1155Holder.sol";
-import "hardhat/console.sol";
 import "./HexBytes.sol";
 
 // TODO: change swapId to bytes32 ?

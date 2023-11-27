@@ -82,7 +82,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     }
 
     node {
-        name "O=Bob,L=London,C=GB"
+        name "O=Bob,L=San Francisco,C=US"
         p2pPort 10003
         extraConfig = [
                 'custom.jvmArgs': [
@@ -90,7 +90,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
                         "-XX:+UseG1GC",
                         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5003"
                 ]
-        ]        
+        ]
         rpcSettings {
             address("localhost:10013")
             adminAddress("localhost:10023")
@@ -98,7 +98,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     }
 
     node {
-        name "O=Bridge,L=London,C=GB"
+        name "O=Charlie,L=Mumbai,C=IN"
         p2pPort 10004
         extraConfig = [
                 'custom.jvmArgs': [

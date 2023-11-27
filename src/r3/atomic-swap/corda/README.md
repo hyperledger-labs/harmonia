@@ -97,7 +97,7 @@ If you followed the steps above correctly, on the second terminal you will see t
 
 Gold Tethered (GLDT) Token deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3</br>  
 Silver Tethered (SLVT) Token deployed to: 0xc6e7DF5E7b4f2A278906862b61205850344D4e7d</br>
-
+SwapVault deployed to: 0x70e0bA845a1A0F2DA3359C97E0285013525FFC49</br>
 
 The test environment is now ready and you can enter the following command:
 

@@ -119,6 +119,7 @@ class RevertAssetFlow(
         return subFlow(RevertTransactionAndReturnAssetFlow(assetState, lockState, unlockData))
     }
 
+    @Suspendable
     private fun generateMerkleProof(
         receipts: List<TransactionReceipt>,
         unlockReceipt: TransactionReceipt
@@ -135,6 +136,7 @@ class RevertAssetFlow(
         return trie.generateMerkleProof(encodeKey(unlockReceipt.transactionIndex))
     }
 
+    @Suspendable
     private fun encodeKey(key: String?) =
         RlpEncoder.encode(RlpString.create(Numeric.toBigInt(key!!).toLong()))
 }

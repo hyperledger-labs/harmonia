@@ -1,5 +1,6 @@
 package com.r3.corda.evminterop.services
 
+import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.FlowLogic
 import org.web3j.crypto.RawTransaction
 import java.net.URI
@@ -30,11 +31,13 @@ interface RemoteEVMIdentity {
     /**
      * Initializes a RemoteEVMIdentity instance
      */
+    @Suspendable
     fun authorize(flowLogic: FlowLogic<*>, authorizedId: PublicKey)
 
     /**
      * Signs a raw transaction before sending it
      */
+    @Suspendable
     fun signMessage(rawTransaction: RawTransaction, chainId: Long) : ByteArray
 
     /**
@@ -45,6 +48,7 @@ interface RemoteEVMIdentity {
     /**
      * Signs some data using the current EVM identity
      */
+    @Suspendable
     fun signData(data: ByteArray) : ByteArray
 
     /**
