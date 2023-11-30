@@ -25,6 +25,7 @@ import net.corda.testing.internal.chooseIdentity
 import net.corda.testing.node.*
 import org.junit.After
 import org.junit.Assert
+import org.junit.AssumptionViolatedException
 import org.junit.Before
 import org.web3j.rlp.RlpEncoder
 import org.web3j.rlp.RlpString
@@ -36,6 +37,7 @@ import java.time.Instant
 import java.util.*
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeoutException
 
 /**
  * ~/evm-interop-workflows testnet setup
