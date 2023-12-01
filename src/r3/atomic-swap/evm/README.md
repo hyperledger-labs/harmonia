@@ -50,8 +50,8 @@ To run the Corda integration tests you need to set up the EVM test environment f
 
 To set up the test environment proceed as follows:
 - open two terminals in the root directory of the EVM project
-- on the first terminal run `npm install` and wait for the required packages to be installed - this step is required once.
-- again on the first terminal run `npx hardhat node` - it will print a number of accounts and will start printing block numbers in the form `Mined empty block range #m to #n`
+- on the first terminal run `forge install && npm install` and wait for the required packages to be installed - this step is required once.
+- again on the first terminal run `npx hardhat node` - it will print a number of default accounts
 - on the second terminal, once the first the hardhat node is running, enter `npx hardhat run deploy.js --network localhost` and wait for the shell prompt to return (without errors)
 
 If you followed the steps above correctly, on the second terminal you will see the following output:
