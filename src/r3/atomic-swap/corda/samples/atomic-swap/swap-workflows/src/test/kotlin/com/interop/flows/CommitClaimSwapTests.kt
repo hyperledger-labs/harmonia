@@ -15,6 +15,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import net.corda.testing.internal.chooseIdentity
+import org.bouncycastle.asn1.x500.style.RFC4519Style.owner
 import org.junit.Assert
 import org.junit.Test
 import org.web3j.abi.DefaultFunctionEncoder

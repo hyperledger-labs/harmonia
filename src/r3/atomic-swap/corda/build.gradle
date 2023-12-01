@@ -37,6 +37,64 @@ buildscript {
     }
 }
 
+task startDockerContainer {
+    doLast {
+        exec {
+            environment 'PATH', System.getenv('PATH') + ":/usr/local/bin"
+            commandLine 'sh', '-c', 'if [ -z "$(docker ps -q -f name=r3-harmonia-testnet-instance)" ]; then docker run --rm -d --name r3-harmonia-testnet-instance --platform linux/amd64 -p 8545:8545 edoardoierina/r3-harmonia-testnet; else echo "Container already running."; fi'
+        }
+    }
+}
+
+task waitForContainerReady {
+    doLast {
+        def retries = 0
+        def maxRetries = 36
+        def healthy = false
+        def outputStream = new ByteArrayOutputStream()
+
+        while (!healthy && retries < maxRetries) {
+            exec {
+                environment 'PATH', System.getenv('PATH') + ":/usr/local/bin"
+                commandLine 'sh', '-c', 'docker inspect --format="{{.State.Health.Status}}" r3-harmonia-testnet-instance'
+                standardOutput = outputStream
+                ignoreExitValue = true
+            }
+
+            def healthStatus = outputStream.toString().trim()
+            outputStream.reset() // Reset the output stream for the next iteration
+
+            if (healthStatus == 'healthy') {
+                healthy = true
+            } else {
+                println "Waiting for container to become ready... (${retries}/${maxRetries})"
+                Thread.sleep(5000) // 5 seconds
+                retries++
+            }
+        }
+
+        if (!healthy) {
+            throw new GradleException("Container did not become ready within the expected time")
+        }
+
+        println "Container is now ready."
+    }
+}
+
+task stopDockerContainer  {
+    doLast {
+        try {
+            exec {
+                environment 'PATH', System.getenv('PATH') + ":/usr/local/bin"
+                commandLine 'sh', '-c', 'docker stop r3-harmonia-testnet-instance'
+                ignoreExitValue = true
+            }
+        } catch (Exception e) {
+            println "An error occurred while stopping the Docker container: ${e.message}"
+        }
+    }
+}
+
 allprojects { // Properties that you need to compile your project (The application)
     apply from: "${rootProject.projectDir}/repositories.gradle"
     apply plugin: 'net.corda.plugins.cordapp'
@@ -59,6 +117,20 @@ allprojects { // Properties that you need to compile your project (The applicati
             apiVersion = "1.2"
             jvmTarget = "1.8"
             javaParameters = true
+        }
+    }
+
+    tasks.withType(Test) {
+        if (project.hasProperty('useDockerTestnet')) {
+            dependsOn startDockerContainer, waitForContainerReady
+            finalizedBy stopDockerContainer
+        }
+    }
+
+    tasks.named('build') {
+        if (project.hasProperty('useDockerTestnet')) {
+            dependsOn startDockerContainer, waitForContainerReady
+            finalizedBy stopDockerContainer
         }
     }
 

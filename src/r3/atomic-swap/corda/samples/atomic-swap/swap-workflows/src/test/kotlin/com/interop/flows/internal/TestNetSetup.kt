@@ -35,7 +35,6 @@ import java.math.BigInteger
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeoutException
 
@@ -46,7 +45,6 @@ abstract class TestNetSetup(
         val jsonRpcEndpoint: String = "http://localhost:8545",
         val chainId: Long = 1337
 ) {
-
     protected val oneEth            = BigInteger("1000000000000000000")
     protected val oneHundredEth     = BigInteger("100000000000000000000")
     protected val twoHundredEth     = BigInteger("200000000000000000000")
@@ -170,7 +168,7 @@ abstract class TestNetSetup(
     }
 
     protected fun <R> await(flow: CordaFuture<R>): R {
-        network!!.runNetwork()
+        network.runNetwork()
         try {
             return flow.getOrThrow(Duration.ofMinutes(2))
         } catch (e: TimeoutException) {
