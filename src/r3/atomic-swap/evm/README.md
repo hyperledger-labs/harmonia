@@ -44,7 +44,7 @@ forge install && forge build
 forge test -vvv  
 ```
 
-## Integration Tests
+## Integration Tests / Test Network Setup
 
 To run the Corda integration tests you need to set up the EVM test environment first.
 
