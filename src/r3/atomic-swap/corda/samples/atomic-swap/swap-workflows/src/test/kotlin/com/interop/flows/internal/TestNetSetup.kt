@@ -7,6 +7,7 @@ import com.r3.corda.evminterop.services.IWeb3
 import com.r3.corda.evminterop.services.IdentityServiceProvider
 import com.r3.corda.evminterop.services.evmInterop
 import com.r3.corda.evminterop.workflows.GenericAssetSchemaV1
+import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
 import com.r3.corda.evminterop.workflows.UnsecureRemoteEvmIdentityFlow
 import com.r3.corda.evminterop.workflows.eth2eth.Erc20TransferFlow
 import com.r3.corda.evminterop.workflows.eth2eth.GetBlockFlow
@@ -16,13 +17,22 @@ import com.r3.corda.evminterop.workflows.swap.CommitWithTokenFlow
 import com.r3.corda.interop.evm.common.trie.PatriciaTrie
 import com.r3.corda.interop.evm.common.trie.SimpleKeyValueStore
 import net.corda.core.concurrent.CordaFuture
+import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowExternalOperation
+import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.internal.FlowStateMachineHandle
+import net.corda.core.internal.concurrent.flatMap
+import net.corda.core.internal.concurrent.map
 import net.corda.core.internal.packageName
 import net.corda.core.utilities.getOrThrow
+import net.corda.node.services.Permissions.Companion.startFlow
 import net.corda.testing.internal.chooseIdentity
 import net.corda.testing.node.*
+import net.corda.testing.node.internal.TestStartedNode
+import net.corda.testing.node.internal.newContext
+import net.corda.testing.node.internal.startFlow
 import org.junit.After
 import org.junit.Assert
 import org.junit.AssumptionViolatedException
@@ -35,8 +45,8 @@ import java.math.BigInteger
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.*
+import java.util.function.Supplier
 
 /**
  * ~/evm-interop-workflows testnet setup
@@ -64,24 +74,25 @@ abstract class TestNetSetup(
     protected val goldTokenDeployAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
     protected val silverTokenDeployAddress = "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d"
 
+    private lateinit var executor: ExecutorService
+
     protected val network: MockNetwork by lazy {
         mockNetwork()
     }
 
-
     protected val alice: StartedMockNode by lazy {
         createNode(network, "O=Alice, L=London, C=GB").also {
-            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+            runFlow(it, UnsecureRemoteEvmIdentityFlow(alicePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress))
         }
     }
     protected val bob: StartedMockNode by lazy {
         createNode(network, "O=Bob, L=San Francisco, C=US").also {
-            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+            runFlow(it, UnsecureRemoteEvmIdentityFlow(bobPrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress))
         }
     }
     protected val charlie: StartedMockNode by lazy {
         createNode(network, "O=Charlie, L=Mumbai, C=IN").also {
-            await(it.startFlow(UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress)))
+            runFlow(it, UnsecureRemoteEvmIdentityFlow(charliePrivateKey, jsonRpcEndpoint, chainId, protocolAddress, evmDeployerAddress))
         }
     }
     protected val notary: StartedMockNode by lazy {
@@ -140,8 +151,14 @@ abstract class TestNetSetup(
         network.stopNodes()
     }
 
-    @Before fun setup() = networkSetup()
-    @After fun tearDown() = networkTeardown()
+    @Before fun setup() {
+        executor = Executors.newCachedThreadPool()
+        networkSetup()
+    }
+    @After fun tearDown() {
+        networkTeardown()
+        executor.shutdown()
+    }
 
     protected fun StartedMockNode.erc20(tokenAddress: String): IERC20 {
         return services.cordaService(IdentityServiceProvider::class.java).erc20(tokenAddress, toParty().owningKey)
@@ -167,15 +184,22 @@ abstract class TestNetSetup(
         alice.web3j().evmSetNextBlockTimestamp(futureInstant.epochSecond.toBigInteger())
     }
 
-    protected fun <R> await(flow: CordaFuture<R>): R {
+    protected fun<T> runFlow(node: StartedMockNode, logic: FlowLogic<T>) : T
+    {
         network.runNetwork()
         try {
-            return flow.getOrThrow(Duration.ofMinutes(2))
+            return node.transaction {
+                val future = node.startFlow(logic)
+                network.runNetwork()
+                future.getOrThrow(Duration.ofMinutes(2))
+            }
         } catch (e: TimeoutException) {
             val threadInfo = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true)
             threadInfo.forEach { println(it) }
             // REVIEW: Workaround while investigating `FinalityFlow may become unresponsive in mock network with some flows`
             throw AssumptionViolatedException("TIMEOUT: Inconclusive test, skipping", e)
+        } finally {
+            network.runNetwork()
         }
     }
 
@@ -183,19 +207,19 @@ abstract class TestNetSetup(
     protected fun transferAndProve(amount: BigInteger, senderNode: StartedMockNode, recipientAddress: String) : Triple<TransactionReceipt, ByteArray, SimpleKeyValueStore> {
 
         // create an ERC20 Transaction from alice to bob that will emit a Transfer event for the given amount
-        val transactionReceipt: TransactionReceipt = await(senderNode.startFlow(
+        val transactionReceipt: TransactionReceipt = runFlow(senderNode,
             Erc20TransferFlow(goldTokenDeployAddress, recipientAddress, amount)
-        ))
+        )
 
         // get the block that mined the ERC20 `Transfer` Transaction
-        val block = await(senderNode.startFlow(
+        val block = runFlow(senderNode,
             GetBlockFlow(transactionReceipt.blockNumber, true)
-        ))
+        )
 
         // get all transaction receipts from the block that mined the ERC20 `Transfer` Transaction
-        val receipts = await(senderNode.startFlow(
+        val receipts = runFlow(senderNode,
             GetBlockReceiptsFlow(transactionReceipt.blockNumber)
-        ))
+        )
 
         // Build the Patricia Trie from the Block receipts and verify it's valid
         val trie = PatriciaTrie()
@@ -223,23 +247,23 @@ abstract class TestNetSetup(
             signers: List<String>
     ) : Triple<TransactionReceipt, ByteArray, SimpleKeyValueStore> {
 
-        val commitTxReceipt: TransactionReceipt = await(senderNode.startFlow(
+        val commitTxReceipt: TransactionReceipt = runFlow(senderNode,
                 CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, recipientAddress, threshold, signers)
-        ))
+        )
 
-        val claimTxReceipt: TransactionReceipt = await(senderNode.startFlow(
+        val claimTxReceipt: TransactionReceipt = runFlow(senderNode,
                 ClaimCommitment(transactionId)
-        ))
+        )
 
         // get the block that mined the ERC20 `Transfer` Transaction
-        val block = await(senderNode.startFlow(
+        val block = runFlow(senderNode,
                 GetBlockFlow(claimTxReceipt.blockNumber, true)
-        ))
+        )
 
         // get all transaction receipts from the block that mined the ERC20 `Transfer` Transaction
-        val receipts = await(senderNode.startFlow(
+        val receipts = runFlow(senderNode,
                 GetBlockReceiptsFlow(claimTxReceipt.blockNumber)
-        ))
+        )
 
         // Build the Patricia Trie from the Block receipts and verify it's valid
         val trie = PatriciaTrie()

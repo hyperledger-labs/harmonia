@@ -14,6 +14,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
+import net.corda.node.services.Permissions.Companion.startFlow
 import net.corda.testing.internal.chooseIdentity
 import org.bouncycastle.asn1.x500.style.RFC4519Style.owner
 import org.junit.Assert
@@ -45,7 +46,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx : StateRef = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         // Prepare the generic `claim / revert` event expectation.
         // Note that this is not the encoded event but the event encoder. It does not include the draft transaction hash,
@@ -67,7 +68,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
         // EVM event proofs are presented for the claim / revert transaction events from the expected protocol address
         // and draft transaction hash (swap id).
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -75,12 +76,12 @@ class CommitClaimSwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty),
             1,
             swapVaultEventEncoder
-        )))
+        ))
 
         // Sign the draft transaction. In real use cases, this only happens after the counterparty (i.e.: alice) signals
         // the acceptance of the draft transaction and the willing to continue with the swap with a commit of the
         // counterparty EVM asset.
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         // counterparty (alice, EVM) commits the asset and claims it in favour of the recipient (bob, EVM address)
         val (txReceipt, leafKey, merkleProof) = commitAndClaim(
@@ -89,17 +90,17 @@ class CommitClaimSwapTests : TestNetSetup() {
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true)))
+        runFlow(bob, CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true))
 
         // Unlock and finalize the transfer to the recipient by producing and presenting proofs (that the EVM asset was
         // transferred to the expected recipient) to the lock contract verified during the new transaction.
-        val utx = await(bob.startFlow(
+        val utx = runFlow(bob,
             UnlockAssetFlow(
                 stx.tx.id,
                 txReceipt.blockNumber,
                 Numeric.toBigInt(txReceipt.transactionIndex!!)
             )
-        ))
+        )
 
         // Verify the unlocked asset is now owned by Alice and not anymore from Bob
         Assert.assertEquals(
@@ -121,7 +122,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx : StateRef = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         // Prepare the generic `claim / revert` event expectation.
         // Note that this is not the encoded event but the event encoder. It does not include the draft transaction hash,
@@ -143,7 +144,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
         // EVM event proofs are presented for the claim / revert transaction events from the expected protocol address
         // and draft transaction hash (swap id).
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -151,12 +152,12 @@ class CommitClaimSwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty),
             1,
             swapVaultEventEncoder
-        )))
+        ))
 
         // Sign the draft transaction. In real use cases, this only happens after the counterparty (i.e.: alice) signals
         // the acceptance of the draft transaction and the willing to continue with the swap with a commit of the
         // counterparty EVM asset.
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         // counterparty (alice, EVM) commits the asset and claims it in favour of the recipient (bob, EVM address)
         val (txReceipt, leafKey, merkleProof) = commitAndClaim(
@@ -165,17 +166,17 @@ class CommitClaimSwapTests : TestNetSetup() {
 
         // alice collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
-        await(alice.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true)))
+        runFlow(alice, CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true))
 
         // Unlock and finalize the transfer to the recipient by producing and presenting proofs (that the EVM asset was
         // transferred to the expected recipient) to the lock contract verified during the new transaction.
-        val utx = await(alice.startFlow(
+        val utx = runFlow(alice,
             UnlockAssetFlow(
                 stx.tx.id,
                 txReceipt.blockNumber,
                 Numeric.toBigInt(txReceipt.transactionIndex!!)
             )
-        ))
+        )
 
         // Verify the unlocked asset is now owned by Alice and not anymore from Bob
         Assert.assertEquals(
@@ -197,7 +198,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx : StateRef = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         // Prepare the generic `claim / revert` event expectation.
         // Note that this is not the encoded event but the event encoder. It does not include the draft transaction hash,
@@ -219,7 +220,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
         // EVM event proofs are presented for the claim / revert transaction events from the expected protocol address
         // and draft transaction hash (swap id).
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -227,40 +228,36 @@ class CommitClaimSwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty),
             1,
             swapVaultEventEncoder
-        )))
-
-        // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
-            CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
         ))
 
+        // Alice commits her asset to the protocol contract
+        val commitTxReceipt: TransactionReceipt = runFlow(alice, CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress)))
+
         // Sign the draft transaction.
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         // bob collects evm signatures from bob and charlie
-        await(bob.startFlow(CollectNotarizationSignaturesFlow(draftTxHash, true)))
+        runFlow(bob, CollectNotarizationSignaturesFlow(draftTxHash, true))
 
         // collect the EVM verifiable signatures that attest that the draft transaction was signed by the notary
         val signatures = bob.services.cordaService(DraftTxService::class.java).notarizationProofs(draftTxHash)
 
         // Bob can claim Alice's EVM committed asset
-        val txReceipt: TransactionReceipt = await(bob.startFlow(
-            ClaimCommitmentWithSignatures(draftTxHash, signatures)
-        ))
+        val txReceipt: TransactionReceipt = runFlow(bob, ClaimCommitmentWithSignatures(draftTxHash, signatures))
 
         // alice collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
-        await(alice.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true)))
+        runFlow(alice, CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true))
 
         // Unlock and finalize the transfer to the recipient by producing and presenting proofs (that the EVM asset was
         // transferred to the expected recipient) to the lock contract verified during the new transaction.
-        val utx = await(alice.startFlow(
+        val utx = runFlow(alice,
             UnlockAssetFlow(
                 stx.tx.id,
                 txReceipt.blockNumber,
                 Numeric.toBigInt(txReceipt.transactionIndex!!)
             )
-        ))
+        )
 
         // Verify the unlocked asset is now owned by Alice and not anymore from Bob
         Assert.assertEquals(
@@ -282,7 +279,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx : StateRef = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         // Prepare the generic `claim / revert` event expectation.
         // Note that this is not the encoded event but the event encoder. It does not include the draft transaction hash,
@@ -304,7 +301,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         // Draft the Corda Asset transfer that can be transferred to the recipient or reverted to the owner if valid
         // EVM event proofs are presented for the claim / revert transaction events from the expected protocol address
         // and draft transaction hash (swap id).
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -312,40 +309,36 @@ class CommitClaimSwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty),
             1,
             swapVaultEventEncoder
-        )))
-
-        // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
-            CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
         ))
 
+        // Alice commits her asset to the protocol contract
+        val commitTxReceipt: TransactionReceipt = runFlow(alice, CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress)))
+
         // Sign the draft transaction.
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         // alice collects evm signatures from bob and charlie
-        await(bob.startFlow(CollectNotarizationSignaturesFlow(draftTxHash, true)))
+        runFlow(bob, CollectNotarizationSignaturesFlow(draftTxHash, true))
 
         // collect the EVM verifiable signatures that attest that the draft transaction was signed by the notary
         val signatures = bob.services.cordaService(DraftTxService::class.java).notarizationProofs(draftTxHash)
 
         // Bob can claim Alice's EVM committed asset
-        val txReceipt: TransactionReceipt = await(bob.startFlow(
-            ClaimCommitmentWithSignatures(draftTxHash, signatures)
-        ))
+        val txReceipt: TransactionReceipt = runFlow(bob, ClaimCommitmentWithSignatures(draftTxHash, signatures))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true)))
+        runFlow(bob, CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true))
 
         // Unlock and finalize the transfer to the recipient by producing and presenting proofs (that the EVM asset was
         // transferred to the expected recipient) to the lock contract verified during the new transaction.
-        val utx = await(bob.startFlow(
+        val utx = runFlow(bob,
             UnlockAssetFlow(
                 stx.tx.id,
                 txReceipt.blockNumber,
                 Numeric.toBigInt(txReceipt.transactionIndex!!)
             )
-        ))
+        )
 
         // Verify the unlocked asset is now owned by Alice and not anymore from Bob
         Assert.assertEquals(
@@ -364,17 +357,13 @@ class CommitClaimSwapTests : TestNetSetup() {
             network.runNetwork()
         }.get()
 
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
-            CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, bobAddress, amount, emptyList())
-        ))
+        val commitTxReceipt: TransactionReceipt = runFlow(alice, CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, bobAddress, amount, emptyList()))
 
         val balanceAfterCommit = alice.goldToken().balanceOf(aliceAddress).also {
             network.runNetwork()
         }.get()
 
-        val revertTxReceipt: TransactionReceipt = await(alice.startFlow(
-            RevertCommitment(transactionId)
-        ))
+        val revertTxReceipt: TransactionReceipt = runFlow(alice, RevertCommitment(transactionId))
 
         val balanceAfterRevert = alice.goldToken().balanceOf(aliceAddress).also {
             network.runNetwork()
@@ -389,7 +378,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val amount = 1.toBigInteger()
         val assetName = UUID.randomUUID().toString()
 
-        val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx : StateRef = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         val swapVaultEventEncoder = SwapVaultEventEncoder.create(
             chainId = BigInteger.valueOf(1337),
@@ -403,7 +392,7 @@ class CommitClaimSwapTests : TestNetSetup() {
             signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -411,34 +400,30 @@ class CommitClaimSwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty),
             1,
             swapVaultEventEncoder
-        )))
+        ))
 
         // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
-            CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
-        ))
+        val commitTxReceipt: TransactionReceipt = runFlow(alice, CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress)))
 
         // Sign the draft transaction.
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         // Bob can claim Alice's EVM committed asset
-        val revertReceipt: TransactionReceipt = await(alice.startFlow(
-            RevertCommitment(draftTxHash)
-        ))
+        val revertReceipt: TransactionReceipt = runFlow(alice, RevertCommitment(draftTxHash))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, revertReceipt.blockNumber, true)))
+        runFlow(bob, CollectBlockSignaturesFlow(draftTxHash, revertReceipt.blockNumber, true))
 
         // Unlock and finalize the transfer to the recipient by producing and presenting proofs (that the EVM asset was
         // transferred to the expected recipient) to the lock contract verified during the new transaction.
-        val utx = await(bob.startFlow(
+        val utx = runFlow(bob,
             RevertAssetFlow(
                 stx.tx.id,
                 revertReceipt.blockNumber,
                 Numeric.toBigInt(revertReceipt.transactionIndex!!)
             )
-        ))
+        )
 
         // Verify the unlocked asset ownership is now reverted to Bob
         Assert.assertEquals(
@@ -454,7 +439,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val amount = 1.toBigInteger()
         val assetName = UUID.randomUUID().toString()
 
-        val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx : StateRef = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         val swapVaultEventEncoder = SwapVaultEventEncoder.create(
             chainId = BigInteger.valueOf(1337),
@@ -468,7 +453,7 @@ class CommitClaimSwapTests : TestNetSetup() {
             signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -476,34 +461,30 @@ class CommitClaimSwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty),
             1,
             swapVaultEventEncoder
-        )))
+        ))
 
         // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
-            CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
-        ))
+        val commitTxReceipt: TransactionReceipt = runFlow(alice, CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress)))
 
         // Sign the draft transaction.
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         // Bob can claim Alice's EVM committed asset
-        val revertReceipt: TransactionReceipt = await(alice.startFlow(
-            RevertCommitment(draftTxHash)
-        ))
+        val revertReceipt: TransactionReceipt = runFlow(alice, RevertCommitment(draftTxHash))
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
-        await(alice.startFlow(CollectBlockSignaturesFlow(draftTxHash, revertReceipt.blockNumber, true)))
+        runFlow(alice, CollectBlockSignaturesFlow(draftTxHash, revertReceipt.blockNumber, true))
 
         // Unlock and finalize the transfer to the recipient by producing and presenting proofs (that the EVM asset was
         // transferred to the expected recipient) to the lock contract verified during the new transaction.
-        val utx = await(alice.startFlow(
+        val utx = runFlow(alice,
             RevertAssetFlow(
                 stx.tx.id,
                 revertReceipt.blockNumber,
                 Numeric.toBigInt(revertReceipt.transactionIndex!!)
             )
-        ))
+        )
 
         // Verify the unlocked asset ownership is now reverted to Bob
         Assert.assertEquals(
@@ -519,7 +500,7 @@ class CommitClaimSwapTests : TestNetSetup() {
         val amount = 1.toBigInteger()
         val assetName = UUID.randomUUID().toString()
 
-        val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx : StateRef = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         val swapVaultEventEncoder = SwapVaultEventEncoder.create(
             chainId = BigInteger.valueOf(1337),
@@ -533,7 +514,7 @@ class CommitClaimSwapTests : TestNetSetup() {
             signers = listOf(charlieAddress) // same as validators but the EVM identity instead
         )
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -541,34 +522,35 @@ class CommitClaimSwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty),
             1,
             swapVaultEventEncoder
-        )))
+        ))
 
         // Alice commits her asset to the protocol contract
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
-            CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
+        val commitTxReceipt: TransactionReceipt = runFlow(alice,
+            CommitWithTokenFlow(draftTxHash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress)
+
         ))
 
         // Sign the draft transaction.
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         // Bob can claim Alice's EVM committed asset
-        val revertReceipt: TransactionReceipt = await(bob.startFlow(
+        val revertReceipt: TransactionReceipt = runFlow(bob,
             RevertCommitment(draftTxHash)
-        ))
+        )
 
         // bob collects signatures form oracles/validators of the block containing the claim's transfer event
         // asynchronously for the given transaction id
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, revertReceipt.blockNumber, true)))
+        runFlow(bob, CollectBlockSignaturesFlow(draftTxHash, revertReceipt.blockNumber, true))
 
         // Unlock and finalize the transfer to the recipient by producing and presenting proofs (that the EVM asset was
         // transferred to the expected recipient) to the lock contract verified during the new transaction.
-        val utx = await(bob.startFlow(
+        val utx = runFlow(bob,
             RevertAssetFlow(
                 stx.tx.id,
                 revertReceipt.blockNumber,
                 Numeric.toBigInt(revertReceipt.transactionIndex!!)
             )
-        ))
+        )
 
         // Verify the unlocked asset ownership is now reverted to Bob
         Assert.assertEquals(
@@ -587,17 +569,17 @@ class CommitClaimSwapTests : TestNetSetup() {
             network.runNetwork()
         }.get()
 
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
-            CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, bobAddress, amount, emptyList())
+        val commitTxReceipt: TransactionReceipt = runFlow(alice,
+            CommitWithTokenFlow(transactionId, goldTokenDeployAddress, amount, bobAddress, amount, emptyList()
         ))
 
         val balanceAfterCommit = alice.goldToken().balanceOf(aliceAddress).also {
             network.runNetwork()
         }.get()
 
-        val revertTxReceipt: TransactionReceipt = await(bob.startFlow(
+        val revertTxReceipt: TransactionReceipt = runFlow(bob,
             RevertCommitment(transactionId)
-        ))
+        )
 
         val balanceAfterRevert = alice.goldToken().balanceOf(aliceAddress).also {
             network.runNetwork()
@@ -612,13 +594,13 @@ class CommitClaimSwapTests : TestNetSetup() {
 
         val assetName = UUID.randomUUID().toString()
 
-        val assetTx : StateRef = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx : StateRef = runFlow(bob, IssueGenericAssetFlow(assetName))
 
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
-            CommitWithTokenFlow(assetTx.txhash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
+        val commitTxReceipt: TransactionReceipt = runFlow(alice,
+            CommitWithTokenFlow(assetTx.txhash, goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress)
         ))
 
-        val commitmentHash1 = await(alice.startFlow(CommitmentHash(assetTx.txhash)))
+        val commitmentHash1 = runFlow(alice, CommitmentHash(assetTx.txhash))
 
         val commitmentHash2 = commitmentHash(
             BigInteger.valueOf(1337),
@@ -637,9 +619,9 @@ class CommitClaimSwapTests : TestNetSetup() {
 
     @Test
     fun `alice can commit with token for bob`() {
-        val commitTxReceipt: TransactionReceipt = await(alice.startFlow(
+        val commitTxReceipt: TransactionReceipt = runFlow(alice,
             CommitWithTokenFlow(SecureHash.randomSHA256(), goldTokenDeployAddress, amount, bobAddress, BigInteger.ONE, listOf(charlieAddress))
-        ))
+        )
     }
 
     private fun queryCriteria(assetName: String): QueryCriteria.VaultCustomQueryCriteria<GenericAssetSchemaV1.PersistentGenericAsset> {

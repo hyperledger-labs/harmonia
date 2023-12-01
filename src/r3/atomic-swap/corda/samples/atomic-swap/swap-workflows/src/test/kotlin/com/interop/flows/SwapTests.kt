@@ -22,9 +22,9 @@ class SwapTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapBaseFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapBaseFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -32,21 +32,21 @@ class SwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
             2,
             transferEventEncoder
-        )))
+        ))
 
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         val (txReceipt, leafKey, merkleProof) = transferAndProve(amount, alice, bobAddress)
 
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true)))
+        runFlow(bob, CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true))
 
-        val utx = await(bob.startFlow(
+        val utx = runFlow(bob,
             UnlockAssetFlow(
                 stx.tx.id,
                 txReceipt.blockNumber,
                 Numeric.toBigInt(txReceipt.transactionIndex!!)
             )
-        ))
+        )
     }
 
     @Test

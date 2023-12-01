@@ -5,6 +5,7 @@ import com.r3.corda.evminterop.Erc20TransferEventEncoder
 import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.workflows.IssueGenericAssetFlow
 import net.corda.core.identity.AbstractParty
+import net.corda.node.services.Permissions.Companion.startFlow
 import org.junit.Test
 import org.web3j.abi.datatypes.Address
 import org.web3j.crypto.Keys
@@ -26,15 +27,15 @@ class SignaturesThresholdTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
-        val draftTxHash = await(bob.startFlow(DemoDraftAssetSwapBaseFlow(assetTx.txhash, assetTx.index, alice.toParty(), charlie.toParty())))
+        val draftTxHash = runFlow(bob, DemoDraftAssetSwapBaseFlow(assetTx.txhash, assetTx.index, alice.toParty(), charlie.toParty()))
 
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         val (txReceipt, leafKey, merkleProof) = transferAndProve(amount, alice, bobAddress)
 
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true)))
+        runFlow(bob, CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true))
 
         val signatures = bob.services.cordaService(DraftTxService::class.java).blockSignatures(txReceipt.blockNumber)
 
@@ -47,9 +48,9 @@ class SignaturesThresholdTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapBaseFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapBaseFlow(
             transactionId =  assetTx.txhash,
             outputIndex = assetTx.index,
             recipient = alice.toParty(),
@@ -57,13 +58,13 @@ class SignaturesThresholdTests : TestNetSetup() {
             validators = listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
             signaturesThreshold = 2,
             unlockEvent = transferEventEncoder
-        )))
+        ))
 
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         val (txReceipt, leafKey, merkleProof) = transferAndProve(amount, alice, bobAddress)
 
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true)))
+        runFlow(bob, CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true))
 
         val signatures = bob.services.cordaService(DraftTxService::class.java).blockSignatures(txReceipt.blockNumber)
 
@@ -76,9 +77,9 @@ class SignaturesThresholdTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapBaseFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapBaseFlow(
             transactionId =  assetTx.txhash,
             outputIndex = assetTx.index,
             recipient = alice.toParty(),
@@ -86,12 +87,12 @@ class SignaturesThresholdTests : TestNetSetup() {
             validators = listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
             signaturesThreshold = 2,
             unlockEvent = transferEventEncoder
-        )))
+        ))
 
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         // alice collects evm signatures from bob and charlie
-        await(alice.startFlow(CollectNotarizationSignaturesFlow(draftTxHash, true)))
+        runFlow(alice, CollectNotarizationSignaturesFlow(draftTxHash, true))
 
         val signatures = alice.services.cordaService(DraftTxService::class.java).notarizationProofs(draftTxHash)
 
