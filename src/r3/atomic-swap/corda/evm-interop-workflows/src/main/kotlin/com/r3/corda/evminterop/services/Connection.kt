@@ -17,7 +17,11 @@ import org.web3j.protocol.core.methods.response.*
 import org.web3j.protocol.http.HttpService
 import org.web3j.utils.Numeric
 import java.math.BigInteger
+import java.util.*
 import java.util.concurrent.*
+import java.util.function.Consumer
+import java.util.function.Supplier
+import kotlin.Pair
 import kotlin.concurrent.timer
 
 /**
@@ -31,7 +35,8 @@ internal class Connection(private val connectionId: ConnectionId) {
          * Provides a fixed pool of threads to handle network calls from the queue. The servicing of the network/ethereum
          * calls needs a review and a fixed pool of threads may not be the best solution.
          */
-        private val executors: ExecutorService = Executors.newFixedThreadPool(10)
+        private val executors: ExecutorService = Executors.newCachedThreadPool()
+        private val pollingExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 
         /**
          * Logger instance for [Connection]
@@ -64,9 +69,7 @@ internal class Connection(private val connectionId: ConnectionId) {
      * A queue to receive future/completable remote network calls.
      * Ethereum network calls are queued here for the polling module to dequeue and check the transaction status.
      */
-    private val queue = ConcurrentLinkedQueue<CompletableTransaction>()
-    private val eventQueue = ConcurrentLinkedQueue<CompletableEvent>()
-    private val eq = ConcurrentHashMap<String, ConcurrentLinkedQueue<CompletableEvent>>()
+    private val queue = LinkedList<CompletableTransaction>()
 
     /**
      * Initializes Web3j underlying network connection depending on the configuration which is currently provided
@@ -88,7 +91,6 @@ internal class Connection(private val connectionId: ConnectionId) {
      */
     private fun initWeb3jConnection(connection: Web3jService): Web3j {
         // NOTE: web3j.ethChainId() could be used to identify network and set associated confirmation blocks nr.
-
         return Web3j.build(connection)
     }
 
@@ -100,35 +102,65 @@ internal class Connection(private val connectionId: ConnectionId) {
         try {
             return HttpService(connectionId.rpcEndpoint.toURL().toString())
         } finally {
-            timer(period = 5000 /*for HTTP 5 seconds polling hardcoded for now*/) {
-                poll()
-            }
+            pollingExecutor.scheduleAtFixedRate({ poll() }, 0, 5, TimeUnit.SECONDS)
         }
     }
 
+    private val lock = Any()
+    
     /**
      * Implements a polling module to query ethereum calls that are pending response form the network.
      */
     private fun poll() {
-        if (queue.isEmpty()) return
+        val items = synchronized(lock) {
+            if (queue.isEmpty()) return
 
-        val expired = queue.filter { it.isExpired }
-        val complete = queue.filter { it.isComplete }
+            val expired = queue.filter { it.isExpired }
+            val complete = queue.filter { it.isComplete }
 
-        queue.removeAll((expired + complete).toSet())
+            queue.removeAll((expired + complete).toSet())
 
-        val inFlight = queue.count { it.inFlight }
-        val batch = queue.filter { !it.inFlight }.take(pollBatchSize - inFlight)
+            val inFlight = queue.count { it.inFlight }
+            val batch = queue.filter { !it.inFlight }.take(pollBatchSize - inFlight)
+            Pair(expired, batch)
+        }
 
         try {
-            expired.forEach { it.completeWithTimeout() }
+            items.first.forEach { it.completeWithTimeout() }
         } catch (e: Exception) {
             log.error("Error signalling transaction timeouts: $e")
         }
 
-        batch.map { cf -> executors.execute { pollTransaction(cf) } }
+        items.second.map { item ->
+            item.inFlight = true
+            val futures = CompletableFuture.supplyAsync(
+                Supplier<EthGetTransactionReceipt> {
+                    try {
+                        web3j.ethGetTransactionReceipt(item.transactionHash).send()
+                    } catch (e: Exception) {
+                        item.inFlight = false
+                        log.error("Error queueing transaction timeouts: $e")
+                        EthGetTransactionReceipt()
+                    }
+                }, executors
+            ).thenAcceptAsync(
+                Consumer<EthGetTransactionReceipt> { it ->
+                    if (it.result != null) {
+                        try {
+                            val receipt = it.result.toSerializable()
+                            item.complete(receipt)
+                        } catch (e: Throwable) {
+                            item.completeError("${e.message}")
+                        }
+                    } else if (it.error != null) {
+                        item.completeError("${it.error.message} (${it.error.code})")
+                    } else {
+                        item.completeError("No result/response received")
+                    }
+                }, executors
+            )
+        }
     }
-
     /**
      * Implements the transaction status query from the Ethereum network used by the polling module
      */
@@ -189,46 +221,50 @@ internal class Connection(private val connectionId: ConnectionId) {
 
     private fun queueTransactionReceiptResponse(hash: String): CompletableFuture<TransactionReceipt> {
         val future = CompletableFuture<TransactionReceipt>()
-        queue.add(CompletableTransaction(hash, future))
+        synchronized(lock) {
+            queue.add(CompletableTransaction(hash, future))
+        }
         return future
     }
 
     fun queueEventLogResponse(address: String): ResponseOperation<com.r3.corda.evminterop.dto.TransactionReceiptLog> {
-        val future = CompletableFuture<com.r3.corda.evminterop.dto.TransactionReceiptLog>()
-
-        var requireRegister = false
-        eq.getOrPut(address) {
-            requireRegister = true
-            ConcurrentLinkedQueue()
-        }.add(CompletableEvent(future))
-
-        if (requireRegister) {
-            registerFilter(address)
-        }
-
-        return ResponseOperation(future)
+        throw NotImplementedError()
+//        val future = CompletableFuture<com.r3.corda.evminterop.dto.TransactionReceiptLog>()
+//
+//        var requireRegister = false
+//        eq.getOrPut(address) {
+//            requireRegister = true
+//            ConcurrentLinkedQueue()
+//        }.add(CompletableEvent(future))
+//
+//        if (requireRegister) {
+//            registerFilter(address)
+//        }
+//
+//        return ResponseOperation(future)
     }
 
     private fun registerFilter(address: String) {
-        val filter = EthFilter(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST, address)
-        web3j.ethLogFlowable(filter).subscribe { log ->
-            eq[address]!!.map { completableEvent ->
-                completableEvent.complete(
-                    com.r3.corda.evminterop.dto.TransactionReceiptLog(
-                        removed = log.isRemoved,
-                        logIndex = log.logIndexRaw,
-                        transactionIndex = log.transactionIndexRaw,
-                        transactionHash = log.transactionHash,
-                        blockHash = log.blockHash,
-                        blockNumber = log.blockNumber,
-                        address = log.address,
-                        data = log.data,
-                        type = log.type,
-                        topics = log.topics
-                    )
-                )
-            }
-        }
+        throw NotImplementedError()
+//        val filter = EthFilter(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST, address)
+//        web3j.ethLogFlowable(filter).subscribe { log ->
+//            eq[address]!!.map { completableEvent ->
+//                completableEvent.complete(
+//                    com.r3.corda.evminterop.dto.TransactionReceiptLog(
+//                        removed = log.isRemoved,
+//                        logIndex = log.logIndexRaw,
+//                        transactionIndex = log.transactionIndexRaw,
+//                        transactionHash = log.transactionHash,
+//                        blockHash = log.blockHash,
+//                        blockNumber = log.blockNumber,
+//                        address = log.address,
+//                        data = log.data,
+//                        type = log.type,
+//                        topics = log.topics
+//                    )
+//                )
+//            }
+//        }
     }
 
     /**

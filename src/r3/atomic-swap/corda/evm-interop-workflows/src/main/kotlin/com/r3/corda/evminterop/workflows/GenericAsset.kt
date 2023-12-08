@@ -6,6 +6,9 @@ import net.corda.core.crypto.CompositeKey
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
+import net.corda.core.node.services.vault.Builder.equal
+import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.node.services.vault.builder
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
 import net.corda.core.schemas.QueryableState
@@ -101,5 +104,35 @@ class IssueGenericAssetFlow(private val assetName: String) : FlowLogic<StateRef>
         val stx = subFlow(CollectSignaturesFlow(ptx, emptyList()))
         val notarizedTx = subFlow(FinalityFlow(stx, emptyList()))
         return StateRef(notarizedTx.id, outputIndex)
+    }
+}
+/**
+ * Helper flow to query a Generic Asset from the Vault
+ */
+@StartableByRPC
+@InitiatingFlow
+class QueryGenericAssetFlow(private val assetName: String) : FlowLogic<List<StateAndRef<GenericAssetState>>>() {
+
+    constructor() : this("")
+
+    @Suspendable
+    override fun call(): List<StateAndRef<GenericAssetState>> {
+
+        return if(assetName.isEmpty()) {
+            serviceHub.vaultService.queryBy(GenericAssetState::class.java).states
+        } else {
+            serviceHub.vaultService.queryBy(GenericAssetState::class.java, queryCriteria(assetName)).states
+        }
+    }
+
+    @Suspendable
+    private fun queryCriteria(assetName: String): QueryCriteria.VaultCustomQueryCriteria<GenericAssetSchemaV1.PersistentGenericAsset> {
+        return builder {
+            QueryCriteria.VaultCustomQueryCriteria(
+                GenericAssetSchemaV1.PersistentGenericAsset::assetName.equal(
+                    assetName
+                )
+            )
+        }
     }
 }

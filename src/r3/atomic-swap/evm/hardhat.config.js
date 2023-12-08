@@ -17,13 +17,13 @@ module.exports = {
   optimizer: {enabled: true},
   networks: {
     hardhat: {
-      mining: {
-        mempool: {
-          order: "fifo",
-        },
-        auto: false,
-        interval: 1000,
-      },
+      // mining: {
+      //   mempool: {
+      //     order: "fifo",
+      //   },
+      //   auto: false,
+      //   interval: 1000,
+      // },
       chainId: 1337,
     },
   },

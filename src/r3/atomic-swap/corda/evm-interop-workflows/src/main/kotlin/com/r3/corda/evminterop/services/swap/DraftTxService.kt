@@ -19,7 +19,7 @@ class DraftTxService(private val serviceHub: AppServiceHub) : SingletonSerialize
 
     private val transactions = ConcurrentHashMap<SecureHash, WireTransaction>()
     private val signatures = ConcurrentHashMap<BigInteger, HashSet<DigitalSignature.WithKey>>()
-    private val evmSignatures = ConcurrentHashMap<String, HashSet<ByteArray>>()
+    private val evmSignatures = ConcurrentHashMap<SecureHash, HashSet<ByteArray>>()
 
     fun saveBlockSignature(blockNumber: BigInteger, signature: DigitalSignature.WithKey): Unit {
         signatures.compute(blockNumber) { _, transactionSignatures ->
@@ -31,7 +31,7 @@ class DraftTxService(private val serviceHub: AppServiceHub) : SingletonSerialize
     }
 
     fun saveNotarizationProof(transactionId: SecureHash, signature: ByteArray): Unit {
-        evmSignatures.compute(transactionId.toHexString()) { _, transactionSignatures ->
+        evmSignatures.compute(transactionId) { _, transactionSignatures ->
             transactionSignatures?.let {
                 it.add(signature)
                 it
@@ -42,7 +42,7 @@ class DraftTxService(private val serviceHub: AppServiceHub) : SingletonSerialize
     fun blockSignatures(blockNumber: BigInteger) = signatures[blockNumber]?.toList() ?: emptyList()
 
     fun notarizationProofs(transactionId: SecureHash): List<ByteArray> {
-        return evmSignatures[transactionId.toHexString()]?.toList() ?: emptyList()
+        return evmSignatures[transactionId]?.toList() ?: emptyList()
     }
 
     fun saveDraftTx(tx: WireTransaction) {

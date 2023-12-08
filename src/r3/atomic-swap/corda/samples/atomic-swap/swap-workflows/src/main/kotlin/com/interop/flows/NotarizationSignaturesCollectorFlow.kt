@@ -1,6 +1,8 @@
 package com.interop.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.interop.flows.BlockSignaturesCollectorFlow.CollectBlockSignaturesFlow
+import com.interop.flows.BlockSignaturesCollectorFlow.CollectorInitiator
 import com.r3.corda.evminterop.services.evmInterop
 import com.r3.corda.evminterop.services.swap.DraftTxService
 import com.r3.corda.evminterop.states.swap.LockState
@@ -55,6 +57,16 @@ object NotarizationSignaturesCollectorFlow {
         }
     }
 
+    /**
+     * [CollectNotarizationSignaturesFlow] initiates the signatures collection from the lock-state approved validators
+     * asynchronously, blocking or non-blocking. This flow initiates a responder flow on each approved validator so
+     * that they can all verify the given signature as soon as they receive the message and asynchronously report the
+     * signature and store it on the initiator node (this) through a secondary flow [CollectorInitiator] that stores
+     * the incoming signatures.
+     *
+     * @param transactionId the transaction hash of the signed draft transaction to unlock
+     * @param blocking indicates whether the initiating flow will wait for the responder flow to complete
+     */
     @Suspendable
     @StartableByRPC
     @InitiatingFlow
@@ -69,7 +81,6 @@ object NotarizationSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // NOTE -> ME
             val signedTransaction = serviceHub.validatedTransactions.getTransaction(transactionId)
                 ?: throw IllegalArgumentException("Transaction not found for ID: $transactionId")
 
@@ -90,6 +101,7 @@ object NotarizationSignaturesCollectorFlow {
                 it.by == notary
             } ?: throw IllegalArgumentException("Transaction $transactionId is not signed by the expected notary")
 
+            val receivableSessions = mutableListOf<FlowSession>()
             for (session in sessions) {
                 try {
                     session.send(
@@ -100,13 +112,14 @@ object NotarizationSignaturesCollectorFlow {
                             blocking
                         )
                     )
+                    receivableSessions.add(session)
                 } catch (e: Throwable) {
                     log.error("Error while sending request.\nError: $e")
                 }
             }
 
             if (blocking) {
-                for (session in sessions) {
+                for (session in receivableSessions) {
                     try {
                         session.receive<Boolean>()
                     } catch (e: Throwable) {
@@ -120,7 +133,7 @@ object NotarizationSignaturesCollectorFlow {
     @Suspendable
     @StartableByRPC
     @InitiatedBy(CollectNotarizationSignaturesFlow::class)
-    class CollectNotarizationSignaturesFlowResponder(val session: FlowSession) : FlowLogic<Unit>() {
+    class CollectNotarizationSignaturesFlowResponder(private val session: FlowSession) : FlowLogic<Unit>() {
 
         companion object {
             val log = loggerFor<CollectNotarizationSignaturesFlowResponder>()
@@ -128,7 +141,6 @@ object NotarizationSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // NOTE -> COUNTERPARTY
             val request = session.receive<RequestParams>().unwrap { it }
 
             subFlow(CollectorInitiator(session.counterparty, request))
@@ -145,11 +157,11 @@ object NotarizationSignaturesCollectorFlow {
     }
 
     /**
-     * [CollectorInitiator] query the EVM blockchain block and signs it passing the signature to the recipient node.
+     * [CollectorInitiator] verify the signature belongs to the given notary and it is over the transaction id.
+     * If positive, signs the transaction id and notary identity with the node's EVM identity.
      *
      * @param recipient the node that will receive the signature.
-     * @param blockNumber the EVM blockchain block number to query for.
-     * @param blocking indicates whether the initiating flow will wait for the responder flow to complete.
+     * @param requestParams request params including transaction id, notary signature, notary public key, blocking mode.
      */
     @Suspendable
     @StartableByRPC
@@ -165,10 +177,7 @@ object NotarizationSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // NOTE -> COUNTERPARTY
-
-            if (requestParams.transactionSignature.isValid(requestParams.transactionId)
-            ) {
+            if (requestParams.transactionSignature.isValid(requestParams.transactionId)) {
                 // Notary signature validates for the transaction ID, therefore this validator signs
                 // with its EVM signature that will need to recover to an EVM validator address
                 val signature = serviceHub.evmInterop().web3Provider().signData(requestParams.transactionId.bytes)
@@ -205,7 +214,6 @@ object NotarizationSignaturesCollectorFlow {
 
         @Suspendable
         override fun call() {
-            // NOTE -> ME
             val params = try {
                 session.receive<StoreParams>().unwrap { it }
             } catch (e: Throwable) {

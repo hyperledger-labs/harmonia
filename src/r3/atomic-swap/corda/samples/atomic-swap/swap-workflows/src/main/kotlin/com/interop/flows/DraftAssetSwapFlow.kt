@@ -9,7 +9,7 @@ import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
-
+import java.math.BigInteger
 
 /**
  * DraftAssetSwapFlow sets up the initial swap agreement and stores the draft transaction for later access.
@@ -20,8 +20,8 @@ import net.corda.core.identity.AbstractParty
  * @param validators the external entities that are trusted to collect and sign the block headers that can attest the
  *                   expected event once observed
  * @param signaturesThreshold the minimum number of validator signatures that will allow the locked asset to be released
- * @param unlockEvent the expected event that once received and proved will allow to unlock the asset to the recipient
- * @param revertEvent the expected event that once received and proved will allow to unlock the asset to the original owner
+ * @param unlockEvent the event encoder that generates the revert and unlock events that once received and proved, allow
+ *                    to revert or unlock the asset back to the owner or forward to recipient
  */
 @StartableByRPC
 @InitiatingFlow
@@ -32,7 +32,7 @@ class DraftAssetSwapFlow(
     private val notary: AbstractParty,
     private val validators: List<AbstractParty>,
     private val signaturesThreshold: Int,
-    private val unlockEvent: IUnlockEventEncoder
+    private val unlockEvent: SwapVaultEventEncoder
 ) : FlowLogic<SecureHash>() {
     @Suspendable
     override fun call(): SecureHash {
@@ -79,16 +79,27 @@ class DemoDraftAssetSwapFlow(
     private val transactionId: SecureHash,
     private val outputIndex: Int,
     private val recipient: AbstractParty,
-    private val validator: AbstractParty
+    private val validator: AbstractParty,
+    private val signer: String
 ) : FlowLogic<SecureHash>() {
     @Suspendable
     override fun call(): SecureHash {
+
         val aliceAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
         val bobAddress = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
         val goldTokenDeployAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+        val protocolAddress = "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49"
 
-        val transferEventEncoder = Erc20TransferEventEncoder(
-            goldTokenDeployAddress, aliceAddress, bobAddress, 1.toBigInteger()
+        val swapVaultEventEncoder = SwapVaultEventEncoder.create(
+            chainId = BigInteger.valueOf(1337),
+            protocolAddress = protocolAddress,
+            owner = aliceAddress,
+            recipient = bobAddress,
+            amount = 1.toBigInteger(),
+            tokenId = BigInteger.ZERO,
+            tokenAddress = goldTokenDeployAddress,
+            signaturesThreshold = BigInteger.ONE,
+            signers = listOf(signer) // same as validators but the EVM identity instead
         )
 
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
@@ -101,7 +112,7 @@ class DemoDraftAssetSwapFlow(
                 notary,
                 listOf(validator),
                 1,
-                transferEventEncoder
+                swapVaultEventEncoder
             )
         )
     }

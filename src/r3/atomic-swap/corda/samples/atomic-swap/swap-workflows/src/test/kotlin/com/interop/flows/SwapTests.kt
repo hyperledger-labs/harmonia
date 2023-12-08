@@ -1,21 +1,11 @@
 package com.interop.flows
 
 import com.interop.flows.internal.TestNetSetup
-import com.r3.corda.evminterop.DefaultEventEncoder
 import com.r3.corda.evminterop.Erc20TransferEventEncoder
-import com.r3.corda.evminterop.Indexed
 import com.r3.corda.evminterop.workflows.*
 import net.corda.core.identity.AbstractParty
 import org.junit.Test
-import org.web3j.abi.FunctionEncoder
-import org.web3j.abi.datatypes.Address
-import org.web3j.abi.datatypes.Function
-import org.web3j.abi.datatypes.Utf8String
-import org.web3j.abi.datatypes.generated.Bytes32
-import org.web3j.abi.datatypes.generated.Uint256
-import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric
-import java.math.BigInteger
 import java.util.*
 
 class SwapTests : TestNetSetup() {
@@ -32,9 +22,9 @@ class SwapTests : TestNetSetup() {
         val assetName = UUID.randomUUID().toString()
 
         // Create Corda asset owned by Bob
-        val assetTx = await(bob.startFlow(IssueGenericAssetFlow(assetName)))
+        val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
-        val draftTxHash = await(bob.startFlow(DraftAssetSwapFlow(
+        val draftTxHash = runFlow(bob, DraftAssetSwapBaseFlow(
             assetTx.txhash,
             assetTx.index,
             alice.toParty(),
@@ -42,23 +32,21 @@ class SwapTests : TestNetSetup() {
             listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
             2,
             transferEventEncoder
-        )))
+        ))
 
-        val stx = await(bob.startFlow(SignDraftTransactionByIDFlow(draftTxHash)))
+        val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
         val (txReceipt, leafKey, merkleProof) = transferAndProve(amount, alice, bobAddress)
 
-        await(bob.startFlow(CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, false)))
+        runFlow(bob, CollectBlockSignaturesFlow(draftTxHash, txReceipt.blockNumber, true))
 
-        network?.waitQuiescent()
-
-        val utx = await(bob.startFlow(
+        val utx = runFlow(bob,
             UnlockAssetFlow(
                 stx.tx.id,
                 txReceipt.blockNumber,
                 Numeric.toBigInt(txReceipt.transactionIndex!!)
             )
-        ))
+        )
     }
 
     @Test
