@@ -3,10 +3,10 @@
   AND ANY UPDATES ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
 */
 
-// SPDX-License-Identifier: MIT License
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "contracts/../../contracts/libraries/EllipticCurve.sol";
+import "contracts/libraries/EllipticCurve.sol";
 
 library SECP256R1 {
 

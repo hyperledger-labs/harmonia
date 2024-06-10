@@ -3,10 +3,10 @@
   AND ANY UPDATES ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
 */
 
-// SPDX-License-Identifier: MIT License
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "contracts/../../contracts/libraries/EllipticCurve.sol";
+import "contracts/libraries/EllipticCurve.sol";
 
 library SECP256K1 {
 
@@ -59,7 +59,7 @@ library SECP256K1 {
       return (address(0));
     }
     // Divide the signature in r, s and v variables with inline assembly.
-    assembly {
+    assembly ("memory-safe")  {
       r := mload(add(signature, 0x20))
       s := mload(add(signature, 0x40))
       v := byte(0, mload(add(signature, 0x60)))
@@ -331,7 +331,7 @@ library SECP256K1 {
 
   /*
    * Perform an address recovery from the given hash and encoded Ethereum signature.
-   * @author Written by Alex Beregszaszi, used under the terms of the MIT license.
+   * Source: Written by Alex Beregszaszi, used under the terms of the MIT license.
    */
   function ecRecovery(
     bytes32 hash,
@@ -343,7 +343,7 @@ library SECP256K1 {
     require(sig.length == 65, "Invalid signature length, signature must consist of < r 32 bytes>< s 32 bytes>< v 1 byte>");
     // The signature in compacted format holds (bytes32, bytes32, uint8) as (r, s, v). Compact means, uint8 is not padded to 32 bytes.
     // For v we are loading the last 32 bytes. We exploit the fact that mload will pad with zeroes if we over read. There is no mload8 to do this.
-    assembly {
+    assembly ("memory-safe")  {
       r := mload(add(sig, 32))
       s := mload(add(sig, 64))
       v := byte(0, mload(add(sig, 96)))
@@ -369,7 +369,7 @@ library SECP256K1 {
     // Note that we can reuse the request memory with staticcall because we deal with the return code.
     bool ret;
     address addr;
-    assembly {
+    assembly ("memory-safe")  {
       let size := mload(0x40)
       mstore(size, hash)
       mstore(add(size, 32), v)

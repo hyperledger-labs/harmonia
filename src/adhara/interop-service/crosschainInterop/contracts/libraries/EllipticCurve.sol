@@ -8,6 +8,7 @@ pragma solidity ^0.8.13;
 
 /*
  * Elliptic curve library providing arithmetic operations over elliptic curves.
+ * Modified from source: https://github.com/witnet/elliptic-curve-solidity/blob/master/contracts/EllipticCurve.sol
  */
 library EllipticCurve {
 
@@ -57,7 +58,7 @@ library EllipticCurve {
       return 1;
     uint256 r = 1;
     uint256 bit = U255_MAX_PLUS_1;
-    assembly {
+    assembly ("memory-safe")  {
       for {} gt(bit, 0) {}{
         r := mulmod(mulmod(r, r, pp), exp(base, iszero(iszero(and(expo, bit)))), pp)
         r := mulmod(mulmod(r, r, pp), exp(base, iszero(iszero(and(expo, div(bit, 2))))), pp)

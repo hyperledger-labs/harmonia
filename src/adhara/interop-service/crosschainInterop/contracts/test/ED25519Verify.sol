@@ -5,9 +5,8 @@
 
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
-pragma abicoder v2;
 
-import "contracts/../../contracts/libraries/ED25519.sol";
+import "contracts/libraries/ED25519.sol";
 
 contract ED25519Verify {
   function verify(
@@ -19,7 +18,6 @@ contract ED25519Verify {
     return ED25519.verify(k, r, s, m);
   }
 
-
   event Bool(bool, string);
 
   function verifyWithEvent(
@@ -29,5 +27,9 @@ contract ED25519Verify {
     bytes memory m
   ) public {
     emit Bool(ED25519.verify(k, r, s, m), "Verification result");
+  }
+
+  function decode(bytes memory d) public returns (bytes memory)  {
+    return ED25519.decode(d);
   }
 }

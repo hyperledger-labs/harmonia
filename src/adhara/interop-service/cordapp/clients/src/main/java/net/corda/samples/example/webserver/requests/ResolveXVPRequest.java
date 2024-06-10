@@ -9,5 +9,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ResolveXVPRequest {
 	private String tradeId;
-	private String sourceSystemId;
+	private String sourceNetworkId;
 }

@@ -1,17 +1,17 @@
-const CrosschainFunctionCallJson = require('../../../build/contracts/CrosschainFunctionCall.json')
+const CrosschainFunctionCallJson = require('../../../build/contracts/CrosschainFunctionCall.sol/CrosschainFunctionCall.json')
 
 function init(config, dependencies){
 
   const ethClient = dependencies.ethClient
   const web3Store = dependencies.web3Store
 
-  async function setAppendAuthParams(systemId, enable){
+  async function setAppendAuthParams(networkId, enable){
     const functionName = 'setAppendAuthParams'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     const result = await ethClient.buildAndSendTx(
       CrosschainFunctionCallJson.abi,
@@ -19,10 +19,10 @@ function init(config, dependencies){
       {enable},
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS'
       }
@@ -33,13 +33,13 @@ function init(config, dependencies){
     }
   }
 
-  async function getAppendAuthParams(systemId){
+  async function getAppendAuthParams(networkId){
     const functionName = 'getAppendAuthParams'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     const result = await ethClient.buildAndCallTx(
       CrosschainFunctionCallJson.abi,
@@ -47,37 +47,37 @@ function init(config, dependencies){
       {},
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
-    const abiDecoded = web3Store[chainName].eth.abi.decodeParameters(['bool'], result)
+    const abiDecoded = web3Store[networkName].eth.abi.decodeParameters(['bool'], result)
     return abiDecoded[0]
   }
 
-  async function addAuthParams(systemId, foreignSystemId, foreignContractAddress) {
+  async function addAuthParams(networkId, remoteNetworkId, remoteContractAddress) {
     const functionName = 'addAuthParams'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     const result = await ethClient.buildAndSendTx(
       CrosschainFunctionCallJson.abi,
       functionName,
       {
-        foreignSystemId: Number(foreignSystemId),
-        foreignContractAddress
+        networkId: Number(remoteNetworkId),
+        contractAddress: remoteContractAddress
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        foreignSystemId,
-        foreignContractAddress
+        remoteNetworkId,
+        remoteContractAddress
       }
     } else {
       return {
@@ -86,56 +86,56 @@ function init(config, dependencies){
     }
   }
 
-  async function isAuthParams(systemId, foreignSystemId, foreignContractAddress) {
+  async function isAuthParams(networkId, remoteNetworkId, remoteContractAddress) {
     const functionName = 'isAuthParams'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     const result = await ethClient.buildAndCallTx(
       CrosschainFunctionCallJson.abi,
       functionName,
       {
-        blockchainId: Number(foreignSystemId),
-        contractAddress: foreignContractAddress
+        networkId: Number(remoteNetworkId),
+        contractAddress: remoteContractAddress
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
-    const abiDecoded = web3Store[chainName].eth.abi.decodeParameters(['bool'], result)
+    const abiDecoded = web3Store[networkName].eth.abi.decodeParameters(['bool'], result)
     return {
       isAuthParams: abiDecoded[0]
     }
   }
 
-  async function removeAuthParams(systemId, foreignSystemId, foreignContractAddress) {
+  async function removeAuthParams(networkId, remoteNetworkId, remoteContractAddress) {
     const functionName = 'removeAuthParams'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     const result = await ethClient.buildAndSendTx(
       CrosschainFunctionCallJson.abi,
       functionName,
       {
-        blockchainId: Number(foreignSystemId),
-        contractAddress: foreignContractAddress
+        networkId: Number(remoteNetworkId),
+        contractAddress: remoteContractAddress
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        foreignSystemId,
-        foreignContractAddress
+        remoteNetworkId,
+        remoteContractAddress
       }
     } else {
       return {
@@ -144,29 +144,29 @@ function init(config, dependencies){
     }
   }
 
-  async function setSystemId(systemId) {
-    const functionName = 'setSystemId'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+  async function setLocalNetworkId(networkId) {
+    const functionName = 'setLocalNetworkId'
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     const result = await ethClient.buildAndSendTx(
       CrosschainFunctionCallJson.abi,
       functionName,
       {
-        systemId
+        networkId
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        systemId,
+        networkId,
       }
     } else {
       return {
@@ -175,13 +175,13 @@ function init(config, dependencies){
     }
   }
 
-  async function getSystemId(systemId) {
-    const functionName = 'getSystemId'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+  async function getLocalNetworkId(networkId) {
+    const functionName = 'getLocalNetworkId'
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     const result = await ethClient.buildAndCallTx(
       CrosschainFunctionCallJson.abi,
@@ -189,38 +189,37 @@ function init(config, dependencies){
       { },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
-    const abiDecoded = web3Store[chainName].eth.abi.decodeParameters(['uint256'], result)
+    const abiDecoded = web3Store[networkName].eth.abi.decodeParameters(['uint256'], result)
     return abiDecoded[0]
   }
 
-  async function performCallFromRemoteChain(chainName, blockchainId, eventSig, encodedInfo, signatureOrProof) {
-    const functionName = 'performCallFromRemoteChain'
-    await checkConfigForChain(chainName, functionName)
+  async function inboundCall(networkName, networkId, encodedInfo, signatureOrProof) {
+    const functionName = 'inboundCall'
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     const result = await ethClient.buildAndSendTx(
       CrosschainFunctionCallJson.abi,
       functionName,
       {
-        blockchainId: Number(blockchainId),
-        eventSig,
+        networkId: Number(networkId),
         encodedInfo,
         signatureOrProof
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        blockchainId: Number(blockchainId),
-        eventSig,
+        processedAt: result.blockNumber,
+        networkId: Number(networkId),
         encodedInfo,
         signatureOrProof
       }
@@ -231,48 +230,9 @@ function init(config, dependencies){
     }
   }
 
-  async function startValidatorUpdate(chainName, operationId, bvsBlockHeader, cvsContractAddress, destinationContract, destinationBlockchainId) {
-    const functionName = 'startValidatorUpdate'
-    await checkConfigForChain(chainName, functionName)
-
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
-
-    const result = await ethClient.buildAndSendTx(
-      CrosschainFunctionCallJson.abi,
-      functionName,
-      {
-        id: operationId,
-        destinationBlockchainId:  Number(destinationBlockchainId),
-        destinationContract: destinationContract,
-        cvsContractAddress: cvsContractAddress,
-        bvsBlockHeader: bvsBlockHeader ? Buffer.from(bvsBlockHeader.substring(2)).toString('hex') : Buffer.from('').toString('hex'),
-      },
-      fromAddress,
-      contractAddress,
-      chainName
-    )
-
-    if(result.status === true){
-      return {
-        transactionState: 'SUCCESS',
-        id: operationId,
-        destinationBlockchainId:  Number(destinationBlockchainId),
-        destinationContract: destinationContract,
-        cvsContractAddress: cvsContractAddress,
-        bvsBlockHeader: bvsBlockHeader ? Buffer.from(bvsBlockHeader.substring(2)).toString('hex') : Buffer.from('').toString('hex'),
-      }
-    } else {
-      return {
-        transactionState: 'FAILURE'
-      }
-    }
-  }
-
-  async function findCrossBlockchainCallExecutedEvent(chainName, startingBlock){
-
-    const eventName = 'CrossBlockchainCallExecuted'
-    const contractAddress = config[chainName].contracts.crosschainFunctionCall.address
+  async function findCrosschainFunctionCallEvents(networkName, fromBlock, toBlock){
+    const eventName = 'CrosschainFunctionCall'
+    const contractAddress = config[networkName].contracts.crosschainFunctionCall.address
 
     let eventABI = {}
     let eventSignature = eventName+'('
@@ -291,16 +251,16 @@ function init(config, dependencies){
       }
     }
 
-    const web3 = web3Store[chainName]
+    const web3 = web3Store[networkName]
 
     const filterTopics = [web3.utils.keccak256(eventSignature)]
-    const eventLogs = await ethClient.getPastLogs(startingBlock, 'latest', contractAddress, filterTopics, chainName)
+    const eventLogs = await ethClient.getPastLogs(fromBlock, toBlock, contractAddress, filterTopics, networkName)
 
     const decodedEventLogs = []
     for(let log of eventLogs){
       const decodedLog = web3.eth.abi.decodeLog(eventABI.inputs, log.data)
       decodedEventLogs.push({
-        decodedLog, //TODO: clean up the decoded log to only contain the named parameters?
+        decodedLog, // TODO: clean up the decoded log to only contain the named parameters?
         blockNumber: log.blockNumber,
         txHash: log.transactionHash,
         data: log.data,
@@ -310,18 +270,18 @@ function init(config, dependencies){
     return decodedEventLogs
   }
 
-  async function checkConfigForChain(chainName, functionName){
-    if (!config[chainName]) {
-      return Promise.reject(Error('No configuration found for chain [' + chainName + '], unable to call [' + functionName + ']'))
+  async function checkConfigForChain(networkName, functionName){
+    if (!config[networkName]) {
+      return Promise.reject(Error('No configuration found for chain [' + networkName + '], unable to call [' + functionName + ']'))
     }
-    if (config[chainName].type !== 'ethereum') {
+    if (config[networkName].type !== 'ethereum') {
       return Promise.reject(Error('Only possible on ethereum chains, unable to call [' + functionName + ']'))
     }
   }
 
-  async function getContractAddress(systemId){
-    const chainName = config.chainIdToChainName[systemId]
-    return config[chainName].contracts.crosschainFunctionCall.address
+  async function getContractAddress(networkId){
+    const networkName = config.networkIdToNetworkName[networkId]
+    return config[networkName].contracts.crosschainFunctionCall.address
   }
 
   return {
@@ -331,11 +291,10 @@ function init(config, dependencies){
     addAuthParams,
     isAuthParams,
     removeAuthParams,
-    setSystemId,
-    getSystemId,
-    performCallFromRemoteChain,
-    startValidatorUpdate,
-    findCrossBlockchainCallExecutedEvent
+    setLocalNetworkId,
+    getLocalNetworkId,
+    inboundCall,
+    findCrosschainFunctionCallEvents
   }
 }
 

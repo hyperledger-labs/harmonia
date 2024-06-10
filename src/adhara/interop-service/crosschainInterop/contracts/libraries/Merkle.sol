@@ -6,6 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
+import "contracts/libraries/SolidityUtils.sol";
+
 /*
  * Merkle tree library providing multi-valued Merkle proof verification.
  */
@@ -29,7 +31,7 @@ library Merkle {
 
   /*
    * Constructs the proof from the leaves of a Merkle tree and the index of the leave for which to generate the proof.
-   * Only for testing purposes. Proof generation should occur off-chain.
+   * Only for testing purposes. Proof generation should occur off-network.
    * @param	{bytes32[]} data The leaves of the Merkle tree.
    * @param	{uint256} index The index of the element to generate the proof for.
    * @return {bytes32[]} Return the generated roof of length equal to the ceiling of log2(numLeaves).
@@ -158,19 +160,20 @@ library Merkle {
     bytes32[] memory values,
     bool singleLeaf
   ) internal pure returns (bytes32[] memory) {
-    uint n = values.length;
+    uint256 n = values.length;
     if (isPowerOfTwo(n) && (n > 1 || singleLeaf)) return values;
-    uint k = 0;
+    uint256 k = 1;
     while (!isPowerOfTwo(++n)) {
       k++;
     }
+    n = values.length;
     bytes32[] memory padded = new bytes32[](n + k);
-    uint i = 0;
+    uint256 i = 0;
     for (; i < n; i++) {
       padded[i] = values[i];
     }
-    uint j = 0;
-    while (j < k) {
+    uint256 j = 0;
+    while (j++ < k) {
       padded[i++] = 0x0000000000000000000000000000000000000000000000000000000000000000;
     }
     return padded;
@@ -182,7 +185,7 @@ library Merkle {
    * @return {bool} Returns true if the value is a power of two.
   */
   function isPowerOfTwo(
-    uint x
+    uint256 x
   ) internal pure returns (bool) {
     return (x != 0) && ((x & (x - 1)) == 0);
   }
@@ -198,7 +201,7 @@ library Merkle {
     uint256 ceil = 0;
     uint pOf2;
     // If x is a power of 2, then this function will return a ceiling that is 1 greater than the actual ceiling. So we need to check if x is a power of 2, and subtract one from ceil if so.
-    assembly {
+    assembly ("memory-safe")  {
     // We check by seeing if x == (~x + 1) & x. This applies a mask to find the lowest set bit of x and then checks it for equality with x. If they are equal, then x is a power of 2.
     // We do some assembly magic to treat the bool as an integer later on.
       pOf2 := eq(and(add(not(x), 1), x), x)

@@ -1,7 +1,6 @@
-import "./interfaces/IToken.sol";
+import "contracts/interfaces/IToken.sol";
 
 pragma solidity ^0.8.13;
-pragma abicoder v1;
 
 contract Token is IToken {
   address public owner;

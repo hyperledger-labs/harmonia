@@ -2,21 +2,23 @@
   "name": "crosschainInterop",
   "version": "1.0.0",
   "description": "## Introduction",
-  "main": "truffle-config.js",
   "directories": {
     "doc": "docs",
     "test": "test",
-    "test-integration": "test-integration"
+    "test-integration": "archive/test-integration"
   },
   "scripts": {
-    "test": "node -e ''; mocha --require mocha-steps --timeout 0 --exit test-integration/*.js"
+    "test": "mocha --require mocha-steps --timeout 0 --exit test-integration/*.js",
+    "test-pvp": "mocha --require mocha-steps --timeout 0 --exit test-integration/settlementInstructionsNativelyLocal.js",
+    "test-dvp": "mocha --require mocha-steps --timeout 0 --exit test-integration/settlementInstructionsWithCordaLocal.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@truffle/contract": "^4.6.31",
-    "@truffle/hdwallet-provider": "^2.1.15",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
+    "@nomiclabs/hardhat-truffle5": "^2.0.7",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
     "abi-decoder": "^2.4.0",
     "bignumber": "^1.1.0",
     "buffer": "^6.0.3",
@@ -31,11 +33,12 @@
     "ethers": "^5.7.0",
     "express-openapi": "^12.0.1",
     "ganache": "^7.4.3",
+    "hardhat": "^2.22.3",
     "js-yaml": "^4.1.0",
     "json-server": "^0.14.0",
     "leveldown": "^6.0.1",
     "levelup": "^4.4.0",
-    "merkle-patricia-tree": "^4.2.0",
+    "merkle-patricia-tree": "^4.2.4",
     "minimist": "^1.2.6",
     "mocha": "^9.0.3",
     "mocha-truffle-reporter": "^1.0.1",
@@ -43,6 +46,7 @@
     "once": "^1.4.0",
     "pm2": "^5.2.0",
     "promisfy": "^1.2.0",
+    "solidity-coverage": "0.7.22",
     "superagent": "^8.0.9",
     "swagger-ui-express": "^4.5.0",
     "truffle": "^5.5.31",

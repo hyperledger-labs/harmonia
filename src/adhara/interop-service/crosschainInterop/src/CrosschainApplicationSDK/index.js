@@ -7,6 +7,8 @@ function init(config, dependencies) {
   const crosschainFunctionCallContract = dependencies.crosschainFunctionCallContract
   const crosschainXVPContract = dependencies.crosschainXVPContract
   const assetTokenContract = dependencies.assetTokenContract
+  const validatorSetManagerContract = dependencies.validatorSetManagerContract
+  const interopManagerContract = dependencies.interopManagerContract
   const settlementObligationsAdapter = dependencies.settlementObligations
 
   if (dependencies.CrosschainXvPJson) abiDecoder.addABI(dependencies.CrosschainXvPJson.abi)
@@ -58,15 +60,42 @@ function init(config, dependencies) {
   });
   const validatorUpdateInstructions = require('./validatorUpdateInstructions')(config, {
     logger,
+    web3Store,
     db: validatorUpdateInstructionDb,
     crosschainFunctionCallSDK: dependencies.crosschainFunctionCallSDK,
-    CrosschainFunctionCallJson: dependencies.CrosschainFunctionCallJson,
+    CrosschainMessagingJson: dependencies.CrosschainMessagingJson,
+    InteropManagerJson: dependencies.InteropManagerJson,
     crosschainFunctionCallContract,
-    crosschainMessagingContract
+    crosschainMessagingContract,
+    validatorSetManagerContract,
+    interopManagerContract,
+  });
+
+  const validatorSetInstructionDb = require('./validatorSetInstructionDb')(config, {
+    logger
+  });
+  const validatorSetInstructions = require('./validatorSetInstructions')(config, {
+    logger,
+    web3Store,
+    db: validatorSetInstructionDb,
+    crosschainFunctionCallSDK: dependencies.crosschainFunctionCallSDK,
+    CrosschainMessagingJson: dependencies.CrosschainMessagingJson,
+    InteropManagerJson: dependencies.InteropManagerJson,
+    crosschainFunctionCallContract,
+    crosschainMessagingContract,
+    validatorSetManagerContract,
+    interopManagerContract,
   });
 
   settlementInstructions.start()
   validatorUpdateInstructions.start()
+  validatorSetInstructions.start()
+
+  async function stop() {
+    await settlementInstructions.stop()
+    await validatorUpdateInstructions.stop()
+    await validatorSetInstructions.stop()
+  }
 
   return {
     getAvailableBalanceOf: assetTokenContract.getAvailableBalanceOf,
@@ -76,8 +105,8 @@ function init(config, dependencies) {
     startCancellation: settlementInstructions.startCancellation,
     performCancellation: settlementInstructions.performCancellation,
     startLeadLeg: settlementInstructions.startLeadLeg,
-    setForeignAccountIdToLocalAccountId: crosschainXVPContract.setForeignAccountIdToLocalAccountId,
-    getForeignAccountIdToLocalAccountId: crosschainXVPContract.getForeignAccountIdToLocalAccountId,
+    setRemoteAccountIdToLocalAccountId: crosschainXVPContract.setRemoteAccountIdToLocalAccountId,
+    getRemoteAccountIdToLocalAccountId: crosschainXVPContract.getRemoteAccountIdToLocalAccountId,
     getSettlementInstruction: settlementInstructions.getSettlementInstruction,
     submitSettlementInstruction: settlementInstructions.submitSettlementInstruction,
     deleteSettlementInstruction: settlementInstructions.deleteSettlementInstruction,
@@ -95,16 +124,24 @@ function init(config, dependencies) {
     setCordaParameterHandlers: crosschainMessagingContract.setParameterHandlers,
     removeCordaParameterHandlers: crosschainMessagingContract.removeParameterHandlers,
     getCordaParameterHandler: crosschainMessagingContract.getParameterHandler,
-    setSystemId: crosschainFunctionCallContract.setSystemId,
-    getSystemId: crosschainFunctionCallContract.getSystemId,
+    setLocalNetworkId: crosschainFunctionCallContract.setLocalNetworkId,
+    getLocalNetworkId: crosschainFunctionCallContract.getLocalNetworkId,
     setAppendAuthParams: crosschainFunctionCallContract.setAppendAuthParams,
     getAppendAuthParams: crosschainFunctionCallContract.getAppendAuthParams,
     addAuthParams: crosschainFunctionCallContract.addAuthParams,
     isAuthParams: crosschainFunctionCallContract.isAuthParams,
     removeAuthParams: crosschainFunctionCallContract.removeAuthParams,
+    getValidators: validatorSetManagerContract.getValidators,
+    getValidatorsAndSyncRemotes: validatorSetManagerContract.getValidatorsAndSyncRemotes,
+    setValidators: validatorSetManagerContract.setValidators,
+    setValidatorsAndSyncRemotes: validatorSetManagerContract.setValidatorsAndSyncRemotes,
+    getValidatorSetInstruction: validatorSetInstructions.getValidatorSetInstruction,
+    submitValidatorSetInstruction: validatorSetInstructions.submitValidatorSetInstruction,
+    deleteValidatorSetInstruction: validatorSetInstructions.deleteValidatorSetInstruction,
     getValidatorUpdateInstruction: validatorUpdateInstructions.getValidatorUpdateInstruction,
     submitValidatorUpdateInstruction: validatorUpdateInstructions.submitValidatorUpdateInstruction,
-    stop: settlementInstructions.stop,
+    deleteValidatorUpdateInstruction: validatorUpdateInstructions.deleteValidatorUpdateInstruction,
+    stop: stop,
     crosschainXVPContract,
     crosschainFunctionCallContract,
     helpers,

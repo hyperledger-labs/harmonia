@@ -9,18 +9,11 @@ COPY ./package-lock.json .
 
 RUN npm i
 
-WORKDIR /crosschainInterop/src/Infrastructure/HqlaxClient
-
-COPY /src/Infrastructure/HqlaxClient/package.json .
-COPY /src/Infrastructure/HqlaxClient/package-lock.json .
-
-RUN npm i
-
 WORKDIR /crosschainInterop
 
 COPY . .
 
-RUN npx truffle compile
+RUN npx hardhat compile
 
 FROM node:18-alpine3.15
 
@@ -33,9 +26,8 @@ ENV PATH=${PATH}:/crosschainInterop/ethgwctl/
 RUN apk --no-cache add curl
 
 COPY --from=builder /crosschainInterop /crosschainInterop
-COPY --from=builder /crosschainInterop/src/Infrastructure/HqlaxClient /crosschainInterop/src/Infrastructure/HqlaxClient
 
-ENTRYPOINT ["node" , "app.js"]
+ENTRYPOINT ["node" , "app/index.js"]
 
 EXPOSE 3030
 EXPOSE 3031
