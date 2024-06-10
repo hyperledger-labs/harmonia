@@ -16,7 +16,7 @@ const logger = Logger(config, {})
 const graph = Graph(config, { logger })
 const crosschainApplicationSDK = graph.crosschainApplicationSDK
 
-/* Middlewares */
+/* Middleware */
 app.use(bodyParser.json())
 app.use(expressLogger("dev"));
 app.use(express.json());
