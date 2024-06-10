@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="161px" preserveAspectRatio="none" style="width:214px;height:161px;background:#FFFFFF;" version="1.1" viewBox="0 0 214 161" width="214px" zoomAndPan="magnify"><defs/><g><!--MD5=[770389ab9df153645bc6ef28055eb2b5]
+entity A--><g id="elem_A"><rect fill="#B4A7E5" height="36.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="197" x="9" y="7"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="169" x="23" y="29.9951">Crosschain Applications</text></g><!--MD5=[22029b2902cbfefb11350e8ee6e306b3]
+entity F--><g id="elem_F"><rect fill="#90EE90" height="36.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="201" x="7" y="63"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="181" x="17" y="85.9951">Crosschain Function Calls</text></g><!--MD5=[c72e14692f063a08d1023b5b76acc947]
+entity M--><g id="elem_M"><rect fill="#FFC0CB" height="36.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="197" x="9" y="119"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="157" x="27" y="141.9951">Crosschain Messaging</text></g><!--MD5=[ee70846fe14f0b996068852809ecc970]
+link A to F--><!--MD5=[592541cc984ff10dcf3a46e145d45334]
+link F to M--><!--MD5=[564ac7a06d13993b0bc6b05930876824]
+@startuml 3_crosschain_interop_spec_component_diagram
+skinparam nodesep 10
+skinparam ranksep 20
+
+'caption "Figure 3.1: Crosschain Interoperability Protocol Stack"
+
+rectangle " Crosschain Application " as A #B4A7E5
+rectangle "Crosschain Function Call" as F #lightGreen
+rectangle "  Crosschain Messaging   " as M #Pink
+
+A -[hidden]-> F
+F -[hidden]-> M
+@enduml
+
+@startuml 3_crosschain_interop_spec_component_diagram
+skinparam nodesep 10
+skinparam ranksep 20
+
+
+rectangle " Crosschain Applications " as A #B4A7E5
+rectangle "Crosschain Function Calls" as F #lightGreen
+rectangle "  Crosschain Messaging   " as M #Pink
+
+A -[hidden]-> F
+F -[hidden]-> M
+@enduml
+
+PlantUML version 1.2022.12(Sun Oct 23 20:12:26 SAST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: ZA
+--></g></svg>

@@ -1,6 +1,7 @@
 # Cross chain proofs #
 
 ## Introduction ##
+
 Cross chain interoperability has a number of trade offs. The two key trade offs are:
  - How much trust is vested in an intermediary notifying one chain that something happened on another chain versus
  - How much does one chain need to know about the mechanisms on another chain in order to verify that something happened on that chain
@@ -24,6 +25,7 @@ Taking it a step futher, how would the trust between two (potentially) different
 As we will explore below, one can also imagine a scenario where an external system can be 'taught' how to determine the presence of certain types of events they care about, so that they don't rely on anybody else to tell them if the block does what they need it to, but where they do rely on one or more trusted parties to tell them whether the block was actually confirmed (and so was hence also valid).
 
 ## Some standard patterns ##
+
 In Enterprise Ethereum based networks, there are some standard patterns that can assist with verifying that a transaction or event on an Enterprise Ethereum network is in fact valid. This pattern is repeatable for all types of events and is scalable because it doesn't rely on needing to know about all of the actors on (or rules of) a network, simply the validators on that network.
 
 ## Block header based proofs ##
@@ -47,8 +49,6 @@ Each transaction that is executed on Ethereum results in a transaction receipt, 
 Each QBFT block header is signed by (at least) a subset of validators of a network, therefore one would need to compare the signatories to an expected list of validators, as well as ensure the number of signatories exceeds a certain threshold, for a given network.
 
 In addition, the Patricia Merkle Tree root would need to be recalculated, using the event in question, and then verify that this root matches the transaction receipt root in the previously verified block header. Recalculating the Patricia Merkle Tree root only requires a subset (only sibling and parent nodes of the transaction receipt containing the event in question) of the Tree, very similar to how a Merkle Tree proof would be verified.
-
-[Here is a working example of how to verify a block header based proof](../../src/adhara/proof-verification/)
 
 ## Limitation of security guarantees in distributed system interoperability ##
 

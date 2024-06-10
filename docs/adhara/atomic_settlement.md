@@ -1,6 +1,7 @@
 # Atomic Settlement - Two phase commit protocol
 
 ## Introduction 
+
 Atomic settlement across two different platforms is well described below by [Paul Krzyzanowski](https://people.cs.rutgers.edu/~pxk/417/notes/transactions.html)
 
 > A key facet of a transaction is that it keeps data consistent even in
@@ -25,13 +26,14 @@ This concept was further refined in the [ERC 2020](https://eips.ethereum.org/EIP
 
 > **Holds**: token balances can be put on hold, which will make the held amount unavailable for further use until the hold is resolved (i.e. either executed or released). Holds have a payer, a payee, and a notary who is in charge of resolving the hold. Holds also implement expiration periods, after which anyone can release the hold Holds are similar to escrows in that are firm and lead to final settlement. Holds can also be used to implement collateralization.
 
-In simple terms if Counterparty A wants to transfer an asset on one chain to Counterparty B in exchange of a different asset on a different chain, then the process would be:
-1. Counterparty A places a hold on asset 1 on chain 1 with Counterparty B as the beneficiary and Notary A as the notary
-2. Counterparty B places a hold on asset 2 on chain 2 with Counterparty A as the beneficiary and Notary A as the notary
+In simple terms if Party A wants to transfer an asset, on one network to Party B, in exchange for a different asset on a different network, then the process would be:
+1. Party A places a hold on asset 1 on network 1 with Party B as the beneficiary and Notary A as the notary
+2. Party B places a hold on asset 2 on network 2 with Party A as the beneficiary and Notary A as the notary
 3. Notary A checks both holds are in place and are correct and then executes both holds
 4. If Notary A decides that anything is wrong in the process, then Notary A releases both holds which cancels the holds, allowing the assets to be used for other transactions
 
 ### Proof based Atomic transactions 
+
 Using the process above, there is an obvious dependency on the Notary to effect the atomic settlement which introduces risk into the system.
 
 One of the ways of mitigating this risk is to change the process slightly.  The change is that each chain has some logic on it that simply verifies a proof that an event occurred on the other chain.  That logic (could be embedded in a smart contract) is the designated notary on the transaction and can therefore ensure settlement happens on one chain if and only if settlement can be guaranteed on the other chain.
