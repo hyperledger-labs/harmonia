@@ -5,7 +5,7 @@ contract('MerkleVerify', async accounts => {
 
   let instance = null
   let testData = [{
-    id: 'HQLAx 1',
+    id: 'Test 1',
     root: '0xA34A076E8E9FBB20C64E05C27751FB757C318AB8D61644A605F346BCDA713A59',
     leaves: [
       '0x116A57394307C0B3E9E6E2795630BAD20ACC03A22B8F537EC248EC3C0950466A',
@@ -26,7 +26,7 @@ contract('MerkleVerify', async accounts => {
       '0x0000000000000000000000000000000000000000000000000000000000000000',
     ],
   }, {
-    id: 'HQLAx 2',
+    id: 'Test 2',
     root: '0xAA7AF2ABDAA2E37785B23AEC36F73A3280FF1326595D0F976532FF8246D8536C',
     leaves: [
       '0x2F248BBBE40D5BC1EFCF85CAF7EA0C226006CD4CED5461277CC0060F44DAF773',
@@ -95,6 +95,20 @@ contract('MerkleVerify', async accounts => {
     instance = await MerkleVerify.new()
   })
 
+
+  it('should be able to pad leaves to a power of two', async () => {
+    let td = testData[0];
+    try {
+      const padded = await instance.padWithZeros(td.leaves.slice(0,9), false);
+      assert.equal(padded.length, td.leaves.length)
+      for (let i = 0; i < padded.length; i++) {
+        assert.equal(padded[i], td.leaves[i].toLowerCase())
+      }
+    } catch (err) {
+      console.log({err})
+      assert.fail('No revert expected:', err)
+    }
+  })
 
   it('should be able to generate and verify a Merkle tree proof for a transaction tree', async () => {
     for (let i=0; i<2; i++) {

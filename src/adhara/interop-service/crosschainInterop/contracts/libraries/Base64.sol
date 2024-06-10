@@ -8,6 +8,7 @@ pragma solidity ^0.8.13;
 
 /*
  * Library to handle Base64 encoding.
+ * Source: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Base64.sol
  */
 library Base64 {
 
@@ -32,7 +33,7 @@ library Base64 {
     // - `4 *`              -> 4 characters for each chunk
     string memory result = new string(4 * ((data.length + 2) / 3));
 
-    assembly {
+    assembly ("memory-safe")  {
     // Prepare the lookup table (skip the first "length" byte)
       let tablePtr := add(table, 1)
 

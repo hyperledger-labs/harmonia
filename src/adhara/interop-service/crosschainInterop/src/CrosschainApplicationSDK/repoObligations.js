@@ -1,6 +1,6 @@
 function init(dependencies) {
 
-  async function createRepoObligation(systemId, body) {
+  async function createRepoObligation(networkId, body) {
 
     const openingLeg = {
       tradeId: body.tradeId,
@@ -18,8 +18,8 @@ function init(dependencies) {
     }
 
     // Don't wait for the closing leg
-    dependencies.createSettlementObligation(systemId, closingLeg)
-    return await dependencies.createSettlementObligation(systemId, openingLeg)
+    dependencies.createSettlementObligation(networkId, closingLeg)
+    return await dependencies.createSettlementObligation(networkId, openingLeg)
   }
 
   return {

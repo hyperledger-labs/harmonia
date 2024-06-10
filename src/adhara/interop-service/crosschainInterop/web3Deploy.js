@@ -1,10 +1,12 @@
 const fs = require("fs");
 const assert = require('assert');
 const {v4: uuidv4} = require("uuid")
-const AssetTokenJson = require('./build/contracts/Token.json')
-const CrosschainXvPJson = require('./build/contracts/XvP.json')
-const CrosschainMessagingJson = require('./build/contracts/CrosschainMessaging.json')
-const CrosschainFunctionCallJson = require('./build/contracts/CrosschainFunctionCall.json')
+const AssetTokenJson = require('./build/contracts/Token.sol/Token.json')
+const CrosschainXvPJson = require('./build/contracts/XvP.sol/XvP.json')
+const CrosschainMessagingJson = require('./build/contracts/CrosschainMessaging.sol/CrosschainMessaging.json')
+const CrosschainFunctionCallJson = require('./build/contracts/CrosschainFunctionCall.sol/CrosschainFunctionCall.json')
+const InteropManagerJson = require('./build/contracts/InteropManager.sol/InteropManager.json')
+const ValidatorSetManagerJson = require('./build/contracts/ValidatorSetManager.sol/ValidatorSetManager.json')
 const Web3 = require('web3')
 const Logger = require("./src/CrosschainSDKUtils/logger")
 const Client = require('./src/Infrastructure/EthereumClient')
@@ -21,23 +23,16 @@ async function deployContracts(context, contracts, deployerAddress) {
     });
     let gas = 10000000 + await contractDeploy.estimateGas();
     try {
-      // let result = await contractDeploy.send({ // Will deploy the contract. The promise will resolve with the new contract instance, instead of the receipt!
-      //   from: deployerAddress,
-      //   gas: gas,
-      //   nonce: nonce++
-      // });
        let result = await sendTransaction(context,{ // Will deploy the contract. The promise will resolve with the new contract instance, instead of the receipt!
          from: deployerAddress,
          nonce: '0x' + Number(nonce++).toString(16),
          gasPrice: '0x' + Number(0).toString(16),
-         chainId: '0x' + Number(context.chainId).toString(16),
+         chainId: '0x' + Number(context.networkId).toString(16),
          gas: '0x' + Number(gas).toString(16),
          data: contractDeploy._deployData,
          value: '0x' + Number(0).toString(16)
        });
-      //contracts[c].address = result._address
       contracts[c].address = result.contractAddress
-      //contracts[c].contract = new context.web3.eth.Contract(contracts[c].abi, contracts[c].address, {from: deployerAddress});
     } catch (err) {
       throw(err)
     }
@@ -149,7 +144,7 @@ async function invoke(context, contract, senderAddress, method, args) {
     args,
     senderAddress,
     contract.address,
-    context.chainName
+    context.networkName
   )
 }
 
@@ -161,7 +156,7 @@ async function call(context, contract, senderAddress, method, args) {
     args,
     senderAddress,
     contract.address,
-    context.chainName
+    context.networkName
   )
 }
 
@@ -172,7 +167,6 @@ async function createTokens(context, tokenContract, senderAddress, accountId, am
     amount: amount,
     metaData: ''
   }
-  //await invokeMethod(context, tokenContract.contract, senderAddress, 'create', args)
   await invoke(context, tokenContract, senderAddress, 'create', args)
 }
 
@@ -186,7 +180,6 @@ async function createHold(context, tokenContract, senderAddress, fromAccountId, 
     duration: '30',
     metaData: '',
   }
-  //await invokeMethod(context, tokenContract.contract, senderAddress, 'createHold', args)
   await invoke(context, tokenContract, senderAddress, 'createHold', args)
 }
 
@@ -194,7 +187,6 @@ async function setMessagingContractAddress(context, fcContract, senderAddress, c
   let args = {
     address: contractAddress
   }
-  //await invokeMethod(context, fcContract.contract, senderAddress, 'setMessagingContractAddress', args)
   await invoke(context, fcContract, senderAddress, 'setMessagingContractAddress', args)
 }
 
@@ -202,7 +194,6 @@ async function setFunctionCallContractAddress(context, xvpContract, senderAddres
   let args = {
     address: contractAddress
   }
-  //await invokeMethod(context, xvpContract.contract, senderAddress, 'setFunctionCallContractAddress', args)
   await invoke(context, xvpContract, senderAddress, 'setFunctionCallContractAddress', args)
 }
 
@@ -210,7 +201,6 @@ async function setTokenContractAddress(context, xvpContract, senderAddress, cont
   let args = {
     address: contractAddress
   }
-  //await invokeMethod(context, xvpContract.contract, senderAddress, 'setTokenContractAddress', args)
   await invoke(context, xvpContract, senderAddress, 'setTokenContractAddress', args)
 }
 
@@ -218,90 +208,74 @@ async function setAppendAuthParams(context, fcContract, senderAddress, enable) {
   let args = {
     enable: enable
   }
-  //await invokeMethod(context, fcContract.contract, senderAddress, 'setAppendAuthParams', args)
   await invoke(context, fcContract, senderAddress, 'setAppendAuthParams', args)
 }
 
-async function addAuthParams(context, fcContract, senderAddress, systemId, contractAddress) {
+async function addAuthParams(context, fcContract, senderAddress, networkId, contractAddress) {
   let args = {
-    blockchainId: Number(systemId),
+    networkId: Number(networkId),
     contractAddress: contractAddress,
   }
-  //await invokeMethod(context, fcContract.contract, senderAddress, 'addAuthParams', args)
   await invoke(context, fcContract, senderAddress, 'addAuthParams', args)
-}
-
-async function setSystemId(context, fcContract, senderAddress, systemId) {
-  let args = {
-    blockchainId: systemId
-  }
-  //await invokeMethod(context, fcContract.contract, senderAddress, 'setSystemId', args)
-  await invoke(context, fcContract, senderAddress, 'setSystemId', args)
 }
 
 async function setNotaryId(context, xvpContract, senderAddress, notaryId) {
   let args = {
     notaryId: notaryId
   }
-  //await invokeMethod(context, xvpContract.contract, senderAddress, 'setNotaryId', args)
   await invoke(context, xvpContract, senderAddress, 'setNotaryId', args)
 }
 
-async function setForeignAccountIdToLocalAccountId(context, xvpContract, senderAddress, foreignAccountId, localAccountId) {
+async function setRemoteAccountIdToLocalAccountId(context, xvpContract, senderAddress, remoteAccountId, localAccountId) {
   let args = {
     localAccountId: localAccountId,
-    foreignAccountId: foreignAccountId,
+    remoteAccountId: remoteAccountId,
   }
-  //await invokeMethod(context, xvpContract.contract, senderAddress, 'setForeignAccountIdToLocalAccountId', args)
-  await invoke(context, xvpContract, senderAddress, 'setForeignAccountIdToLocalAccountId', args)
+  await invoke(context, xvpContract, senderAddress, 'setRemoteAccountIdToLocalAccountId', args)
 }
 
-async function getForeignAccountIdToLocalAccountId(context, tokenContract, senderAddress, foreignAccountId) {
-  // console.log('Invoke asset token layer method [getAvailableBalanceOf] via provider [' + web3.currentProvider.host + ']')
+async function getRemoteAccountIdToLocalAccountId(context, tokenContract, senderAddress, remoteAccountId) {
   let args = {
-    foreignAccountId: foreignAccountId
+    remoteAccountId: remoteAccountId
   }
-  //return await callMethod(context, tokenContract.contract, senderAddress, 'getAvailableBalanceOf', args)
-  let result = await call(context, tokenContract, senderAddress, 'getForeignAccountIdToLocalAccountId', args)
+  let result = await call(context, tokenContract, senderAddress, 'getRemoteAccountIdToLocalAccountId', args)
   let decoded = context.web3.eth.abi.decodeParameters(['string'], result)
   return decoded[0]
 }
 
-async function onboardProvingScheme(context, msgContract, senderAddress, chainId, schemeId) {
+async function onboardProvingScheme(context, msgContract, senderAddress, networkId, schemeId) {
   let args = {
-    chainId: chainId,
+    networkId: networkId,
     scheme: schemeId
   }
-  //await invokeMethod(context, msgContract.contract, senderAddress, 'onboardProvingScheme', args)
   await invoke(context, msgContract, senderAddress, 'onboardProvingScheme', args)
 }
 
-async function onboardEventDecodingScheme(context, fcContract, senderAddress, chainId, schemeId) {
+async function onboardEventDecodingScheme(context, fcContract, senderAddress, networkId, schemeId) {
   let args = {
-    chainId: chainId,
+    networkId: networkId,
     scheme: schemeId
   }
-  //await invokeMethod(context, fcContract.contract, senderAddress, 'onboardEventDecodingScheme', args)
   await invoke(context, fcContract, senderAddress, 'onboardEventDecodingScheme', args)
 }
 
-async function setParameterHandlers(context, msgContract, senderAddress, chainId, functionSignature, paramHandlers) {
+async function setParameterHandlers(context, msgContract, senderAddress, networkId, functionSignature, functionPrototype, functionCommand, paramHandlers) {
   let args = {
-    chainId: chainId,
+    networkId: networkId,
     functionSignature: functionSignature,
+    functionPrototype: functionPrototype,
+    functionCommand: functionCommand,
     paramHandlers: paramHandlers
   }
-  //await invokeMethod(context, msgContract.contract, senderAddress, 'setParameterHandlers', args)
   await invoke(context, msgContract, senderAddress, 'setParameterHandlers', args)
 }
 
-async function getParameterHandler(context, msgContract, senderAddress, chainId, functionSignature, index) {
+async function getParameterHandler(context, msgContract, senderAddress, networkId, functionSignature, index) {
   let args = {
-    chainId: chainId,
+    networkId: networkId,
     functionSignature: functionSignature,
     index: index
   }
-  //await invokeCall(context, msgContract.contract, senderAddress, 'getParameterHandler', args)
   let result = await call(context, msgContract, senderAddress, 'getParameterHandler', args)
   const decoded = context.web3.eth.abi.decodeParameters(['bytes'], result);
   let handler = context.web3.eth.abi.decodeParameters([{
@@ -312,6 +286,7 @@ async function getParameterHandler(context, msgContract, senderAddress, chainId,
       'describedType': 'string',
       'describedPath': 'bytes',
       'solidityType': 'string',
+      'calldataPath': 'bytes',
       'parser': 'string',
     },
   }], decoded[0])
@@ -322,35 +297,53 @@ async function getParameterHandler(context, msgContract, senderAddress, chainId,
     'describedType': handler['0'].describedType,
     'describedPath': handler['0'].describedPath,
     'solidityType': handler['0'].solidityType,
+    'calldataPath': handler['0'].calldataPath,
     'parser': handler['0'].parser,
   }
 }
 
-async function addNotary(context, msgContract, senderAddress, chainId, publicKey) {
+async function getFunctionCommand(context, msgContract, senderAddress, networkId, functionSignature) {
   let args = {
-    chainId: chainId,
+    networkId: networkId,
+    functionSignature: functionSignature,
+  }
+  let result = await call(context, msgContract, senderAddress, 'getFunctionCommand', args)
+  let decoded = context.web3.eth.abi.decodeParameters(['string'], result)
+  return decoded[0]
+}
+
+async function getFunctionPrototype(context, msgContract, senderAddress, networkId, functionSignature) {
+  let args = {
+    networkId: networkId,
+    functionSignature: functionSignature,
+  }
+  let result = await call(context, msgContract, senderAddress, 'getFunctionPrototype', args)
+  let decoded = context.web3.eth.abi.decodeParameters(['string'], result)
+  return decoded[0]
+}
+
+async function addNotary(context, msgContract, senderAddress, networkId, publicKey) {
+  let args = {
+    networkId: networkId,
     publicKey: publicKey
   }
-  //await invokeMethod(context, msgContract.contract, senderAddress, 'addNotary', args)
   await invoke(context, msgContract, senderAddress, 'addNotary', args)
 }
 
-async function addParticipant(context, msgContract, senderAddress, chainId, publicKey) {
+async function addParticipant(context, msgContract, senderAddress, networkId, publicKey) {
   let args = {
-    chainId: chainId,
+    networkId: networkId,
     publicKey: publicKey
   }
-  //await invokeMethod(context, msgContract.contract, senderAddress, 'addParticipant', args)
   await invoke(context, msgContract, senderAddress, 'addParticipant', args)
 }
 
-async function setValidatorList(context, msgContract, senderAddress, chainId, validatorList) {
+async function setValidatorList(context, msgContract, senderAddress, networkId, validatorList) {
   let args = {
-    chainId: chainId,
-    operationId: uuidv4(),
+    networkId: networkId,
+    blockNumber: 1,
     validatorList: validatorList
   }
-  //await invokeMethod(context, msgContract.contract, senderAddress, 'setValidatorList', args)
   await invoke(context, msgContract, senderAddress, 'setValidatorList', args)
 }
 
@@ -359,26 +352,75 @@ async function addHoldNotary(context, tokenContract, senderAddress, notaryId, ho
     notaryId: notaryId,
     holdNotaryAdminAddress: holdNotaryAdminAddress
   }
-  //await invokeMethod(context, tokenContract.contract, senderAddress, 'addHoldNotary', args)
   await invoke(context, tokenContract, senderAddress, 'addHoldNotary', args)
 }
 
 async function getBalanceOf(context, tokenContract, senderAddress, accountId) {
-  // console.log('Invoke asset token layer method [getAvailableBalanceOf] via provider [' + web3.currentProvider.host + ']')
   let args = {
     account: accountId
   }
-  //return await callMethod(context, tokenContract.contract, senderAddress, 'getAvailableBalanceOf', args)
   let result = await call(context, tokenContract, senderAddress, 'getAvailableBalanceOf', args)
   let decoded = context.web3.eth.abi.decodeParameters(['uint256'], result)
   return decoded[0]
 }
 
 async function getOwner(context, ownedContract, senderAddress) {
-  //return await callMethod(context, ownedContract.contract, senderAddress, 'owner', {})
   let result = await call(context, ownedContract, senderAddress, 'owner', {})
   result = result.slice(26, 66)
   return '0x'+result
+}
+
+async function setValidators(context, vsmContract, senderAddress, validatorList) {
+  let args = {
+    validators: validatorList
+  }
+  await invoke(context, vsmContract, senderAddress, 'setValidators', args)
+}
+
+async function getValidators(context, vsmContract, senderAddress) {
+  let args = {}
+  let result = await call(context, vsmContract, senderAddress, 'getValidators', args)
+  let decoded = context.web3.eth.abi.decodeParameters(['address[]'], result)
+  return decoded[0]
+}
+
+async function setLocalNetworkId(context, imContract, senderAddress, networkId) {
+  let args = {
+    networkId: networkId
+  }
+  await invoke(context, imContract, senderAddress, 'setLocalNetworkId', args)
+}
+
+async function addRemoteDestinationNetwork(context, imContract, senderAddress, networkId, connectorContract) {
+  let args = {
+    remoteNetworkId: networkId,
+    chainConnectorAddress: connectorContract
+  }
+  await invoke(context, imContract, senderAddress, 'addRemoteDestinationNetwork', args)
+}
+
+async function enableRemoteDestinationNetwork(context, imContract, senderAddress, networkId) {
+  let args = {
+    remoteNetworkId: networkId,
+  }
+  await invoke(context, imContract, senderAddress, 'enableRemoteDestinationNetwork', args)
+}
+
+async function listRemoteDestinationNetworks(context, imContract, senderAddress) {
+  let args = {
+    startIndex: 0,
+    limit: 50
+  }
+  let result = await call(context, imContract, senderAddress, 'listRemoteDestinationNetworks', args)
+  let decoded = context.web3.eth.abi.decodeParameters(['uint256[]'], result)
+  return decoded[0]
+}
+
+async function setInteropManager(context, vsmContract, senderAddress, contractAddress) {
+  let args = {
+    address: contractAddress
+  }
+  await invoke(context, vsmContract, senderAddress, 'setInteropManager', args)
 }
 
 async function setupLedger(context, config) {
@@ -401,6 +443,16 @@ async function setupLedger(context, config) {
       bin: AssetTokenJson.bytecode,
     }
   }
+  contracts.interopManager = {
+    abi: InteropManagerJson.abi,
+    bin: InteropManagerJson.bytecode,
+    address: '0x0000000000000000000000000000000000008888'
+  }
+  contracts.validatorSetManager = {
+    abi: ValidatorSetManagerJson.abi,
+    bin: ValidatorSetManagerJson.bytecode,
+    address: '0x0000000000000000000000000000000000007777'
+  }
   await deployContracts(context, contracts, from)
   return contracts
 }
@@ -412,7 +464,9 @@ async function setupConfig(context, config, contracts) {
   assert.strictEqual(await getOwner(context, contracts.crosschainXvP, from), from.toLowerCase(), msg)
   assert.strictEqual(await getOwner(context, contracts.assetTokenContract, from), from.toLowerCase(), msg)
 
-  await setSystemId(context, contracts.crosschainFunctionCall, from, config.localSystemId) // Set the local system id
+  await getValidators(context, contracts.validatorSetManager, from)
+  await setLocalNetworkId(context, contracts.interopManager, from, config.localNetworkId) // Set the local network id
+  await setLocalNetworkId(context, contracts.crosschainFunctionCall, from, config.localNetworkId) // Set the local system id
   await setAppendAuthParams(context, contracts.crosschainFunctionCall, from, true) // Enable contract authentication
   await setMessagingContractAddress(context, contracts.crosschainFunctionCall, from, contracts.crosschainMessaging.address)
   await setNotaryId(context, contracts.crosschainXvP, from, config.holdNotaryId)
@@ -423,39 +477,47 @@ async function setupConfig(context, config, contracts) {
   assert.strictEqual(await getBalanceOf(context, contracts.assetTokenContract, from, config.tokenAccount), config.tokenAmount, 'Balance does not match')
 }
 
-async function setupForeign(context, config, contracts) {
+async function setupRemote(context, config, contracts) {
   let from = config.deployerAddress
-  for (let foreignSystem of config.foreignSystems) {
-    if (foreignSystem.cordaSystemId !== undefined) {
-      //const msg = 'Only administrators can set up contract configuration'
-      //assert.strictEqual(await getOwner(context, contracts.crosschainMessaging, from), from.toLowerCase(), msg)
-      //assert.strictEqual(await getOwner(context, contracts.crosschainFunctionCall, from), from.toLowerCase(), msg)
-      //assert.strictEqual(await getOwner(context, contracts.crosschainXvP, from), from.toLowerCase(), msg)
-      //assert.strictEqual(await getOwner(context, contracts.assetTokenContract, from), from.toLowerCase(), msg)
-      await addAuthParams(context, contracts.crosschainFunctionCall, from, foreignSystem.cordaSystemId, contracts.crosschainXvP.address)
-      await onboardEventDecodingScheme(context, contracts.crosschainFunctionCall, from, foreignSystem.cordaSystemId, 1) // Corda decoding scheme
-      await onboardProvingScheme(context, contracts.crosschainMessaging, from, foreignSystem.cordaSystemId, 1) // Corda transaction-based proving scheme
-      await addParticipant(context, contracts.crosschainMessaging, from, foreignSystem.cordaSystemId, foreignSystem.cordaPartyAKey) // Corda issuing party
-      await addParticipant(context, contracts.crosschainMessaging, from, foreignSystem.cordaSystemId, foreignSystem.cordaPartyBKey) // Corda receiving party
-      await addNotary(context, contracts.crosschainMessaging, from, foreignSystem.cordaSystemId, foreignSystem.cordaNotaryKey) // Corda notary
-      for (let h of foreignSystem.cordaParameterHandlers) {
-        await setParameterHandlers(context, contracts.crosschainMessaging, from, foreignSystem.cordaSystemId, h.signature, h.handlers)
-        for (let i=0; i<h.handlers.length; i++) await getParameterHandler(context, contracts.crosschainMessaging, from, foreignSystem.cordaSystemId, h.signature, i)
+  await setInteropManager(context, contracts.validatorSetManager, from, contracts.interopManager.address)
+  for (let remoteNetwork of config.remoteNetworks) {
+    if (remoteNetwork.cordaNetworkId !== undefined) {
+      await addRemoteDestinationNetwork(context, contracts.interopManager, from, remoteNetwork.cordaNetworkId, remoteNetwork.connectorContract) // This is the messaging contract currently
+      await enableRemoteDestinationNetwork(context, contracts.interopManager, from, remoteNetwork.cordaNetworkId) // Misuse of enable/disable of connector contract to enable/disable auth parameters
+      await listRemoteDestinationNetworks(context, contracts.interopManager, from)
+      await addAuthParams(context, contracts.crosschainFunctionCall, from, remoteNetwork.cordaNetworkId, contracts.crosschainXvP.address)
+      await onboardEventDecodingScheme(context, contracts.crosschainFunctionCall, from, remoteNetwork.cordaNetworkId, 1) // Corda decoding scheme
+      await onboardProvingScheme(context, contracts.crosschainMessaging, from, remoteNetwork.cordaNetworkId, 1) // Corda transaction-based proving scheme
+      await addParticipant(context, contracts.crosschainMessaging, from, remoteNetwork.cordaNetworkId, remoteNetwork.cordaPartyAKey) // Corda issuing party
+      await addParticipant(context, contracts.crosschainMessaging, from, remoteNetwork.cordaNetworkId, remoteNetwork.cordaPartyBKey) // Corda receiving party
+      await addNotary(context, contracts.crosschainMessaging, from, remoteNetwork.cordaNetworkId, remoteNetwork.cordaNotaryKey) // Corda notary
+      for (let h of remoteNetwork.cordaParameterHandlers) {
+        await setParameterHandlers(context, contracts.crosschainMessaging, from, remoteNetwork.cordaNetworkId, h.signature, h.prototype, h.command, h.handlers)
+        for (let i=0; i<h.handlers.length; i++) {
+          await getParameterHandler(context, contracts.crosschainMessaging, from, remoteNetwork.cordaNetworkId, h.signature, i)
+        }
+        await getFunctionPrototype(context, contracts.crosschainMessaging, from, remoteNetwork.cordaNetworkId, h.signature)
+        await getFunctionCommand(context, contracts.crosschainMessaging, from, remoteNetwork.cordaNetworkId, h.signature)
       }
-      await setForeignAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, foreignSystem.cordaPartyAForeignId, foreignSystem.cordaPartyALocalId) // Register Party A id mapping
-      assert.strictEqual(await getForeignAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, foreignSystem.cordaPartyAForeignId), foreignSystem.cordaPartyALocalId, 'Identity mapping failed')
-      await setForeignAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, foreignSystem.cordaPartyBForeignId, foreignSystem.cordaPartyBLocalId) // Register Party B id mapping
-      assert.strictEqual(await getForeignAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, foreignSystem.cordaPartyBForeignId), foreignSystem.cordaPartyBLocalId, 'Identity mapping failed')
+      await setRemoteAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, remoteNetwork.cordaPartyARemoteId, remoteNetwork.cordaPartyALocalId) // Register Party A id mapping
+      assert.strictEqual(await getRemoteAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, remoteNetwork.cordaPartyARemoteId), remoteNetwork.cordaPartyALocalId, 'Identity mapping failed')
+      await setRemoteAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, remoteNetwork.cordaPartyBRemoteId, remoteNetwork.cordaPartyBLocalId) // Register Party B id mapping
+      assert.strictEqual(await getRemoteAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, remoteNetwork.cordaPartyBRemoteId), remoteNetwork.cordaPartyBLocalId, 'Identity mapping failed')
     }
-    if (foreignSystem.ethSystemId !== undefined) {
-      await addAuthParams(context, contracts.crosschainFunctionCall, from, foreignSystem.ethSystemId, foreignSystem.authenticatedContract)
-      await onboardEventDecodingScheme(context, contracts.crosschainFunctionCall, from, foreignSystem.ethSystemId, 2) // Block header decoding
-      await onboardProvingScheme(context, contracts.crosschainMessaging, from, foreignSystem.ethSystemId, 2) // Block header proving scheme
-      await setValidatorList(context, contracts.crosschainMessaging, from, foreignSystem.ethSystemId, foreignSystem.ethValidatorAddresses) // Register validator list
-      await setForeignAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, foreignSystem.ethPartyAForeignId, foreignSystem.ethPartyALocalId) // Register Party A id mapping
-      assert.strictEqual(await getForeignAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, foreignSystem.ethPartyAForeignId), foreignSystem.ethPartyALocalId, 'Identity mapping failed')
-      await setForeignAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, foreignSystem.ethPartyBForeignId, foreignSystem.ethPartyBLocalId) // Register Party B id mapping
-      assert.strictEqual(await getForeignAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, foreignSystem.ethPartyBForeignId), foreignSystem.ethPartyBLocalId, 'Identity mapping failed')
+    if (remoteNetwork.ethNetworkId !== undefined) {
+      await addRemoteDestinationNetwork(context, contracts.interopManager, from, remoteNetwork.ethNetworkId, remoteNetwork.connectorContract) // This is the messaging contract currently
+      await enableRemoteDestinationNetwork(context, contracts.interopManager, from, remoteNetwork.ethNetworkId) // Misuse of enable/disable of connector contract to enable/disable auth parameters
+      await listRemoteDestinationNetworks(context, contracts.interopManager, from)
+      for (let i=0; i<remoteNetwork.authenticatedContracts.length; i++) {
+        await addAuthParams(context, contracts.crosschainFunctionCall, from, remoteNetwork.ethNetworkId, remoteNetwork.authenticatedContracts[i])
+      }
+      await onboardEventDecodingScheme(context, contracts.crosschainFunctionCall, from, remoteNetwork.ethNetworkId, 2) // Block header decoding
+      await onboardProvingScheme(context, contracts.crosschainMessaging, from, remoteNetwork.ethNetworkId, 2) // Block header proving scheme
+      await setValidatorList(context, contracts.crosschainMessaging, from, remoteNetwork.ethNetworkId, remoteNetwork.ethValidatorAddresses) // Register validator list
+      await setRemoteAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, remoteNetwork.ethPartyARemoteId, remoteNetwork.ethPartyALocalId) // Register Party A id mapping
+      assert.strictEqual(await getRemoteAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, remoteNetwork.ethPartyARemoteId), remoteNetwork.ethPartyALocalId, 'Identity mapping failed')
+      await setRemoteAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, remoteNetwork.ethPartyBRemoteId, remoteNetwork.ethPartyBLocalId) // Register Party B id mapping
+      assert.strictEqual(await getRemoteAccountIdToLocalAccountId(context, contracts.crosschainXvP, from, remoteNetwork.ethPartyBRemoteId), remoteNetwork.ethPartyBLocalId, 'Identity mapping failed')
     }
   }
 }
@@ -463,16 +525,16 @@ async function setupForeign(context, config, contracts) {
 async function createContext(config) {
   const logger = Logger(config, {})
   const context = {}
-  context.chainName = config.chainName
+  context.networkName = config.networkName
   context.web3 = new Web3(config.ethProvider)
   context.web3.eth.handleRevert = true
-  context.chainId = config.chainId
+  context.networkId = config.networkId
   context.signer = config.web3Provider
   const web3Store = {}
-  web3Store[config.chainName] = context.web3
+  web3Store[config.networkName] = context.web3
   const clientConfig = {}
-  clientConfig[config.chainName] = {
-    chainId: context.chainId,
+  clientConfig[config.networkName] = {
+    networkId: context.networkId,
     signerBaseURL: context.signer
   }
   context.client = Client(clientConfig, { logger, web3Store })
@@ -488,12 +550,12 @@ async function setupNetwork(config) {
 
 async function setupIntegration(config, deployed) {
   let context = await createContext(config)
-  await setupForeign(context, config, deployed)
+  await setupRemote(context, config, deployed)
 }
 
-async function updateConfig(pathToConfig, systemId, deployed) {
+async function updateConfig(pathToConfig, networkId, deployed) {
   const config = require(pathToConfig)
-  const systemName = config.chainIdToChainName[systemId]
+  const systemName = config.networkIdToNetworkName[networkId]
   for (let key in deployed) {
     config[systemName].contracts[key].address = deployed[key].address
   }
@@ -506,21 +568,3 @@ module.exports = {
   setupIntegration,
   updateConfig
 };
-
-
-/*
- * Network setup configuration for integration with Corda.
- * @property {string} web3Provider Web3 provider to use. Example: http://localhost:4545
- * @property {string} deployerAddress Ethereum address from which to deploy contracts. Example: 0x049eb617fBa599E3D455Da70C6730ABc8Cc4221d
- * @property {string} cordaPartyAKey Corda issuing party public key. Example: 0x2247d1d382c4f4d7273742b0a8020bedd64c2f1f0bb908c0746706dd79682db3
- * @property {string} cordaPartyALocalId Corda issuing party local identification. Example: FNUSUS00GBP
- * @property {string} cordaPartyAForeignId Corda issuing party foreign identification encoded as base64. Example: Tz1QYXJ0eUEsIEw9TG9uZG9uLCBDPUdC
- * @property {string} cordaPartyBKey Corda receiving party public key. Example: 0xaffbc60356739f6a14aca6c394224af7dae8e443c97e8a10b5a630cfeb0072fd
- * @property {string} cordaPartyBLocalId Corda receiving party local identification. Example: FNGBGB00GBP
- * @property {string} cordaPartyBForeignId Corda receiving party identification encoded as base64. Example: Tz1QYXJ0eUIsIEw9TmV3IFlvcmssIEM9VVM=
- * @property {string} cordaNotaryKey Corda notary public key. Example: 0xc9b765141a1686f1344469443e22a9bd9a839755256788e7dcb0592cd56ec2c3
- * @property {number} cordaSystemId Corda ledger identification. Example: 3
- * @property {number} localSystemId Local Ethereum ledger identification. Example: 1
- * @property {string} holdNotaryId Ethereum hold notary identification. Example: NOTARY00XVP
- * @property {string} tokenAmount Amount of tokens to create for the Ethereum issuing party. Example: 100000000000
- */

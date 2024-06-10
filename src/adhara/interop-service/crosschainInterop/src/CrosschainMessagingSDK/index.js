@@ -1,6 +1,7 @@
 const Web3 = require('web3')
 const rlp = require('rlp')
 const { GetProof } = require('eth-proof')
+const {errorResultMessage} = require("truffle/build/102.bundled");
 
 function init(config, dependencies){
 
@@ -84,7 +85,7 @@ function init(config, dependencies){
       return '0x' + rlp.encode([decodedExtraData[extraDataVanityIndex], decodedExtraData[extraDataValidatorsIndex], decodedExtraData[extraDataVoteIndex], decodedExtraData[extraDataRoundIndex]]).toString('hex')
   }
 
-  function excludeRoundAndValidatorSeals(consensus, block) {
+  function extractPreimageExtraData(consensus, block) {
     let decodedExtraData = rlp.decode(block.extraData)
     if (consensus === 'ibft') {
       return '0x' + rlp.encode([decodedExtraData[extraDataVanityIndex], decodedExtraData[extraDataValidatorsIndex], decodedExtraData[extraDataVoteIndex]]).toString('hex')
@@ -121,7 +122,7 @@ function init(config, dependencies){
 
   function formatBlockHeaderToArray(consensus, block) {
     block.extraDataExcludingValidatorSeals = excludeValidatorSeals(block)
-    block.extraDataExcludingRoundAndValidatorSeals = excludeRoundAndValidatorSeals(consensus, block)
+    block.extraDataForPreimage = extractPreimageExtraData(consensus, block)
     block.extraDataValidatorAddresses = extractValidatorAddresses(consensus, block)
     const gasLimit = block.gasLimit === 0 ? '0x' : web3.utils.toHex(block.gasLimit)
     const gasUsed = block.gasUsed === 0 ? '0x' : web3.utils.toHex(block.gasUsed)
@@ -155,47 +156,36 @@ function init(config, dependencies){
     blockHeaderExcludingSeals[headerExtraData] = block.extraDataExcludingValidatorSeals
 
     const blockHeaderExcludingRound = [...blockHeader]
-    blockHeaderExcludingRound[headerExtraData] = block.extraDataExcludingRoundAndValidatorSeals
+    blockHeaderExcludingRound[headerExtraData] = block.extraDataForPreimage
 
     const rlpBlockHeader = rlp.encode(blockHeader)
     const rlpBlockHeaderExcludingSeals = rlp.encode(blockHeaderExcludingSeals)
-    const rlpBlockHeaderExcludingRound = rlp.encode(blockHeaderExcludingRound)
+    const rlpBlockHeaderPreimage = rlp.encode(blockHeaderExcludingRound)
 
     return {
       rlpBlockHeader,
       rlpBlockHeaderExcludingSeals,
-      rlpBlockHeaderExcludingRound,
+      rlpBlockHeaderPreimage,
       rlpValidatorSignatures
     }
   }
 
   function encodeReceiptProof(proof){
-    // the path is HP encoded
-    logger.log('silly', 'TxIndex:', proof.txIndex)
-    const indexBuffer = proof.txIndex.slice(2);
-    logger.log('silly', JSON.stringify({indexBuffer}, null, 2))
-    const hpIndex = '0x' + (indexBuffer.startsWith('0') ? '1' + indexBuffer.slice(1) : '00' + indexBuffer);
-    logger.log('silly', JSON.stringify({hpIndex}, null, 2))
-    // The value is the second buffer in the leaf (last node)
     const value = '0x' + Buffer.from(proof.receiptProof[proof.receiptProof.length - 1][1]).toString('hex');
     // The parent nodes must be rlp encoded
     const parentNodes = rlp.encode(proof.receiptProof);
     return {
-        path: hpIndex,
+        path: proof.txIndex,
         rlpEncodedReceipt: value,
         witness: '0x'+parentNodes.toString('hex')
     };
   }
 
-  async function createProof(chainName, block, txHash){
-    logger.log('debug', 'Creating proof for system: ['+chainName+']')
-    const ethProof = new GetProof(config[chainName].httpProvider)
-    logger.log('silly', 'ReceiptsRoot:' + JSON.stringify(block.receiptsRoot, null, 2))
+  async function createProof(networkName, block, txHash){
+    logger.log('debug', 'Creating proof for system: ['+networkName+']')
+    const ethProof = new GetProof(config[networkName].httpProvider)
     const txProof = await ethProof.receiptProof(txHash)
-    logger.log('silly', 'ReceiptProof:', txProof.receiptProof.toString('hex'))
-    const encodedReceiptProof = encodeReceiptProof(txProof)
-    logger.log('silly', JSON.stringify({encodedReceiptProof}, null, 2))
-    return encodedReceiptProof;
+    return encodeReceiptProof(txProof)
   }
 
   return {
@@ -204,7 +194,7 @@ function init(config, dependencies){
     decodeValidatorSeals,
     encodeValidatorSeals,
     excludeValidatorSeals,
-    excludeRoundAndValidatorSeals,
+    extractPreimageExtraData,
     createProof,
     getBlockHeaderObjFromBlock,
     encodeReceiptProof

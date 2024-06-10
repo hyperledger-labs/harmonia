@@ -1,35 +1,37 @@
-const CrosschainMessagingJson = require('../../../build/contracts/CrosschainMessaging.json')
+const CrosschainMessagingJson = require('../../../build/contracts/CrosschainMessaging.sol/CrosschainMessaging.json')
 
 function init(config, dependencies){
 
   const ethClient = dependencies.ethClient
   const web3Store = dependencies.web3Store
 
-  async function setParameterHandlers(systemId, foreignSystemId, functionSignature, paramHandlers) {
+  async function setParameterHandlers(networkId, remoteNetworkId, functionSignature, functionPrototype, functionCommand, paramHandlers) {
     const functionName = 'setParameterHandlers'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
 
     const result = await ethClient.buildAndSendTx(
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         functionSignature,
+        functionPrototype,
+        functionCommand,
         paramHandlers
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        foreignSystemId,
+        remoteNetworkId,
         functionSignature,
         paramHandlers
       }
@@ -40,30 +42,30 @@ function init(config, dependencies){
     }
   }
 
-  async function removeParameterHandlers(systemId, foreignSystemId, functionSignature) {
+  async function removeParameterHandlers(networkId, remoteNetworkId, functionSignature) {
     const functionName = 'removeParameterHandlers'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
 
     const result = await ethClient.buildAndSendTx(
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         functionSignature
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        foreignSystemId,
+        remoteNetworkId,
         functionSignature
       }
     } else {
@@ -73,30 +75,30 @@ function init(config, dependencies){
     }
   }
 
-  async function getParameterHandler(systemId, foreignSystemId, functionSignature, index) {
+  async function getParameterHandler(networkId, remoteNetworkId, functionSignature, index) {
     const functionName = 'getParameterHandler'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
 
     const result = await ethClient.buildAndCallTx(
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         functionSignature,
         index
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    const abiDecoded = web3Store[chainName].eth.abi.decodeParameters(['bytes'], result);
+    const abiDecoded = web3Store[networkName].eth.abi.decodeParameters(['bytes'], result);
 
-    const abiDecodedStruct = web3Store[chainName].eth.abi.decodeParameters([{
+    const abiDecodedStruct = web3Store[networkName].eth.abi.decodeParameters([{
       'ParameterHandler': {
         'fingerprint': 'string',
         'componentIndex': 'uint8',
@@ -104,6 +106,7 @@ function init(config, dependencies){
         'describedType': 'string',
         'describedPath': 'bytes',
         'solidityType': 'string',
+        'calldataPath': 'bytes',
         'parser': 'string',
       },
     }], abiDecoded[0]);
@@ -115,17 +118,18 @@ function init(config, dependencies){
       'describedType': abiDecodedStruct['0'].describedType,
       'describedPath': abiDecodedStruct['0'].describedPath,
       'solidityType': abiDecodedStruct['0'].solidityType,
+      'calldataPath': abiDecodedStruct['0'].calldataPath,
       'parser': abiDecodedStruct['0'].parser,
     };
   }
 
-  async function addParticipant(systemId, foreignSystemId, publicKey) {
+  async function addParticipant(networkId, remoteNetworkId, publicKey) {
     const functionName = 'addParticipant'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
 
     const decimalPublicKey = BigInt(publicKey).toString(10)
 
@@ -133,18 +137,18 @@ function init(config, dependencies){
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         publicKey: decimalPublicKey
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        foreignSystemId,
+        remoteNetworkId,
         publicKey
       }
     } else {
@@ -154,13 +158,13 @@ function init(config, dependencies){
     }
   }
 
-  async function removeParticipant(systemId, foreignSystemId, publicKey) {
+  async function removeParticipant(networkId, remoteNetworkId, publicKey) {
     const functionName = 'removeParticipant'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
 
     const decimalPublicKey = BigInt(publicKey).toString(10)
 
@@ -168,18 +172,18 @@ function init(config, dependencies){
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         publicKey: decimalPublicKey
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        foreignSystemId,
+        remoteNetworkId,
         publicKey
       }
     } else {
@@ -189,40 +193,40 @@ function init(config, dependencies){
     }
   }
 
-  async function isParticipant(systemId, foreignSystemId, publicKey) {
+  async function isParticipant(networkId, remoteNetworkId, publicKey) {
     const functionName = 'isParticipant'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
     const decimalPublicKey = BigInt(publicKey).toString(10)
 
     const result = await ethClient.buildAndCallTx(
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         publicKey: decimalPublicKey
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
-    const abiDecoded = web3Store[chainName].eth.abi.decodeParameters(['bool'], result);
+    const abiDecoded = web3Store[networkName].eth.abi.decodeParameters(['bool'], result);
 
     return {
       isParticipant: abiDecoded[0]
     }
   }
 
-  async function addNotary(systemId, foreignSystemId, publicKey) {
+  async function addNotary(networkId, remoteNetworkId, publicKey) {
     const functionName = 'addNotary'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
 
     const decimalPublicKey = BigInt(publicKey).toString(10)
 
@@ -230,18 +234,18 @@ function init(config, dependencies){
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         publicKey: decimalPublicKey
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        foreignSystemId,
+        remoteNetworkId,
         publicKey
       }
     } else {
@@ -251,13 +255,13 @@ function init(config, dependencies){
     }
   }
 
-  async function removeNotary(systemId, foreignSystemId, publicKey) {
+  async function removeNotary(networkId, remoteNetworkId, publicKey) {
     const functionName = 'removeNotary'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
 
     const decimalPublicKey = BigInt(publicKey).toString(10)
 
@@ -265,18 +269,18 @@ function init(config, dependencies){
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         publicKey: decimalPublicKey
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
 
-    if(result.status === true){
+    if (result.status === true) {
       return {
         transactionState: 'SUCCESS',
-        foreignSystemId,
+        remoteNetworkId,
         publicKey
       }
     } else {
@@ -286,46 +290,46 @@ function init(config, dependencies){
     }
   }
 
-  async function isNotary(systemId, foreignSystemId, publicKey) {
+  async function isNotary(networkId, remoteNetworkId, publicKey) {
     const functionName = 'isNotary'
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, functionName)
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, functionName)
 
-    const fromAddress = config[chainName].contexts.interopService
-    const contractAddress = config[chainName].contracts.crosschainMessaging.address
+    const fromAddress = config[networkName].contexts.interopService
+    const contractAddress = config[networkName].contracts.crosschainMessaging.address
     const decimalPublicKey = BigInt(publicKey).toString(10)
 
     const result = await ethClient.buildAndCallTx(
       CrosschainMessagingJson.abi,
       functionName,
       {
-        chainId: foreignSystemId,
+        networkId: remoteNetworkId,
         publicKey: decimalPublicKey
       },
       fromAddress,
       contractAddress,
-      chainName
+      networkName
     )
-    const abiDecoded = web3Store[chainName].eth.abi.decodeParameters(['bool'], result);
+    const abiDecoded = web3Store[networkName].eth.abi.decodeParameters(['bool'], result);
 
     return {
       isNotary: abiDecoded[0]
     }
   }
 
-  async function checkConfigForChain(chainName, functionName){
-    if (!config[chainName]) {
-      return Promise.reject(Error('No configuration found for chain [' + chainName + '], unable to call [' + functionName + ']'))
+  async function checkConfigForChain(networkName, functionName){
+    if (!config[networkName]) {
+      return Promise.reject(Error('No configuration found for chain [' + networkName + '], unable to call [' + functionName + ']'))
     }
-    if (config[chainName].type !== 'ethereum') {
+    if (config[networkName].type !== 'ethereum') {
       return Promise.reject(Error('Only possible on ethereum chains, unable to call [' + functionName + ']'))
     }
   }
 
-  async function getContractAddress(systemId){
-    const chainName = config.chainIdToChainName[systemId]
-    await checkConfigForChain(chainName, 'getContractAddress')
-    return config[chainName].contracts.crosschainMessaging.address
+  async function getContractAddress(networkId){
+    const networkName = config.networkIdToNetworkName[networkId]
+    await checkConfigForChain(networkName, 'getContractAddress')
+    return config[networkName].contracts.crosschainMessaging.address
   }
 
   return {

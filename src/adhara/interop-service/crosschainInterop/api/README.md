@@ -6,41 +6,39 @@ WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
 
 ## Introduction
 
-The Crosschain interop service provides API endpoints to interact with the crosschain interop application SDK.
+The crosschain interop service provides API endpoints to interact with the crosschain interop application SDK.
 
 ## Problem Description
 
-The crosschain interop SDKs are decentralised and trustless for the most part, however certain onboarding and setup
-steps need to be performed.
-Some of these steps are, but not limited to, onboarding proving schemes, onboarding event decoding schemes and adding
-foreign to local accountId mappings.
+The crosschain interop SDKs are decentralised and trustless for the most part, however certain onboarding and setup steps need to be performed.
 
-In addition to the functioning of the crosschain interop SDK, there is also a need for parties to be able to submit
-settlement instructions, which is not trustless or decentralised.
+Some of these steps are, but not limited to, onboarding proving schemes, onboarding event decoding schemes and adding remote to local account identity mappings.
+
+In addition to the functioning of the crosschain interop SDK, there is also a need for parties to be able to submit settlement instructions, which is not trustless or decentralised.
 
 ## Methodology
 
+### Setup
+
+Refer to either [Payment versus Payment (PvP)](pvp/README.md) or [Delivery versus Payment (DvP)](dvp/README.md) for
+specific instructions.
+
 ### Start the API
 
-1. The API needs nodejs (tested with v18.12.1) installed
-2. Run `npm i` to install needed packages
-3. The API needs contract build artifacts from the root crosschainInterop folder:
+1. The API needs contract build artifacts from the `crosschainInterop` folder:
 
 ```bash
-cd crosschainInterop
-npx truffle compile
+make setup && make compile
 ```
 
-The api-v1 can be started by:
+2. The application API can be started with:
 
 ```bash
-cd crosschainInterop/api
-node app.js
+npm run start-app
 ```
 
-The admin-v2 can be started by:
+3. The admin API can be started with:
 
 ```bash
-cd crosschainInterop/api/admin-v2
-node index.js
+npm run start-admin
 ```

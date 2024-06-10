@@ -8,23 +8,23 @@ function init(config, dependencies) {
   const settlementObligationsAdapter = dependencies.settlementObligationsAdapter
   const helpers = dependencies.helpers
 
-  async function createSettlementObligation(systemId, body) {
-    const chainName = config.chainIdToChainName[systemId]
+  async function createSettlementObligation(networkId, body) {
+    const networkName = config.networkIdToNetworkName[networkId]
     const tradeId = body.tradeId.toString()
-    const foreignFromAccount = body.fromAccount
-    const foreignToAccount = body.toAccount
+    const remoteFromAccount = body.fromAccount
+    const remoteToAccount = body.toAccount
     const amount = body.amount
     const timestamp = body.timestamp
 
-    const fromAccountId = (await crosschainXVPContract.getForeignAccountIdToLocalAccountId(systemId, {foreignAccountId: foreignFromAccount})).localAccountId
-    const toAccountId = (await crosschainXVPContract.getForeignAccountIdToLocalAccountId(systemId, {foreignAccountId: foreignToAccount})).localAccountId
-    const localOperationId = await helpers.getOperationIdFromTradeId(chainName, tradeId, fromAccountId, toAccountId)
+    const fromAccountId = (await crosschainXVPContract.getRemoteAccountIdToLocalAccountId(networkId, {remoteAccountId: remoteFromAccount})).localAccountId
+    const toAccountId = (await crosschainXVPContract.getRemoteAccountIdToLocalAccountId(networkId, {remoteAccountId: remoteToAccount})).localAccountId
+    const localOperationId = await helpers.getOperationIdFromTradeId(networkName, tradeId, fromAccountId, toAccountId)
 
-    await settlementObligationsAdapter.createAndMakeHoldPerpetual(chainName, tradeId, fromAccountId, toAccountId, amount, localOperationId, timestamp)
+    await settlementObligationsAdapter.createAndMakeHoldPerpetual(networkName, tradeId, fromAccountId, toAccountId, amount, localOperationId, timestamp)
 
     let makeHoldPerpetualExecutedEvent = undefined
     while (!makeHoldPerpetualExecutedEvent) {
-      makeHoldPerpetualExecutedEvent = await getMakeHoldPerpetualExecutedEventByOperationId(chainName, 0, localOperationId)
+      makeHoldPerpetualExecutedEvent = await getMakeHoldPerpetualExecutedEventByOperationId(networkName, 0, localOperationId)
       await utils.sleep(3000)
     }
     return {
@@ -32,9 +32,9 @@ function init(config, dependencies) {
     }
   }
 
-  async function getMakeHoldPerpetualExecutedEventByOperationId(chainName, startingBlock, operationId) {
+  async function getMakeHoldPerpetualExecutedEventByOperationId(networkName, startingBlock, operationId) {
 
-    const eventLogs = await assetTokenContract.findMakeHoldPerpetualExecutedEvent(chainName, startingBlock)
+    const eventLogs = await assetTokenContract.findMakeHoldPerpetualExecutedEvent(networkName, startingBlock)
 
     for (let eventLog of eventLogs) {
       if (!!eventLog.decodedLog && !!eventLog.decodedLog.operationId && eventLog.decodedLog.operationId.toString() === operationId) {
@@ -42,39 +42,39 @@ function init(config, dependencies) {
           txHash: eventLog.txHash,
           operationId: eventLog.decodedLog.operationId.toString(),
           blockNumber: Number(eventLog.blockNumber),
-          chainName
+          networkName
         }
       }
     }
     return undefined
   }
 
-  async function getCounterpartyChainMakeHoldPerpetualExecutedEvent(chainName, tradeId, fromAccount, toAccount) {
+  async function getCounterpartyChainMakeHoldPerpetualExecutedEvent(networkName, tradeId, fromAccount, toAccount) {
     const holdPromiseArr = []
     // Add all other configured chains, except the lead leg's chain
     for (const chain of config.chains) {
-      if (chain === chainName) {
+      if (chain === networkName) {
         continue
       }
       if (config[chain].type !== 'ethereum') {
         continue
       }
 
-      const foreignSystemId = config[chain].id
-      const foreignFromAccount = (await crosschainXVPContract.getForeignAccountIdToLocalAccountId(foreignSystemId, {foreignAccountId: fromAccount})).localAccountId
-      const foreignToAccount = (await crosschainXVPContract.getForeignAccountIdToLocalAccountId(foreignSystemId, {foreignAccountId: toAccount})).localAccountId
-      // The from and to accounts are expected to be swapped on the foreign side vs the local side
-      const foreignOperationId = await helpers.getOperationIdFromTradeId(chain, tradeId, foreignToAccount, foreignFromAccount)
-      logger.log('silly', 'Finding counterparty chain perpetual hold for tradeId [' + tradeId + '], fromAccount [' + fromAccount + '], toAccount [' + toAccount + '] and foreignOperationId [' + foreignOperationId + ']')
+      const remoteNetworkId = config[chain].id
+      const remoteFromAccount = (await crosschainXVPContract.getRemoteAccountIdToLocalAccountId(remoteNetworkId, {remoteAccountId: fromAccount})).localAccountId
+      const remoteToAccount = (await crosschainXVPContract.getRemoteAccountIdToLocalAccountId(remoteNetworkId, {remoteAccountId: toAccount})).localAccountId
+      // The from and to accounts are expected to be swapped on the remote side vs the local side
+      const remoteOperationId = await helpers.getOperationIdFromTradeId(chain, tradeId, remoteToAccount, remoteFromAccount)
+      logger.log('silly', 'Finding counterparty chain perpetual hold for tradeId [' + tradeId + '], fromAccount [' + fromAccount + '], toAccount [' + toAccount + '] and remoteOperationId [' + remoteOperationId + ']')
 
-      holdPromiseArr.push(getMakeHoldPerpetualExecutedEventByOperationId(chain, 0, foreignOperationId))
+      holdPromiseArr.push(getMakeHoldPerpetualExecutedEventByOperationId(chain, 0, remoteOperationId))
     }
     return await Promise.any(holdPromiseArr)
   }
 
-  async function getExecuteHoldExecutedEventByOperationId(chainName, startingBlock, operationId) {
+  async function getExecuteHoldExecutedEventByOperationId(networkName, startingBlock, operationId) {
 
-    const eventLogs = await assetTokenContract.findExecuteHoldExecutedEvent(chainName, startingBlock)
+    const eventLogs = await assetTokenContract.findExecuteHoldExecutedEvent(networkName, startingBlock)
 
     for (let eventLog of eventLogs) {
       if (!!eventLog.decodedLog && !!eventLog.decodedLog.operationId && eventLog.decodedLog.operationId.toString() === operationId) {
@@ -82,16 +82,16 @@ function init(config, dependencies) {
           txHash: eventLog.txHash,
           operationId: eventLog.decodedLog.operationId.toString(),
           blockNumber: Number(eventLog.blockNumber),
-          chainName
+          networkName
         }
       }
     }
     return undefined
   }
 
-  async function getCancelHoldExecutedEventByOperationId(chainName, startingBlock, operationId) {
+  async function getCancelHoldExecutedEventByOperationId(networkName, startingBlock, operationId) {
 
-    const eventLogs = await assetTokenContract.findCancelHoldExecutedEvent(chainName, startingBlock)
+    const eventLogs = await assetTokenContract.findCancelHoldExecutedEvent(networkName, startingBlock)
 
     for (let eventLog of eventLogs) {
       if (!!eventLog.decodedLog && !!eventLog.decodedLog.operationId && eventLog.decodedLog.operationId.toString() === operationId) {
@@ -99,7 +99,7 @@ function init(config, dependencies) {
           txHash: eventLog.txHash,
           operationId: eventLog.decodedLog.operationId.toString(),
           blockNumber: Number(eventLog.blockNumber),
-          chainName
+          networkName
         }
       }
     }

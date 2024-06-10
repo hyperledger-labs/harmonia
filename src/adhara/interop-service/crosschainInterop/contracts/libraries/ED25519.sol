@@ -6,8 +6,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
-import "contracts/../../contracts/libraries/SHA512.sol";
+import "contracts/libraries/SHA512.sol";
 
+/*
+ * Library to handle ED25519 signature verification.
+ * Modified from source: https://github.com/chengwenxi/Ed25519/blob/main/contracts/libraries/Ed25519.sol
+ */
 library ED25519 {
 
   /*
@@ -927,4 +931,80 @@ library ED25519 {
     a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
     p22501 = mulmod(p22501, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
   }
+
+  function decode(bytes memory d) internal pure returns (bytes memory)  {
+    uint256 totLen = 44;
+    uint256 idLen = 5;
+    uint256 doId = uint256(uint8(d[8]));
+    if (doId == 100) {
+      totLen = 47;
+      idLen = 8;
+    } else {
+      if (doId != 112) {
+        revert("Unsupported X.509 key spec");
+      }
+      if (uint8(d[3]) == 7) {
+        totLen = 46;
+        idLen = 7;
+      }
+    }
+    if (d.length != totLen) {
+      revert("Invalid X.509 key spec length");
+    } else {
+      uint256 idx = 0;
+      idx = idx + 1;
+      if (uint8(d[idx]) == 48 && uint8(d[idx++]) == totLen - 2 && uint8(d[idx++]) == 48 && uint8(d[idx++]) == idLen && uint8(d[idx++]) == 6 && uint8(d[idx++]) == 3 && uint8(d[idx++]) == 43 && uint8(d[idx++]) == 101) {
+        ++idx;
+        if (doId == 100) {
+          if (uint8(d[idx++]) != 10 || uint8(d[idx++]) != 1 || uint8(d[idx++]) != 1) {
+            revert("Unsupported X.509 key spec");
+          }
+        } else if (idLen == 7 && (uint8(d[idx++]) != 5 || uint8(d[idx++]) != 0)) {
+          revert("Unsupported X.509 key spec");
+        }
+        if (uint8(d[idx++]) == 3 && uint8(d[idx++]) == 33 && uint8(d[idx++]) == 0) {
+          bytes memory rv = new bytes(32);
+          copy(d, idx, rv, 0, 32);
+          return rv;
+        } else {
+          revert("Unsupported X.509 key spec");
+        }
+      } else {
+        revert("Unsupported X.509 key spec");
+      }
+    }
+  }
+
+  function encode(bytes memory a) internal pure returns (bytes memory) {
+    uint256 totLen = 12 + a.length;
+    bytes memory rv = new bytes(totLen);
+    uint256 idx = 0;
+    idx = idx + 1;
+    rv[idx] = bytes1(uint8(48));
+    rv[idx++] = bytes1(uint8(totLen-2));
+    rv[idx++] = bytes1(uint8(48));
+    rv[idx++] = bytes1(uint8(5));
+    rv[idx++] = bytes1(uint8(6));
+    rv[idx++] = bytes1(uint8(3));
+    rv[idx++] = bytes1(uint8(43));
+    rv[idx++] = bytes1(uint8(101));
+    rv[idx++] = bytes1(uint8(112));
+    rv[idx++] = bytes1(uint8(3));
+    rv[idx++] = bytes1(uint8(1+a.length));
+    rv[idx++] = bytes1(uint8(0));
+    copy(a, 0, rv, idx, a.length);
+    return rv;
+  }
+
+  function copy(bytes memory src, uint256 srcPos, bytes memory dest, uint256 destPos, uint256 length) internal pure returns (bytes memory)  {
+    if (srcPos + length >= src.length || destPos + length >= dest.length) {
+      revert("Unexpected array length");
+    }
+    for (uint256 i = 0; i < length; i++) {
+      dest[destPos+i] = src[srcPos+i];
+    }
+    return dest;
+  }
+
+
 }

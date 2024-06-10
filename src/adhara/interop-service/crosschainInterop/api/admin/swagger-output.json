@@ -1,0 +1,1223 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1",
+    "title": "Administration API",
+    "description": "Crosschain interop service Administration API defines endpoints for maintaining the Corda Notaries, Corda Participants, Corda Registered Functions, Interop Authentication Parameters, Interop Participants, and Validators resources."
+  },
+  "host": "localhost:3031",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Validators",
+      "description": "Validators Resource"
+    },
+    {
+      "name": "InteropAuthParams",
+      "description": "Interop Authentication Parameters Resource"
+    },
+    {
+      "name": "InteropParticipants",
+      "description": "Interop Participants Resource"
+    },
+    {
+      "name": "CordaNotaries",
+      "description": "Corda Notaries Resource"
+    },
+    {
+      "name": "CordaParticipants",
+      "description": "Corda Participants Resource"
+    },
+    {
+      "name": "CordaRegisteredFunctions",
+      "description": "Corda Registered Functions Resource"
+    },
+    {
+      "name": "ValidatorUpdateInstructions",
+      "description": "Validator Update Instruction Resource"
+    },
+    {
+      "name": "ValidatorSetInstructions",
+      "description": "Validator Set Instruction Resource"
+    }
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/validators": {
+      "get": {
+        "tags": [
+          "Validators"
+        ],
+        "summary": "Fetch list of validators.",
+        "description": "",
+        "operationId": "getValidators",
+        "parameters": [
+          {
+            "name": "blockHash",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched list of validators.",
+            "schema": {
+              "$ref": "#/definitions/Validators"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/cordaNotaries": {
+      "get": {
+        "tags": [
+          "CordaNotaries"
+        ],
+        "summary": "Fetch if is a Corda Notary.",
+        "description": "",
+        "operationId": "getCordaNotary",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteNetworkId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "publicKey",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched if is a Corda Notary.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "isNotary": {
+                  "type": "boolean",
+                  "example": true
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CordaNotaries"
+        ],
+        "summary": "Create a corda notary.",
+        "description": "",
+        "operationId": "postCordaNotary",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "cordaNotary",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CordaNotary"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created corda notary.",
+            "schema": {
+              "$ref": "#/definitions/CordaNotary"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CordaNotaries"
+        ],
+        "summary": "Remove a corda notary.",
+        "description": "",
+        "operationId": "deleteCordaNotary",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteNetworkId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "publicKey",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed corda notary.",
+            "schema": {
+              "$ref": "#/definitions/CordaNotary"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/cordaParticipants": {
+      "get": {
+        "tags": [
+          "CordaParticipants"
+        ],
+        "summary": "Fetched if is a Corda participant.",
+        "description": "",
+        "operationId": "getCordaParticipant",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteNetworkId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "publicKey",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched if is a Corda participant.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "isParticipant": {
+                  "type": "boolean",
+                  "example": true
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CordaParticipants"
+        ],
+        "summary": "Create a corda participant.",
+        "description": "",
+        "operationId": "postCordaParticipant",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "cordaParticipant",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CordaParticipant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created corda participant.",
+            "schema": {
+              "$ref": "#/definitions/CordaParticipant"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CordaParticipants"
+        ],
+        "summary": "Remove a corda participant.",
+        "description": "",
+        "operationId": "deleteCordaParticipant",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteNetworkId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "publicKey",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed corda participant.",
+            "schema": {
+              "$ref": "#/definitions/CordaParticipant"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/cordaRegisteredFunctions": {
+      "get": {
+        "tags": [
+          "CordaRegisteredFunctions"
+        ],
+        "summary": "Fetch the parameter handler for a registered function.",
+        "description": "",
+        "operationId": "getRegisteredFunction",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteNetworkId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "functionSignature",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched the parameter handler for a registered function.",
+            "schema": {
+              "$ref": "#/definitions/CordaParameterHandler"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CordaRegisteredFunctions"
+        ],
+        "summary": "Create a Corda registered function.",
+        "description": "",
+        "operationId": "postRegisteredFunction",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteNetworkId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "functionSignature",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "functionParameterHandlers",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CordaParameterHandlers"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created a Corda registered function.",
+            "schema": {
+              "$ref": "#/definitions/CordaRegisteredFunction"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CordaRegisteredFunctions"
+        ],
+        "summary": "Remove a Corda registered function.",
+        "description": "",
+        "operationId": "deleteRegisteredFunction",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteNetworkId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "functionSignature",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed a Corda registered function.",
+            "schema": {
+              "$ref": "#/definitions/CordaRegisteredFunction"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/interopParticipants": {
+      "get": {
+        "tags": [
+          "InteropParticipants"
+        ],
+        "summary": "Fetch the interop participant.",
+        "description": "",
+        "operationId": "getLocalAccountId",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteAccountId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched the interop participant.",
+            "schema": {
+              "$ref": "#/definitions/InteropParticipant"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "InteropParticipants"
+        ],
+        "summary": "Create interop participant.",
+        "description": "",
+        "operationId": "postInteropParticipants",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "interopParticipant",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/InteropParticipant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created interop participant.",
+            "schema": {
+              "$ref": "#/definitions/InteropParticipant"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "InteropParticipants"
+        ],
+        "summary": "Remove interop participant.",
+        "description": "",
+        "operationId": "deleteInteropParticipant",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteAccountId",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "interopParticipant",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/InteropParticipant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed interop participant.",
+            "schema": {
+              "$ref": "#/definitions/InteropParticipant"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/interopAuthParams": {
+      "get": {
+        "tags": [
+          "InteropAuthParams"
+        ],
+        "summary": "Fetch if is interop authentication parameters.",
+        "description": "",
+        "operationId": "getInteropAuthParams",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "remoteNetworkId",
+            "in": "query",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "remoteContractAddress",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched if is interop authentication parameters.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "isAuthParam": {
+                  "type": "boolean",
+                  "example": true
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "InteropAuthParams"
+        ],
+        "summary": "Create interop authentication parameters.",
+        "description": "",
+        "operationId": "postInteropAuthParams",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "interopAuthParam",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/InteropAuthParam"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created interop authentication parameters.",
+            "schema": {
+              "$ref": "#/definitions/InteropAuthParam"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "InteropAuthParams"
+        ],
+        "summary": "Remove interop authentication parameters.",
+        "description": "",
+        "operationId": "deleteInteropAuthParams",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "interopAuthParam",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/InteropAuthParam"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed interop authentication parameters.",
+            "schema": {
+              "$ref": "#/definitions/InteropAuthParam"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/validatorUpdateInstructions": {
+      "get": {
+        "tags": [
+          "ValidatorUpdateInstructions"
+        ],
+        "summary": "Fetch the validator update instruction.",
+        "description": "",
+        "operationId": "getValidatorUpdateInstruction",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "operationId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched the validator update instruction.",
+            "schema": {
+              "$ref": "#/definitions/ValidatorUpdateInstructionResponse"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ValidatorUpdateInstructions"
+        ],
+        "summary": "Create validator update instruction.",
+        "description": "",
+        "operationId": "postValidatorUpdateInstruction",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "validatorUpdateInstruction",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ValidatorUpdateInstructionRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created validator update instruction.",
+            "schema": {
+              "$ref": "#/definitions/ValidatorUpdateInstructionResponse"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ValidatorUpdateInstructions"
+        ],
+        "summary": "Remove validator update instruction.",
+        "description": "",
+        "operationId": "deleteValidatorUpdateInstruction",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "operationId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed validator update instruction.",
+            "schema": {
+              "$ref": "#/definitions/ValidatorUpdateInstructionResponse"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/validatorSetInstructions": {
+      "get": {
+        "tags": [
+          "ValidatorSetInstructions"
+        ],
+        "summary": "Fetch the validator set instruction.",
+        "description": "",
+        "operationId": "getValidatorSetInstruction",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "operationId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched the validator set instruction.",
+            "schema": {
+              "$ref": "#/definitions/ValidatorSetInstructionResponse"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ValidatorSetInstructions"
+        ],
+        "summary": "Create validator set instruction.",
+        "description": "",
+        "operationId": "postValidatorSetInstruction",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "validatorSetInstruction",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ValidatorSetInstructionRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created validator update instruction.",
+            "schema": {
+              "$ref": "#/definitions/ValidatorSetInstructionResponse"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ValidatorSetInstructions"
+        ],
+        "summary": "Remove validator set instruction.",
+        "description": "",
+        "operationId": "deleteValidatorSetInstruction",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "operationId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed validator set instruction.",
+            "schema": {
+              "$ref": "#/definitions/ValidatorSetInstructionResponse"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Validators": {
+      "type": "object",
+      "properties": {
+        "networkId": {
+          "type": "number",
+          "example": 0
+        },
+        "ethereumAddresses": {
+          "type": "array",
+          "example": [
+            "string"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "InteropAuthParam": {
+      "type": "object",
+      "properties": {
+        "remoteNetworkId": {
+          "type": "string",
+          "example": "string"
+        },
+        "remoteContractAddress": {
+          "type": "string",
+          "example": "string"
+        }
+      },
+      "required": [
+        "remoteNetworkId",
+        "remoteContractAddress"
+      ]
+    },
+    "InteropParticipant": {
+      "type": "object",
+      "properties": {
+        "localAccountId": {
+          "type": "string",
+          "example": "string"
+        },
+        "remoteAccountId": {
+          "type": "string",
+          "example": "string"
+        }
+      },
+      "required": [
+        "localAccountId",
+        "remoteAccountId"
+      ]
+    },
+    "CordaNotary": {
+      "type": "object",
+      "properties": {
+        "remoteNetworkId": {
+          "type": "number",
+          "example": 0
+        },
+        "publicKey": {
+          "type": "string",
+          "example": "string"
+        }
+      },
+      "required": [
+        "remoteNetworkId",
+        "publicKey"
+      ]
+    },
+    "CordaParticipant": {
+      "type": "object",
+      "properties": {
+        "remoteNetworkId": {
+          "type": "number",
+          "example": 0
+        },
+        "publicKey": {
+          "type": "string",
+          "example": "string"
+        }
+      },
+      "required": [
+        "remoteNetworkId",
+        "publicKey"
+      ]
+    },
+    "CordaParameterHandler": {
+      "type": "object",
+      "properties": {
+        "fingerprint": {
+          "type": "string",
+          "example": "string"
+        },
+        "componentIndex": {
+          "type": "number",
+          "example": 0
+        },
+        "describedSize": {
+          "type": "number",
+          "example": 0
+        },
+        "describedType": {
+          "type": "string",
+          "example": "string"
+        },
+        "describedPath": {
+          "type": "string",
+          "example": "string"
+        },
+        "solidityType": {
+          "type": "string",
+          "example": "string"
+        },
+        "parser": {
+          "type": "string",
+          "example": "string"
+        }
+      }
+    },
+    "CordaParameterHandlers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CordaParameterHandler"
+      }
+    },
+    "CordaRegisteredFunction": {
+      "type": "object",
+      "properties": {
+        "networkId": {
+          "type": "number",
+          "example": 0
+        },
+        "functionsSignature": {
+          "type": "number",
+          "example": 0
+        },
+        "parameterHandlers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CordaParameterHandler"
+          }
+        }
+      }
+    },
+    "EthereumProof": {
+      "type": "object",
+      "properties": {
+        "networkId": {
+          "type": "string",
+          "example": "string"
+        },
+        "sourceNetworkId": {
+          "type": "number",
+          "example": 0
+        },
+        "encodedInfo": {
+          "type": "number",
+          "example": 0
+        },
+        "signatureOrProof": {
+          "type": "string",
+          "example": "string"
+        }
+      }
+    },
+    "ValidatorUpdateInstructionFilter": {
+      "type": "object",
+      "properties": {
+        "remoteDestinationNetworkId": {
+          "type": "number",
+          "example": 0
+        },
+        "callbackURL": {
+          "type": "string",
+          "example": "string"
+        }
+      }
+    },
+    "ValidatorUpdateInstructionRequest": {
+      "type": "object",
+      "properties": {
+        "operationId": {
+          "type": "string",
+          "example": "string"
+        },
+        "filters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValidatorUpdateInstructionFilter"
+          }
+        }
+      },
+      "required": [
+        "operationId"
+      ]
+    },
+    "ValidatorUpdateInstructionResponse": {
+      "type": "object",
+      "properties": {
+        "networkId": {
+          "type": "number",
+          "example": 0
+        },
+        "operationId": {
+          "type": "string",
+          "example": "string"
+        },
+        "state": {
+          "type": "string",
+          "example": "string"
+        },
+        "creationDate": {
+          "type": "number",
+          "example": 0
+        },
+        "lastUpdate": {
+          "type": "number",
+          "example": 0
+        },
+        "humanReadableTimestamp": {
+          "type": "string",
+          "example": "string"
+        },
+        "result": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EthereumProof"
+          }
+        }
+      }
+    },
+    "ValidatorSetInstructionFilter": {
+      "type": "object",
+      "properties": {
+        "remoteDestinationNetworkId": {
+          "type": "number",
+          "example": 0
+        },
+        "callbackURL": {
+          "type": "string",
+          "example": "string"
+        }
+      }
+    },
+    "ValidatorSetInstructionRequest": {
+      "type": "object",
+      "properties": {
+        "operationId": {
+          "type": "string",
+          "example": "string"
+        },
+        "validators": {
+          "type": "array",
+          "example": [
+            "string"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "filters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValidatorSetInstructionFilter"
+          }
+        }
+      },
+      "required": [
+        "operationId",
+        "validators"
+      ]
+    },
+    "ValidatorSetInstructionResponse": {
+      "type": "object",
+      "properties": {
+        "networkId": {
+          "type": "number",
+          "example": 0
+        },
+        "operationId": {
+          "type": "string",
+          "example": "string"
+        },
+        "state": {
+          "type": "string",
+          "example": "string"
+        },
+        "creationDate": {
+          "type": "number",
+          "example": 0
+        },
+        "lastUpdate": {
+          "type": "number",
+          "example": 0
+        },
+        "humanReadableTimestamp": {
+          "type": "string",
+          "example": "string"
+        },
+        "result": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EthereumProof"
+          }
+        }
+      }
+    }
+  }
+}

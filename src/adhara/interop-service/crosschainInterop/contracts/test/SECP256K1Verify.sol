@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "contracts/../../contracts/libraries/SECP256K1.sol";
+import "contracts/libraries/SECP256K1.sol";
 
 contract SECP256K1Verify {
 

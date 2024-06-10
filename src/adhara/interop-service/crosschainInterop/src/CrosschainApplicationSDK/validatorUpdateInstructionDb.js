@@ -19,7 +19,7 @@ function init(config, dependencies) {
     let found = false
     for (let i in validatorUpdateInstructionObjStore) {
       const item = validatorUpdateInstructionObjStore[i]
-      if (validatorUpdateInstructionObj.systemId === item.systemId && validatorUpdateInstructionObj.operationId === item.operationId) {
+      if (validatorUpdateInstructionObj.networkId === item.networkId && validatorUpdateInstructionObj.operationId === item.operationId) {
         found = true
         break
       }
@@ -36,24 +36,24 @@ function init(config, dependencies) {
     let found = false
     for (let i in validatorUpdateInstructionObjStore) {
       const item = validatorUpdateInstructionObjStore[i]
-      if (validatorUpdateInstructionObj.systemId === item.systemId && validatorUpdateInstructionObj.operationId === item.operationId) {
+      if (validatorUpdateInstructionObj.networkId === item.networkId && validatorUpdateInstructionObj.operationId === item.operationId) {
         found = true
         validatorUpdateInstructionObjStore[i] = validatorUpdateInstructionObj
-        logger.log('debug', 'Updated validator update instruction object for systemId [' + validatorUpdateInstructionObj.systemId + '] with operationId ['+validatorUpdateInstructionObj.operationId+'] and state ['+validatorUpdateInstructionObj.state+']')
+        logger.log('debug', 'Updated validator update instruction object for networkId [' + validatorUpdateInstructionObj.networkId + '] with operationId ['+validatorUpdateInstructionObj.operationId+'] and state ['+validatorUpdateInstructionObj.state+']')
         break
       }
     }
       fs.writeFileSync(validatorUpdateInstructionStorePath, JSON.stringify(validatorUpdateInstructionObjStore))
     if (!found) {
-      return Promise.reject(Error('Validator update instruction from systemId [' + validatorUpdateInstructionObj.systemId + '] with operationId [' + validatorUpdateInstructionObj.operationId + '] was not found'))
+      return Promise.reject(Error('Validator update instruction from networkId [' + validatorUpdateInstructionObj.networkId + '] with operationId [' + validatorUpdateInstructionObj.operationId + '] was not found'))
     }
   }
 
-  async function removeValidatorUpdateInstruction(systemId, operationId) {
+  async function removeValidatorUpdateInstruction(networkId, operationId) {
     let found = false
     for (let i in validatorUpdateInstructionObjStore) {
       const item = validatorUpdateInstructionObjStore[i]
-      if (systemId === item.systemId && operationId === item.operationId) {
+      if (networkId === item.networkId && operationId === item.operationId) {
         found = true
         validatorUpdateInstructionObjStore.splice(i, 1)
         break
@@ -61,23 +61,23 @@ function init(config, dependencies) {
     }
     fs.writeFileSync(validatorUpdateInstructionStorePath, JSON.stringify(validatorUpdateInstructionObjStore))
     if (!found) {
-      return Promise.reject(Error('Validator update instruction from systemId [' + systemId + '] with operationId [' + operationId + '] was not found'))
+      return Promise.reject(Error('Validator update instruction from networkId [' + networkId + '] with operationId [' + operationId + '] was not found'))
     }
   }
 
-  async function findValidatorUpdateInstructionByState(systemId, state) {
+  async function findValidatorUpdateInstructionByState(networkId, state) {
     const list = []
     for (let item of validatorUpdateInstructionObjStore) {
-      if (item.systemId === systemId && item.state === state) {
+      if (item.networkId === networkId && item.state === state) {
         list.push(item)
       }
     }
     return list
   }
 
-  async function findValidatorUpdateInstructionByOperationId(systemId, operationId) {
+  async function findValidatorUpdateInstructionByOperationId(networkId, operationId) {
     for (let item of validatorUpdateInstructionObjStore) {
-      if (item.systemId === systemId && item.operationId === operationId) {
+      if (item.networkId === networkId && item.operationId === operationId) {
         return item
       }
     }
@@ -87,7 +87,7 @@ function init(config, dependencies) {
   async function findValidatorUpdateInstructionsToProcess(){
     const list = []
     for (let validatorUpdateInstructionObj of validatorUpdateInstructionObjStore) {
-      if (validatorUpdateInstructionObj.state === validatorUpdateInstructionStates.confirmed || validatorUpdateInstructionObj.state === validatorUpdateInstructionStates.waitingForCrossBlockchainCallExecuted) {
+      if (validatorUpdateInstructionObj.state === validatorUpdateInstructionStates.confirmed || validatorUpdateInstructionObj.state === validatorUpdateInstructionStates.waitingForCrosschainFunctionCall) {
         list.push(validatorUpdateInstructionObj)
       }
     }

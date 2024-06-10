@@ -41,7 +41,7 @@ public class ConstructProofFromSignatureController {
 		SignedData signedData = new SignedData(by, bytes, ledgerSignature.getPartialMerkleRoot(), platformVersion, schemaNumber);
 		String tradeId = ledgerSignature.getEncodedId();
 		Map<String, Object> result = constructFunctionCallData(
-			ledgerSignature.getBlockchainId(),
+			ledgerSignature.getNetworkId(),
 			ledgerSignature.getContractAddress(),
 			ledgerSignature.getFunctionName(),
 			ledgerSignature.getSenderId(),
@@ -49,21 +49,21 @@ public class ConstructProofFromSignatureController {
 			tradeId,
 			signedData,
 			withHiddenParams,
-			ledgerSignature.getAuthBlockchainId(),
+			ledgerSignature.getAuthNetworkId(),
 			ledgerSignature.getAuthContractAddress());
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
 
 		return ResponseEntity.created(location).contentType(MediaType.APPLICATION_JSON).body(result);
 	}
 
-	private Map<String, Object> constructFunctionCallData(String blockchainId, String controlContractAddress, String functionName, String senderId, String receiverId, String tradeId, SignedData signedData, boolean withHiddenAuthParams, String authBlockchainId, String authContractAddress) {
+	private Map<String, Object> constructFunctionCallData(String networkId, String controlContractAddress, String functionName, String senderId, String receiverId, String tradeId, SignedData signedData, boolean withHiddenAuthParams, String authNetworkId, String authContractAddress) {
 		HashMap<String, Object> result = new HashMap<>();
 		try {
 			HashMap<String, String> export = new HashMap<>();
-			BigInteger chainId = new BigInteger(blockchainId);
+			BigInteger chainId = new BigInteger(networkId);
 			String controlContract = controlContractAddress.replaceAll("\"", "");
 			String authContract = authContractAddress != null ? authContractAddress.replaceAll("\"", "") : "";
-			BigInteger authId = authBlockchainId != null && !authBlockchainId.isEmpty() ? new BigInteger(authBlockchainId) : BigInteger.ZERO;
+			BigInteger authId = authNetworkId != null && !authNetworkId.isEmpty() ? new BigInteger(authNetworkId) : BigInteger.ZERO;
 			BigInteger amount = BigInteger.valueOf(0);
 			String transactionHash = "0x" + tradeId;
 			String functionCallData = "";
@@ -78,7 +78,7 @@ public class ConstructProofFromSignatureController {
 						new Utf8String(senderId),              // senderId
 						new Utf8String(receiverId),            // receiverId
 						new Address(controlContract),          // controlContract
-						new Uint256(chainId),                  // sourceBlockchainId
+						new Uint256(chainId),                  // sourceNetworkId
 						new Uint256(amount)),                  // amount
 					Arrays.<TypeReference<?>>asList(
 						new TypeReference<Bool>() {
@@ -101,7 +101,7 @@ public class ConstructProofFromSignatureController {
 			if (withHiddenAuthParams) {
 				String authParams = DefaultFunctionEncoder.encodeConstructorPacked(
 					Arrays.<Type>asList(
-						new Uint256(authId),       // authBlockchainId
+						new Uint256(authId),       // authNetworkId
 						new Address(authContract)) // authContract
 				);
 				functionCallData = functionCallData + authParams;
@@ -122,9 +122,8 @@ public class ConstructProofFromSignatureController {
 			);
 			String encodedInfo = "0x" + DefaultFunctionEncoder.encodeConstructor(
 				Arrays.<Type>asList(
-					new Uint256(chainId),                                     // sourceBlockchainId
+					new Uint256(chainId),                                     // sourceNetworkId
 					new Address(controlContract),                             // controlContract
-					new Bytes32(Numeric.hexStringToByteArray(eventSig)),      // eventSig
 					new DynamicBytes(Numeric.hexStringToByteArray(eventData)) // eventData
 				)
 			);
@@ -141,6 +140,7 @@ public class ConstructProofFromSignatureController {
 			String signatureOrProof = "0x" + DefaultFunctionEncoder.encodeConstructor(
 				Arrays.<Type>asList(
 					new DynamicStruct(
+						new Uint256(0),
 						new DynamicStruct(
 							new Bytes32(Numeric.hexStringToByteArray(transactionHash)),
 							new DynamicArray<>(Bytes32.class, proof),
@@ -152,7 +152,7 @@ public class ConstructProofFromSignatureController {
 				);
 			eventSig = String.format("0x%1$" + 64 + "s", eventData.substring(2, 10)).replace(' ', '0');
 
-			export.put("blockchainId", chainId.toString(16));
+			export.put("networkId", chainId.toString(16));
 			export.put("eventSig", eventSig);
 			export.put("encodedInfo", encodedInfo);
 			export.put("signatureOrProof", signatureOrProof);
@@ -162,7 +162,7 @@ public class ConstructProofFromSignatureController {
 			result.put("tradeId", tradeId.toLowerCase());
 			result.put("fromAccount", senderId);
 			result.put("toAccount", receiverId);
-			result.put("foreignNotional", amount);
+			result.put("remoteNotional", amount);
 
 		} catch (Exception e) {
 			e.printStackTrace();

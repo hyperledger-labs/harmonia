@@ -8,8 +8,10 @@ pragma solidity ^0.8.13;
 
 /*
  * Library to handle SHA-512 hashing
- * Source: https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
+ * Modified from source: https://github.com/chengwenxi/Ed25519/blob/main/contracts/libraries/Sha512.sol
+ * Reference: https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
  */
+
 library SHA512 {
 
   /*

@@ -13,8 +13,7 @@ The test environment provided here is focussed on testing minimum interoperabili
  - `besu` - Docker compose files to start two Besu nodes, note that there is no transaction signer
  - `corda-decoder` - Service that aids in building the corda proofs
  - `cordapp` - Sample corda application for use in "Delivery vs Payment" (DVP) trades
- - `crosschainInterop` - Crosschain interop service that contains a Solitidy smart contracts, an API and some tests
- - `CrosschainInteroperability.pdf` - Crosschain interoperability document that details DVP flows as well as implementation details
+ - `crosschainInterop` - Crosschain interop service that contains a Solidity smart contracts, an API and some tests
 
 ## Test environment
 
@@ -36,7 +35,9 @@ cd besu/services
 ```
 
 Wait a few moments for the Besu nodes to produce ~30 blocks before running the tests.
- 
+
+The integration tests in this repo need a signer to run. An RPC server implementing the eth_signTransaction endpoint as documented here https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_signtransaction. An open source Hyperledger signer to use with Besu services will be available soon.
+
 ### Corda services
 
 Start three Corda nodes.

@@ -16,7 +16,7 @@ public class ContractTests {
     static private final TestIdentity miniCorp = new TestIdentity(new CordaX500Name("MiniCorp", "London", "GB"));
     static private final String dcrValue = "1";
     static private final String dcrCurrency = "GBP";
-    static private final String chainId = "0";
+    static private final String networkId = "0";
     static private final String contractAddress = "0x123";
     static private final String receiverId = "0x456";
     static private final String senderId = "0x789";

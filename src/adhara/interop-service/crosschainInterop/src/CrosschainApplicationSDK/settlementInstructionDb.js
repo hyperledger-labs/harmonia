@@ -28,7 +28,7 @@ function init(config, dependencies) {
       if(settlementInstructionRequest.tradeId === settlementInstructionObj.tradeId
         || settlementInstructionRequest.fromAccount === settlementInstructionObj.fromAccount
         || settlementInstructionRequest.toAccount === settlementInstructionObj.toAccount
-        || settlementInstructionRequest.systemId === settlementInstructionObj.systemId
+        || settlementInstructionRequest.networkId === settlementInstructionObj.networkId
         || settlementInstructionRequest.amount === settlementInstructionObj.amount
         || settlementInstructionRequest.state === settlementInstructionObj.state
       ){
@@ -48,11 +48,11 @@ function init(config, dependencies) {
     for (let settlementInstructionObj of settlementInstructionObjStore) {
       if(settlementInstructionObj.state === settlementInstructionStates.confirmed
         || settlementInstructionObj.state === settlementInstructionStates.waitingForHold
-        || settlementInstructionObj.state === settlementInstructionStates.waitingForCrossBlockchainCallExecuted
+        || settlementInstructionObj.state === settlementInstructionStates.waitingForCrosschainFunctionCall
         || settlementInstructionObj.state === settlementInstructionStates.waitingForExecuteHoldExecuted
         || settlementInstructionObj.state === settlementInstructionStates.waitingForCommunication
         || settlementInstructionObj.state === settlementInstructionStates.waitingForCancelHoldExecuted
-        || settlementInstructionObj.state === settlementInstructionStates.waitingForForeignSystemCancellation
+        || settlementInstructionObj.state === settlementInstructionStates.waitingForRemoteNetworkCancellation
         || settlementInstructionObj.state === settlementInstructionStates.cancel
         || settlementInstructionObj.state === settlementInstructionStates.cancelling
       ){
@@ -106,26 +106,26 @@ function init(config, dependencies) {
     return list
   }
 
-  async function findSettlementInstruction(systemId, tradeId, fromAccount, toAccount) {
+  async function findSettlementInstruction(networkId, tradeId, fromAccount, toAccount) {
     for (let item of settlementInstructionObjStore) {
-      if (item.systemId === systemId && item.tradeId === tradeId && item.fromAccount === fromAccount && item.toAccount === toAccount) {
+      if (item.networkId === networkId && item.tradeId === tradeId && item.fromAccount === fromAccount && item.toAccount === toAccount) {
         return item
       }
     }
   }
 
-  async function findSettlementInstructionByOperationId(systemId, operationId) {
+  async function findSettlementInstructionByOperationId(networkId, operationId) {
     for (let item of settlementInstructionObjStore) {
-      if (item.systemId === systemId && item.localOperationId === operationId) {
+      if (item.networkId === networkId && item.localOperationId === operationId) {
         return item
       }
     }
   }
 
-  async function findSettlementInstructionByTradeId(systemId, tradeId) {
+  async function findSettlementInstructionByTradeId(networkId, tradeId) {
     let it
     for (let item of settlementInstructionObjStore) {
-      if (item.systemId === systemId && item.tradeId === tradeId) {
+      if (item.networkId === networkId && item.tradeId === tradeId) {
         it = item
       }
     }

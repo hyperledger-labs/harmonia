@@ -51,7 +51,7 @@ const UNABLE_TO_MAKE_HOLD_PERPETUAL_NAME = 'Unable to make an expired hold perpe
 const UNABLE_TO_MAKE_HOLD_PERPETUAL_CODE = 525;
 const TRADE_CAN_ONLY_BE_CANCELLED_ONCE_NAME = 'Trade can only be cancelled once, by either the leader or the follower';
 const TRADE_CAN_ONLY_BE_CANCELLED_ONCE_CODE = 526;
-const CROSS_CHAIN_FUNCTION_CALL_FAILED_NAME = 'Cross-chain function call failed';
+const CROSS_CHAIN_FUNCTION_CALL_FAILED_NAME = 'Crosschain function call failed';
 const CROSS_CHAIN_FUNCTION_CALL_FAILED_CODE = 527;
 
 function isError(error) {
