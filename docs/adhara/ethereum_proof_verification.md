@@ -1,4 +1,4 @@
-# Ethereum Proof Verification
+# Ethereum event attestation proofs
 
 ## Introduction
 

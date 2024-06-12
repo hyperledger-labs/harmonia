@@ -8,7 +8,7 @@ skinparam Swimlane {
   TitleFontSize 20
   BorderColor black
   BorderThickness 2
-  width same
+  width 500
 }
 
 | **Network A**\n        USD  |
@@ -18,9 +18,9 @@ skinparam Swimlane {
 | **Local Services**\n        Party A |
 
   start
-  :Party A and Party B agree
-  to settle a PvP trade using a
-  uniquely generated trade id.;
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
   :Party A places hold.;
 
 | **Network A**\n        USD  |
@@ -33,9 +33,9 @@ skinparam Swimlane {
 | **Local Services**\n        Party B |
 
   start
-  :Party A and Party B agree
-  to settle a PvP trade using a
-  uniquely generated trade id.;
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
   :Party B places hold.;
 
 | **Network B**\n        GBP |
@@ -52,28 +52,32 @@ skinparam Swimlane {
 
 | **Network A**\n        USD  |
 
-  :The ""XvP"" contract checks that the trade
-  is not marked as cancelled and that the
-  hold exists. It calls the ""CrosschainFunctionCall""
-  contract's ""outboundCall"" function
-  with Network B as destination network,
-  the ""XvP"" contract as destination contract
-  and ""requestFollowLeg"" function call data.;
+  :The ""XvP"" contract checks that the
+  trade is not marked as cancelled and
+  that the hold exists. It calls the
+  ""CrosschainFunctionCall"" contract's
+  ""outboundCall"" function with
+  Network B as destination network,
+  the ""XvP"" contract as destination
+  contract and ""requestFollowLeg""
+  function call data.;
   #lightGreen:The ""CrosschainFunctionCall"" contract
-  emits the ""CrosschainFunctionCall"" event
-  with given data.;
+  emits the ""CrosschainFunctionCall""
+  event with given data.;
 
 | **Local Services**\n        Party A |
 
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   monitors for events and once received
   calls the ""CrosschainMessaging"" SDK;
-  #Pink:The ""CrosschainMessaging"" SDK constructs an
-  Ethereum event attestation proof, using it as proof
-  that the lead leg hold was placed.;
-  #lightGreen:The ""CrosschainFunctionCall"" SDK submits the
-  proof to ""CrosschainFunctionCall"" contract by calling
-  its ""inboundCall"" function.;
+  #Pink:The ""CrosschainMessaging"" SDK
+  constructs an Ethereum event attestation
+  proof, to be used as proof that the lead
+  leg hold was placed.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  submits the proof to
+  ""CrosschainFunctionCall"" contract by
+  calling its ""inboundCall"" function.;
 
 | **Network B**\n        GBP |
 
@@ -85,9 +89,9 @@ skinparam Swimlane {
   verifies the event attestation proof,
   returning the verified function call
   data contained within.;
-  #lightGreen:The ""CrosschainFunctionCall"" contract invokes
-  the verified ""requestFollowLeg"" function call on
-  the ""XvP"" contract.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  invokes the verified ""requestFollowLeg""
+  function call on the ""XvP"" contract.;
   :The ""XvP"" contract checks that the trade
   is not marked as cancelled and that the
   hold exists. It executes the hold,
@@ -98,21 +102,23 @@ skinparam Swimlane {
   with Network A as destination network,
   the ""XvP"" contract as destination contract,
   and ""completeLeadLeg"" function call data.;
-  #lightGreen:The ""CrosschainFunctionCall"" contract emits
-  the ""CrosschainFunctionCall"" event with given
-  data.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  emits the ""CrosschainFunctionCall""
+  event with given data.;
 
 | **Local Services**\n        Party B |
 
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   monitors for events and once received
   calls the ""CrosschainMessaging"" SDK;
-  #Pink:The ""CrosschainMessaging"" SDK constructs an
-  Ethereum event attestation proof, using it as proof
-  that the follow leg hold was executed.;
-  #lightGreen:The ""CrosschainFunctionCall"" SDK submits the
-  proof to ""CrosschainFunctionCall"" contract by calling
-  its ""inboundCall"" function.;
+  #Pink:The ""CrosschainMessaging"" SDK
+  constructs an Ethereum event attestation
+  proof, to be used as proof that the
+  follow leg hold was executed.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  submits the proof to
+  ""CrosschainFunctionCall"" contract
+  by calling its ""inboundCall"" function.;
 
 | **Network A**\n        USD  |
 
@@ -124,9 +130,9 @@ skinparam Swimlane {
   verifies the event attestation proof,
   returning the verified function call
   data contained within.;
-  #lightGreen:The ""CrosschainFunctionCall"" contract invokes
-  the verified ""completeLeadLeg"" function call on
-  the ""XvP"" contract.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  invokes the verified ""completeLeadLeg""
+  function call on the ""XvP"" contract.;
   :The ""XvP"" contract checks that the trade
   is not marked as cancelled and that the
   hold exists. It executes the hold,

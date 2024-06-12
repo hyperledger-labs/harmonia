@@ -1,4 +1,4 @@
-# Corda Proof Verification
+# Corda transaction attestation proofs
 
 ## Introduction 
 

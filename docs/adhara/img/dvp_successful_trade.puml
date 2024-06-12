@@ -8,7 +8,7 @@ skinparam Swimlane {
   TitleFontSize 20
   BorderColor black
   BorderThickness 2
-  width same
+  width 500
 }
 
 | **Network A**\n      Corda |
@@ -16,9 +16,9 @@ skinparam Swimlane {
 | **Local Services**\n        Party B |
 | **Local Services**\n        Party A |
   start
-  :Party A and Party B agree
-  to settle a DvP trade using a
-  uniquely generated trade id.;
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
   :Party A places hold;
 
 | **Network A**\n      Corda |
@@ -36,9 +36,9 @@ skinparam Swimlane {
 | **Local Services**\n        Party B |
 
   start
-  :Party A and Party B agree
-  to settle a DvP trade using a
-  uniquely generated trade id.;
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
   :Party B places hold;
 
 | **Network B**\n   Ethereum |
@@ -62,22 +62,25 @@ skinparam Swimlane {
 
 | **Local Services**\n        Party B |
 
-  :The ""CrosschainApplication"" SDK receives
-  a settlement instruction and calls the
-  ""CrosschainMessaging"" SDK to construct the proof.;
+  :The ""CrosschainApplication"" SDK
+  receives a settlement instruction and
+  calls the ""CrosschainMessaging"" SDK
+  to construct the proof.;
 
-  #Pink:The ""CrosschainMessaging"" SDK constructs a
-  Corda transaction attestation proof, using it as proof
-  that the trade was cancelled on the Corda network.;
+  #Pink:The ""CrosschainMessaging"" SDK
+  constructs a Corda transaction attestation
+  proof, to be used as proof that the trade
+  was cancelled on the Corda network.;
 
-  #lightGreen:The ""CrosschainFunctionCall"" SDK uses
-  the proof to perform a crosschain function call with
-  Network B as destination network, the ""XvP"" contract
-  as destination contract and ""requestFollowLeg""
-  function call data. It submits the instruction to
-  the ""CrosschainFunctionCall"" contract by calling
-  its ""inboundCall"" function with the provided
-  parameters.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  uses the proof to perform a crosschain
+  function call with Network B as destination
+  network, the ""XvP"" contract as
+  destination contract and ""requestFollowLeg""
+  function call data. It submits the instruction
+  to the ""CrosschainFunctionCall"" contract by
+  calling its ""inboundCall"" function with the
+  provided parameters.;
 
 
 | **Network B**\n   Ethereum |
@@ -112,16 +115,19 @@ skinparam Swimlane {
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   monitors for events and once received
   calls the ""CrosschainMessaging"" SDK;
-  #Pink:The ""CrosschainMessaging"" SDK constructs an
-  Ethereum event attestation proof, using it as proof
-  that the follow leg hold was executed.;
-  #lightGreen:The ""CrosschainFunctionCall"" SDK records the
-  proof so that the ""CrosschainApplication"" SDK
-  services can return it as part of a callback
+  #Pink:The ""CrosschainMessaging"" SDK
+  constructs an Ethereum event attestation
+  proof, to be used as proof that the
+  follow leg hold was executed.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  records the proof so that the
+  ""CrosschainApplication"" SDK can
+  return it as part of a callback
   response to a settlement instruction.;
-  :The ""CrosschainApplication"" SDK returns the
-  response to the ""Corda"" services as part of a callback
-  from the original settlement instruction.;
+  :The ""CrosschainApplication"" SDK
+  returns the response to the ""Corda""
+  service as part of a callback from
+  the original settlement instruction.;
 
 | **Local Services**\n        Party A |
 

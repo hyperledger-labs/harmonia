@@ -8,7 +8,7 @@ skinparam Swimlane {
   TitleFontSize 20
   BorderColor black
   BorderThickness 2
-  width same
+  width 500
 }
 
 | **Network A**\n      Corda |
@@ -17,18 +17,18 @@ skinparam Swimlane {
 | **Local Services**\n        Party A |
 
   start
-  :Party A and Party B agree
-  to settle a PvP trade using a
-  uniquely generated trade id.;
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
   detach
 
 | **Local Services**\n        Party B |
 
   start
-  :Party A and Party B agree
-  to settle a PvP trade using a
-  uniquely generated trade id.;
-  :Party B places hold;
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
+  :Party B places hold.;
 
 | **Network B**\n   Ethereum |
 
@@ -40,68 +40,77 @@ skinparam Swimlane {
 | **Local Services**\n        Party B |
 
   start
-  : Party B starts cancellation;
+  : Party B starts cancellation.;
 
 | **Network A**\n      Corda |
 
   :Party B verifies that no securities
   was placed on hold against the
   given trade and creates a draft
-  transaction to cancel the trade on
-  Network A. Party A signs the transaction
-  after validating it, Party B signs and the
-  notary finalises it after verifying unique
-  transaction inputs.;
+  transaction to cancel the trade
+  on Network A. Party A signs the
+  transaction after validating it,
+  Party B signs and the notary
+  finalises it after verifying
+  unique transaction inputs.;
 '  stop
 
 | **Local Services**\n        Party B |
 
 '  start
-  :The ""Corda"" service extracts the raw signed
-  transaction from Party B's records and submits
-  it the ""CrosschainApplication"" SDK  as part
-  of a settlement cancellation instruction.;
+  :The ""Corda"" service extracts the
+  raw signed transaction from Party B's
+  records and submits it the
+  ""CrosschainApplication"" SDK
+  as part of a settlement cancellation
+  instruction.;
 
-  :The ""CrosschainApplication"" SDK receives
-  a settlement cancellation instruction and calls the
-  ""CrosschainMessaging"" SDK to construct the proof.;
+  :The ""CrosschainApplication"" SDK
+  receives a settlement cancellation
+  instruction and calls the
+  ""CrosschainMessaging"" SDK to
+  construct the proof.;
 
-  #Pink:The ""CrosschainMessaging"" SDK constructs a
-  Corda transaction attestation proof, using it as proof
-  that the trade was cancelled on the Corda network.;
+  #Pink:The ""CrosschainMessaging"" SDK
+  constructs a Corda transaction
+  attestation proof, to be used as
+  proof that the trade was cancelled
+  on the Corda network.;
 
-  #lightGreen:The ""CrosschainFunctionCall"" SDK uses
-  the proof to perform a crosschain function call with
-  Network B as destination network, the ""XvP"" contract
-  as destination contract and ""performCancellation""
-  function call data. It submits the instruction to
-  the ""CrosschainFunctionCall"" contract by calling
-  its ""inboundCall"" function with the provided
-  parameters.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  uses the proof to perform a crosschain
+  function call with Network B as
+  destination network, the ""XvP""
+  contract as destination contract
+  and ""performCancellation"" function
+  call data. It submits the instruction
+  to the ""CrosschainFunctionCall""
+  contract by calling its ""inboundCall""
+  function with the provided parameters.;
 
 | **Network B**\n   Ethereum |
 
   #lightGreen:The ""CrosschainFunctionCall"" contract
-  calls the ""CrosschainMessaging"" contract's
-  ""decodeAndVerify"" function with provided
-  arguments.;
+  calls the ""CrosschainMessaging""
+  contract's ""decodeAndVerify"" function
+  with provided arguments.;
   #Pink:The ""CrosschainMessaging"" contract
   verifies the transaction attestation proof,
   returning the verified function call
   data contained within.;
-  #lightGreen:The ""CrosschainFunctionCall"" contract invokes
-  the verified ""performCancellation"" function call on
-  the ""XvP"" contract.;
-  :The ""XvP"" contract checks that it is a crosschain
-  cancellation. It marks the trade as cancelled
-  and check that the hold is cancellable before
-  cancelling it.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  invokes the verified ""performCancellation""
+  function call on the ""XvP"" contract.;
+  :The ""XvP"" contract checks that it is a
+  crosschain cancellation. It marks the trade
+  as cancelled and check that the hold is
+  cancellable before cancelling it.;
   stop
 
 | **Local Services**\n        Party A |
 
   start
-  : Party A places hold;
+  : Party A places hold.;
 
 | **Network A**\n      Corda |
 
@@ -118,17 +127,19 @@ skinparam Swimlane {
 | **Local Services**\n        Party A |
 
   start
-  : Party A cancels hold;
+  : Party A cancels hold.;
 
 | **Network A**\n      Corda |
 
-  :Party A validates that the trade was
-  cancelled and creates a draft
-  transaction to cancel the hold created
-  for Party B. Party B signs the transaction
-  after validating it, Party A signs and the
-  notary finalises it after verifying unique
-  transaction inputs.;
+  :Party A validates that the trade
+  was cancelled and creates a draft
+  transaction to cancel the hold
+  created for Party B. Party B
+  signs the transaction after
+  validating it, Party A signs and
+  the notary finalises it after
+  verifying unique transaction
+  inputs.;
   stop
 
 @enduml

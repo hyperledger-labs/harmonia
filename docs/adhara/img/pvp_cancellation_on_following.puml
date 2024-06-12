@@ -8,7 +8,7 @@ skinparam Swimlane {
   TitleFontSize 20
   BorderColor black
   BorderThickness 2
-  width same
+  width 500
 }
 
 | **Network A**\n        USD  |
@@ -18,9 +18,9 @@ skinparam Swimlane {
 | **Local Services**\n        Party A |
 
   start
-  :Party A and Party B agree
-  to settle a PvP trade using a
-  uniquely generated trade id.;
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
   :Party A places hold.;
 
 | **Network A**\n        USD  |
@@ -33,9 +33,9 @@ skinparam Swimlane {
 | **Local Services**\n        Party B |
 
   start
-  :Party A and Party B agree
-  to settle a PvP trade using a
-  uniquely generated trade id.;
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
   detach
 
 | **Local Services**\n        Party A |
@@ -46,27 +46,31 @@ skinparam Swimlane {
 | **Network B**\n        GBP |
 
   :The ""XvP"" contract checks that the hold
-  does not exist, marks the trade as cancelled
-  and calls the ""CrosschainFunctionCall""
-  contract's ""outboundCall"" function
-  with Network A as destination network,
-  the ""XvP"" contract as destination contract
-  and ""performCancellation"" function call data.;
+  does not exist, marks the trade as
+  cancelled and calls the
+  ""CrosschainFunctionCall"" contract's
+  ""outboundCall"" function with
+  Network A as destination network, the
+  ""XvP"" contract as destination contract
+  and ""performCancellation"" function
+  call data.;
   #lightGreen:The ""CrosschainFunctionCall"" contract
-  emits the ""CrosschainFunctionCall"" event
-  with given data.;
+  emits the ""CrosschainFunctionCall""
+  event with given data.;
 
 | **Local Services**\n        Party A |
 
    #lightGreen:The ""CrosschainFunctionCall"" SDK
    monitors for events and once received
    calls the ""CrosschainMessaging"" SDK;
-   #Pink:The ""CrosschainMessaging"" SDK constructs an
-   Ethereum event attestation proof, using it as proof
-   that the trade was cancelled.;
-   #lightGreen:The ""CrosschainFunctionCall"" SDK submits the
-   proof to ""CrosschainFunctionCall"" contract by calling
-   its ""inboundCall"" function.;
+   #Pink:The ""CrosschainMessaging"" SDK
+   constructs an Ethereum event attestation
+   proof, to be used as proof that the trade
+   was cancelled.;
+   #lightGreen:The ""CrosschainFunctionCall"" SDK
+   submits the proof to the
+   ""CrosschainFunctionCall"" contract by
+   calling its ""inboundCall"" function.;
 
 | **Network A**\n        USD  |
 
@@ -82,9 +86,9 @@ skinparam Swimlane {
   invokes the verified ""performCancellation""
   function call on the ""XvP"" contract.;
   :The ""XvP"" contract checks that it is a
-  crosschain cancellation. It marks the trade
-  as cancelled and check if the hold is cancellable
-  before cancelling it.;
+  crosschain cancellation. It marks the
+  trade as cancelled and check if the
+  hold is cancellable before cancelling it.;
   stop
 
 | **Local Services**\n        Party B |
