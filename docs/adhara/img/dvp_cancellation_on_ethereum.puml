@@ -1,0 +1,144 @@
+@startuml 2_3_1_dvp_cancellation_on_follow_ledger_activity_diagram
+skinparam ActivityBackgroundColor LightBlue
+skinparam activityDiamondBackgroundColor transparent
+skinparam defaultTextAlignment left
+skinparam shadowing false
+skinparam Swimlane {
+  TitleFontColor black
+  TitleFontSize 20
+  BorderColor black
+  BorderThickness 2
+  width same
+}
+
+| **Network A**\n      Corda |
+| **Local Services**\n        Party A |
+| **Local Services**\n        Party B |
+| **Local Services**\n        Party A |
+
+  start
+  :Party A and Party B agree
+  to settle a PvP trade using a
+  uniquely generated trade id.;
+  :Party A places hold;
+
+| **Network A**\n      Corda |
+
+  :Party A creates a draft
+  transaction, placing securities
+  on hold for Party B against the
+  given trade id. Party B signs
+  the transaction after validating
+  it, Party A signs it and the notary
+  finalises it after verifying
+  unique transaction inputs.;
+  detach
+
+| **Local Services**\n        Party B |
+
+  start
+  :Party A and Party B agree
+  to settle a DvP trade using a
+  uniquely generated trade id.;
+  detach
+
+| **Local Services**\n        Party A |
+
+  start
+  : Party A starts cancellation.;
+  :The ""Corda"" service submits a cancellation
+  instruction to the ""CrosschainApplication""
+  SDK.;
+
+| **Local Services**\n        Party B |
+
+  :The ""CrosschainApplication"" SDK
+  receives a settlement cancellation
+  instruction to start the cancellation
+  process.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK calls
+  the ""XvP"" contract's ""startCancellation""
+  function;
+
+| **Network B**\n   Ethereum |
+
+  :The ""XvP"" contract checks that the hold does
+  not exist, marks the trade as cancelled and
+  calls the ""CrosschainFunctionCall"" contract's
+  ""outboundCall"" function with Network A
+  as destination network, the ""XvP"" contract
+  as destination contract, and
+  ""performCancellation"" function call data.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract emits
+  the crosschain event with provided data to
+  perform a crosschain function call.;
+
+| **Local Services**\n        Party B |
+
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  monitors for events and once received
+  calls the ""CrosschainMessaging"" SDK;
+  #Pink:The ""CrosschainMessaging"" SDK constructs an
+  Ethereum event attestation proof, using it as proof
+  that the trade was cancelled.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK records the
+  proof so that the ""CrosschainApplication"" SDK
+  services can return it as part of a callback
+  response to a cancellation instruction.;
+  :The ""CrosschainApplication"" SDK returns the
+  response to the ""Corda"" services as part of a
+  callback from the original settlement cancellation
+  instruction.;
+
+| **Local Services**\n        Party A |
+
+  :The ""Corda"" service extracts the Ethereum
+  proof from the instruction callback and
+  initiates the Corda flow to perform
+  cancellation of the trade.;
+
+| **Network A**\n      Corda |
+
+  :Party A verifies the proof after
+  checking current network state for the
+  provided trade and creates a draft
+  transaction to cancel the trade on
+  Network A. Party B signs the transaction
+  after validating it, Party A signs and
+  the notary finalises it after verifying
+  unique transaction inputs.;
+
+  :Party A creates a draft transaction,
+  releasing the hold on the securities for
+  Party B against the cancelled trade.
+  Party B signs the transaction after
+  validating it, and the notary finalises
+  it after verifying unique transaction
+  inputs.;
+  stop
+
+| **Local Services**\n        Party B |
+
+  start
+  :Party B places hold;
+
+| **Network B**\n   Ethereum |
+
+  :Party B places the cash on hold for
+  Party A, marking the ""XvP"" contract
+  as notary.;
+  detach
+
+| **Local Services**\n        Party B |
+
+  start
+  : Party B cancels hold;
+| **Network B**\n   Ethereum |
+
+  :The ""XvP"" contract checks that it is
+  direct cancellation and that the hold is
+  cancellable before cancelling it.;
+  stop
+
+@enduml
+

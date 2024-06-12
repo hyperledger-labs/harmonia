@@ -1,4 +1,4 @@
-# Cross chain proofs #
+# Cross chain proofs 
 
 ## Introduction ##
 
@@ -55,4 +55,5 @@ In addition, the Patricia Merkle Tree root would need to be recalculated, using 
 TODO
 
 ## References ##
-EEA Crosschain Interoperability Technical Speciofication Draft [https://entethalliance.github.io/crosschain-interoperability/draft_crosschain_techspec.html](https://entethalliance.github.io/crosschain-interoperability/draft_crosschain_techspec.html) 
+
+EEA Crosschain Interoperability Technical Specification Draft [https://entethalliance.github.io/crosschain-interoperability/draft_crosschain_techspec.html](https://entethalliance.github.io/crosschain-interoperability/draft_crosschain_techspec.html) 

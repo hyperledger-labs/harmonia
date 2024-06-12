@@ -1,0 +1,113 @@
+@startuml 2_3_1_pvp_cancellation_on_follow_ledger_activity_diagram
+skinparam ActivityBackgroundColor LightBlue
+skinparam activityDiamondBackgroundColor transparent
+skinparam defaultTextAlignment left
+skinparam shadowing false
+skinparam Swimlane {
+  TitleFontColor black
+  TitleFontSize 20
+  BorderColor black
+  BorderThickness 2
+  width same
+}
+
+| **Network A**\n        USD  |
+| **Local Services**\n        Party A |
+| **Local Services**\n        Party B |
+
+| **Local Services**\n        Party A |
+
+  start
+  :Party A and Party B agree
+  to settle a PvP trade using a
+  uniquely generated trade id.;
+  :Party A places hold.;
+
+| **Network A**\n        USD  |
+
+  :Party A places the lead leg cash on
+  hold for Party B, marking the ""XvP""
+  contract as notary.;
+  detach
+
+| **Local Services**\n        Party B |
+
+  start
+  :Party A and Party B agree
+  to settle a PvP trade using a
+  uniquely generated trade id.;
+  detach
+
+| **Local Services**\n        Party A |
+
+  start
+  : Party A starts cancellation;
+
+| **Network B**\n        GBP |
+
+  :The ""XvP"" contract checks that the hold
+  does not exist, marks the trade as cancelled
+  and calls the ""CrosschainFunctionCall""
+  contract's ""outboundCall"" function
+  with Network A as destination network,
+  the ""XvP"" contract as destination contract
+  and ""performCancellation"" function call data.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  emits the ""CrosschainFunctionCall"" event
+  with given data.;
+
+| **Local Services**\n        Party A |
+
+   #lightGreen:The ""CrosschainFunctionCall"" SDK
+   monitors for events and once received
+   calls the ""CrosschainMessaging"" SDK;
+   #Pink:The ""CrosschainMessaging"" SDK constructs an
+   Ethereum event attestation proof, using it as proof
+   that the trade was cancelled.;
+   #lightGreen:The ""CrosschainFunctionCall"" SDK submits the
+   proof to ""CrosschainFunctionCall"" contract by calling
+   its ""inboundCall"" function.;
+
+| **Network A**\n        USD  |
+
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  calls the ""CrosschainMessaging"" contract's
+  ""decodeAndVerify"" function with provided
+  arguments.;
+  #Pink:The ""CrosschainMessaging"" contract
+  verifies the event attestation proof,
+  returning the verified function call
+  data contained within.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  invokes the verified ""performCancellation""
+  function call on the ""XvP"" contract.;
+  :The ""XvP"" contract checks that it is a
+  crosschain cancellation. It marks the trade
+  as cancelled and check if the hold is cancellable
+  before cancelling it.;
+  stop
+
+| **Local Services**\n        Party B |
+
+  : Party B places hold;
+
+| **Network B**\n        GBP |
+
+  :Party B places the follow leg cash on
+  hold for Party A, marking the ""XvP""
+  contract as notary.;
+  detach
+
+| **Local Services**\n        Party B |
+
+  : Party B cancels hold;
+
+| **Network B**\n        GBP |
+
+  :The ""XvP"" contract checks that it is a
+  direct cancellation and that the hold is
+  cancellable before cancelling it.;
+  stop
+
+@enduml
+
