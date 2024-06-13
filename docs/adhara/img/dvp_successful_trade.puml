@@ -8,20 +8,20 @@ skinparam Swimlane {
   TitleFontSize 20
   BorderColor black
   BorderThickness 2
-  width 500
+  swimlaneWidth same
 }
 
-| **Network A**\n      Corda |
-| **Local Services**\n        Party A |
-| **Local Services**\n        Party B |
-| **Local Services**\n        Party A |
+|              **Network A**              \n                   Corda |
+ |           **Local Services**           \n                   Party A |
+ |           **Local Services**           \n                   Party B |
+ |           **Local Services**           \n                   Party A |
   start
   :Party A and Party B agree to settle a
   PvP trade using a uniquely generated
   trade id.;
   :Party A places hold;
 
-| **Network A**\n      Corda |
+|              **Network A**              \n                   Corda |
 
   :Party A creates a draft
   transaction, placing securities
@@ -33,7 +33,7 @@ skinparam Swimlane {
   uniqueness of transaction inputs.;
   detach
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   start
   :Party A and Party B agree to settle a
@@ -41,26 +41,27 @@ skinparam Swimlane {
   trade id.;
   :Party B places hold;
 
-| **Network B**\n   Ethereum |
+|              **Network B**              \n                Ethereum |
 
   :Party B places the cash on hold for
   Party A, marking the ""XvP"" contract
   as notary.;
   detach
 
-| **Local Services**\n        Party A |
+ |           **Local Services**           \n                   Party A |
 
   start
 
-| **Local Services**\n        Party A |
+ |           **Local Services**           \n                   Party A |
   :Party A starts the lead leg.;
 
-  :The ""Corda"" service extracts the raw signed
-  transaction from Party A's records and submits
-  it the ""CrosschainApplication"" SDK  as part
-  of a settlement instruction.;
+  :The ""Corda"" service extracts the
+  raw signed transaction from Party A's
+  records and submits it the
+  ""CrosschainApplication"" SDK as
+  part of a settlement instruction.;
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   :The ""CrosschainApplication"" SDK
   receives a settlement instruction and
@@ -75,15 +76,15 @@ skinparam Swimlane {
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   uses the proof to perform a crosschain
   function call with Network B as destination
-  network, the ""XvP"" contract as
-  destination contract and ""requestFollowLeg""
-  function call data. It submits the instruction
-  to the ""CrosschainFunctionCall"" contract by
+  network, the ""XvP"" contract as destination
+  contract and ""requestFollowLeg"" function
+  call data. It submits the instruction to the
+  ""CrosschainFunctionCall"" contract by
   calling its ""inboundCall"" function with the
   provided parameters.;
 
 
-| **Network B**\n   Ethereum |
+|              **Network B**              \n                Ethereum |
 
   #lightGreen:The ""CrosschainFunctionCall"" contract
   calls the ""CrosschainMessaging"" contract's
@@ -93,9 +94,9 @@ skinparam Swimlane {
   verifies the transaction attestation proof,
   returning the verified function call
   data contained within.;
-  #lightGreen:The ""CrosschainFunctionCall"" contract invokes
-  the verified ""requestFollowLeg"" function call on
-  the ""XvP"" contract.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  invokes the verified ""requestFollowLeg""
+  function call on the ""XvP"" contract.;
   :The ""XvP"" contract checks that the trade
   is not marked as cancelled and that the
   hold exists. It executes the hold,
@@ -106,19 +107,20 @@ skinparam Swimlane {
   as destination network, the ""XvP"" contract
   as destination contract, and
   ""completeLeadLeg"" function call data.;
-  #lightGreen:The ""CrosschainFunctionCall"" contract emits
-  the ""CrosschainFunctionCall"" event with given
-  data.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  emits the ""CrosschainFunctionCall""
+  event with given data.;
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   monitors for events and once received
   calls the ""CrosschainMessaging"" SDK;
   #Pink:The ""CrosschainMessaging"" SDK
-  constructs an Ethereum event attestation
-  proof, to be used as proof that the
-  follow leg hold was executed.;
+  constructs an Ethereum event
+  attestation proof, to be used as
+  proof that the follow leg hold was
+  executed.;
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   records the proof so that the
   ""CrosschainApplication"" SDK can
@@ -129,23 +131,25 @@ skinparam Swimlane {
   service as part of a callback from
   the original settlement instruction.;
 
-| **Local Services**\n        Party A |
+ |           **Local Services**           \n                   Party A |
 
-  :The ""Corda"" service extracts the Ethereum
-  proof from the instruction callback and
-  initiates the Corda flow to complete the
-  lead leg.;
+  :The ""Corda"" service extracts the
+  Ethereum proof from the instruction
+  callback and initiates the Corda
+  flow to complete the lead leg.;
 
-| **Network A**\n      Corda |
+|              **Network A**              \n                   Corda |
 
   :Party A verifies the proof after
-  checking current network state for the
-  provided trade id. Party A creates a draft
-  transaction, executing the hold by transferring
-  the securities to Party B. Party B signs the
-  transaction after validating it, and the notary
-  finalises it after verifying unique transaction
-  inputs.;
+  checking current network state for
+  the provided trade id. Party A
+  creates a draft transaction,
+  executing the hold by transferring
+  the securities to Party B.
+  Party B signs the transaction after
+  validating it, and the notary
+  finalises it after verifying
+  unique transaction inputs.;
   stop
 
 @enduml

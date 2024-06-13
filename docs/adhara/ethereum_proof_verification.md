@@ -107,7 +107,7 @@ The `Proof` structure contains the EEA-compliant proof consisting of proof data 
 
 ## Verifying the proof
 
-The Ethereum block header proof is verified on-chain by a Solidity contract. In alignment with the EEA DTL interoperability specification, discussed in the <<paragraph-crosschain-protocol-stack, Crosschain Protocol Stack>> chapter, the Solidity function that performs the verification is called `decodeAndVerify` and belongs to the `ICrosschainVerifier` interface. This interface and function is defined as follows:
+The Ethereum block header proof is verified on-chain by a Solidity contract. In alignment with the EEA DTL interoperability specification, the Solidity function that performs the verification is called `decodeAndVerify` and belongs to the `ICrosschainVerifier` interface. This interface and function is defined as follows:
 
 ```solidity
 interface ICrosschainVerifier {

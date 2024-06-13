@@ -121,31 +121,33 @@ The table below provides a summary of the network and local service components g
 
 ### PvP
 
+For Ethereum crosschain PvP it is required to have the above contracts and local services deployed on both Ethereum networks. The local interop service is completely trustless for PvP   
+
 The diagram that follows shows an asset transfer between two accounts on an Ethereum network, called Network A, if (and only if) another asset transfer between two linked accounts occurred on another Ethereum network, called Network B. The process is spread across the three protocol layers and each layer is represented by local services and network components.
 
-![Successful PvP settlement](img/pvp_successful_trade.png)
+![Successful PvP settlement](./img/pvp_successful_trade.png)
 
 The diagram below shows how a PvP trade can be cancelled when the lead leg hold is already in place.  
 
-![Cancelling PvP settlement on following network](img/pvp_cancellation_on_following.png)
+![Cancelling PvP settlement on following network](./img/pvp_cancellation_on_following.png)
 
 The diagram below shows how a PvP trade can be cancelled when the following leg hold is already in place.
 
-![Cancelling PvP settlement on leading network](img/pvp_cancellation_on_leading.png)
+![Cancelling PvP settlement on leading network](./img/pvp_cancellation_on_leading.png)
 
 ### DvP
 
 The diagram that follows shows an asset transfer between two accounts on a Corda network, called Network A, if (and only if) another asset transfer between two linked accounts occurred on an Ethereum network, called Network B. The process is spread across the three protocol layers and each layer is represented by local services and network components.
 
-![Successful DvP settlement](img/dvp_successful_trade.png)
+![Successful DvP settlement](./img/dvp_successful_trade.png)
 
 The diagram below shows how a DvP trade can be cancelled on the Ethereum network when the securities leg hold is already in place.
 
-![Cancelling DvP settlement on Ethereum](img/dvp_cancellation_on_ethereum.png)
+![Cancelling DvP settlement on Ethereum](./img/dvp_cancellation_on_ethereum.png)
 
 The diagram below shows how a DvP trade can be cancelled on the Corda network when the cash leg hold is already in place.
 
-![Cancelling DvP settlement on Corda](img/dvp_cancellation_on_corda.png)
+![Cancelling DvP settlement on Corda](./img/dvp_cancellation_on_corda.png)
 
 
 

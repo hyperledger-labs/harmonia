@@ -8,14 +8,14 @@ skinparam Swimlane {
   TitleFontSize 20
   BorderColor black
   BorderThickness 2
-  width 500
+  swimlaneWidth same
 }
 
-| **Network A**\n        USD  |
-| **Local Services**\n        Party A |
-| **Local Services**\n        Party B |
+ |              **Network A**              \n                    USD  |
+ |           **Local Services**           \n                   Party A |
+ |           **Local Services**           \n                   Party B |
 
-| **Local Services**\n        Party A |
+ |           **Local Services**           \n                   Party A |
 
   start
   :Party A and Party B agree to settle a
@@ -23,14 +23,14 @@ skinparam Swimlane {
   trade id.;
   :Party A places hold.;
 
-| **Network A**\n        USD  |
+ |              **Network A**              \n                    USD  |
 
   :Party A places the lead leg cash on
   hold for Party B, marking the ""XvP""
   contract as notary.;
   detach
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   start
   :Party A and Party B agree to settle a
@@ -38,19 +38,19 @@ skinparam Swimlane {
   trade id.;
   :Party B places hold.;
 
-| **Network B**\n        GBP |
+ |              **Network B**              \n                    GBP  |
 
   :Party B places the follow leg cash on
   hold for Party A, marking the ""XvP""
   contract as notary.;
   detach
 
-| **Local Services**\n        Party A |
+ |           **Local Services**           \n                   Party A |
 
   start
   :Party A starts the lead leg.;
 
-| **Network A**\n        USD  |
+ |              **Network A**              \n                    USD  |
 
   :The ""XvP"" contract checks that the
   trade is not marked as cancelled and
@@ -65,7 +65,7 @@ skinparam Swimlane {
   emits the ""CrosschainFunctionCall""
   event with given data.;
 
-| **Local Services**\n        Party A |
+ |           **Local Services**           \n                   Party A |
 
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   monitors for events and once received
@@ -79,7 +79,7 @@ skinparam Swimlane {
   ""CrosschainFunctionCall"" contract by
   calling its ""inboundCall"" function.;
 
-| **Network B**\n        GBP |
+ |              **Network B**              \n                    GBP  |
 
   #lightGreen:The ""CrosschainFunctionCall"" contract
   calls the ""CrosschainMessaging"" contract's
@@ -96,17 +96,17 @@ skinparam Swimlane {
   is not marked as cancelled and that the
   hold exists. It executes the hold,
   transferring funds from Party B's
-  account to Party A's account, and calls the
-  ""CrosschainFunctionCall"" contract's
-  ""outboundCall"" function
-  with Network A as destination network,
-  the ""XvP"" contract as destination contract,
+  account to Party A's account, and calls
+  the ""CrosschainFunctionCall"" contract's
+  ""outboundCall"" function with
+  Network A as destination network, the
+  ""XvP"" contract as destination contract,
   and ""completeLeadLeg"" function call data.;
   #lightGreen:The ""CrosschainFunctionCall"" contract
   emits the ""CrosschainFunctionCall""
   event with given data.;
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   monitors for events and once received
@@ -120,7 +120,7 @@ skinparam Swimlane {
   ""CrosschainFunctionCall"" contract
   by calling its ""inboundCall"" function.;
 
-| **Network A**\n        USD  |
+ |              **Network A**              \n                    USD  |
 
   #lightGreen:The ""CrosschainFunctionCall"" contract
   calls the ""CrosschainMessaging"" contract's

@@ -8,13 +8,13 @@ skinparam Swimlane {
   TitleFontSize 20
   BorderColor black
   BorderThickness 2
-  width 500
+  swimlaneWidth same
 }
 
-| **Network A**\n      Corda |
-| **Local Services**\n        Party A |
-| **Local Services**\n        Party B |
-| **Local Services**\n        Party A |
+ |              **Network A**              \n                   Corda |
+ |           **Local Services**           \n                   Party A |
+ |           **Local Services**           \n                   Party B |
+ |           **Local Services**           \n                   Party A |
 
   start
   :Party A and Party B agree to settle a
@@ -22,7 +22,7 @@ skinparam Swimlane {
   trade id.;
   :Party A places hold.;
 
-| **Network A**\n      Corda |
+|              **Network A**              \n                   Corda |
 
   :Party A creates a draft
   transaction, placing securities
@@ -34,7 +34,7 @@ skinparam Swimlane {
   unique transaction inputs.;
   detach
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   start
   :Party A and Party B agree to settle a
@@ -42,7 +42,7 @@ skinparam Swimlane {
   trade id.;
   detach
 
-| **Local Services**\n        Party A |
+ |           **Local Services**           \n                   Party A |
 
   start
   : Party A starts cancellation.;
@@ -50,7 +50,7 @@ skinparam Swimlane {
   cancellation instruction to the
   ""CrosschainApplication"" SDK.;
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   :The ""CrosschainApplication"" SDK
   receives a settlement cancellation
@@ -60,7 +60,7 @@ skinparam Swimlane {
   calls the ""XvP"" contract's
   ""startCancellation"" function.;
 
-| **Network B**\n   Ethereum |
+|              **Network B**              \n                Ethereum |
 
   :The ""XvP"" contract checks that the hold
   does not exist, marks the trade as
@@ -76,7 +76,7 @@ skinparam Swimlane {
   provided data to perform a crosschain
   function call.;
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   #lightGreen:The ""CrosschainFunctionCall"" SDK
   monitors for events and once received
@@ -95,14 +95,15 @@ skinparam Swimlane {
   as part of a callback from the original
   settlement cancellation instruction.;
 
-| **Local Services**\n        Party A |
+ |           **Local Services**           \n                   Party A |
 
-  :The ""Corda"" service extracts the Ethereum
-  proof from the instruction callback and
-  initiates the Corda flow to perform
-  cancellation of the trade.;
+  :The ""Corda"" service extracts the
+  Ethereum proof from the instruction
+  callback and initiates the Corda
+  flow to perform cancellation of the
+  trade.;
 
-| **Network A**\n      Corda |
+|              **Network A**              \n                   Corda |
 
   :Party A verifies the proof after
   checking current network state for the
@@ -122,23 +123,23 @@ skinparam Swimlane {
   inputs.;
   stop
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   start
   :Party B places hold;
 
-| **Network B**\n   Ethereum |
+|              **Network B**              \n                Ethereum |
 
   :Party B places the cash on hold for
   Party A, marking the ""XvP"" contract
   as notary.;
   detach
 
-| **Local Services**\n        Party B |
+ |           **Local Services**           \n                   Party B |
 
   start
   : Party B cancels hold;
-| **Network B**\n   Ethereum |
+|              **Network B**              \n                Ethereum |
 
   :The ""XvP"" contract checks that it is
   direct cancellation and that the hold is
