@@ -121,13 +121,15 @@ The table below provides a summary of the network and local service components g
 
 ### PvP
 
-For Ethereum crosschain PvP it is required to have the above contracts and local services deployed on both Ethereum networks. The local interop service is completely trustless for PvP   
+For crosschain PvP it is required to have the above contracts and local services deployed on and connected to both Ethereum networks. The local interop service is completely trustless for PvP.   
 
 The diagram that follows shows an asset transfer between two accounts on an Ethereum network, called Network A, if (and only if) another asset transfer between two linked accounts occurred on another Ethereum network, called Network B. The process is spread across the three protocol layers and each layer is represented by local services and network components.
 
 ![Successful PvP settlement](./img/pvp_successful_trade.png)
 
-The diagram below shows how a PvP trade can be cancelled when the lead leg hold is already in place.  
+A hold, placed for a PvP trade, can only be cancelled by the notary, which is a smart contract, and the contract will only cancel a hold if the trade is cancelled. Furthermore, the trade can only be cancelled on the network where the hold does not yet exist.
+
+The diagram below shows how a PvP trade can be cancelled when the lead leg hold is already in place. 
 
 ![Cancelling PvP settlement on following network](./img/pvp_cancellation_on_following.png)
 
@@ -137,9 +139,13 @@ The diagram below shows how a PvP trade can be cancelled when the following leg 
 
 ### DvP
 
+For crosschain DvP it is required to have the above contracts and local services deployed on and connected to the Ethereum network. A local Corda service, as depicted in the diagrams, needs to be deployed and connected to the Corda network. It is capable of submitting settlement instructions to local services connected to the Ethereum network, and initiate flows on the Corda network after receiving a callback.    
+
 The diagram that follows shows an asset transfer between two accounts on a Corda network, called Network A, if (and only if) another asset transfer between two linked accounts occurred on an Ethereum network, called Network B. The process is spread across the three protocol layers and each layer is represented by local services and network components.
 
 ![Successful DvP settlement](./img/dvp_successful_trade.png)
+
+A hold, placed for a DvP trade on the Ethereum network, can only be cancelled by the notary, which is a smart contract, and the contract will only cancel a hold if the trade is cancelled. Furthermore, the trade can only be cancelled on the network where the hold does not yet exist.
 
 The diagram below shows how a DvP trade can be cancelled on the Ethereum network when the securities leg hold is already in place.
 
