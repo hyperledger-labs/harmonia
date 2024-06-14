@@ -127,10 +127,10 @@ struct Proof {
   Signature[] signatures;
 }
 ```
-The `ProofData` structure contains the Merkle Patricia tree inclusion proof data where:
+The `ProofData` structure contains the Merkle tree inclusion proof data where:
 
 * `root` is the Merkle tree root.
-* `witnesses` is theMerkle multivalued proof's witnesses.
+* `witnesses` is the Merkle multivalued proof's witnesses.
 * `flags` is the Merkle multivalued proof's flags.
 * `values` is the Merkle multivalued proof's leaves.
 
@@ -149,7 +149,7 @@ The `Proof` structure contains the EEA-compliant proof consisting of proof data 
 
 ## Verifying the proof
 
-The Corda transaction attestation proof is verified on-chain by a Solidity contract. In alignment with the EEA DTL interoperability specification, discussed in the <<paragraph-crosschain-protocol-stack, Crosschain Protocol Stack>> chapter, the Solidity function that performs the verification is called `decodeAndVerify` and belongs to the `ICrosschainVerifier` interface. This interface and function is defined as follows:
+The Corda transaction attestation proof is verified on-chain by a Solidity contract. In alignment with the EEA DTL interoperability specification. The Solidity function that performs the verification is called `decodeAndVerify` and belongs to the `ICrosschainVerifier` interface. This interface and function is defined as follows:
 
 ```solidity
 interface ICrosschainVerifier {

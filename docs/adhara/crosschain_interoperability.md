@@ -18,13 +18,13 @@ The design of the architecture, protocols, and interfaces is in alignment with t
 
 ## General use cases
 
-The crosschain application layer XvP (PvP/DvP) smart contract implementation is based on a leader-follower approach in which one network is the leading network and the other is the follower network. Atomic settlement, in the financial sense, is achieved by ensuring that either both legs complete successfully or none does, in which case the trade is cancelled.
+The crosschain application layer XvP (PvP/DvP) smart contract implementation is based on a leader-follower approach where one network acts as the leading network and the other acts as the follower network. Atomic settlement is achieved by ensuring that either both legs complete successfully or none does, in which case the trade is cancelled.
 
 ### PvP
 
 The crosschain Payment versus Payment (PvP) flows discussed here involve payments taking place across two Ethereum networks.
 
-The crosschain PvP cash settlement flows make use of earmarks, where cash are placed on hold with the intent to transfer it to the entity it was earmarked for after receiving sufficient proof that a previous step in the PvP flow was executed.
+The crosschain PvP cash settlement flows make use of earmarks, where cash is placed on hold with the intent to transfer it to the entity it was earmarked for after receiving sufficient proof that a previous step in the PvP flow was executed.
 
 The general crosschain PvP settlement use case flow for a successful trade is outlined below:
 
