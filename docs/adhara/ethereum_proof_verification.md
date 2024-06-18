@@ -1,5 +1,11 @@
 # Ethereum event attestation proofs
 
+Each transaction that is executed on Ethereum results in a transaction receipt, which contains all logs of all events that resulted from that transaction. The transaction receipts of all the transactions in a block is stored in a Merkle (Patricia) tree, and its root is included as one of the fields in the block header, that was signed over. Therefore, we can use a Merkle (Patricia) inclusion proof to prove that an event is part of a block.
+
+Every QBFT block header is signed by (a subset of) validators of the network, and thus the signatories need to be compared to a known list of validators, as well as ensure that enough signatures are present to exceed a certain threshold, for a given network.
+
+In addition, the Patricia Merkle Tree root would need to be recalculated, using the event in question, and then verify that this root matches the transaction receipt root in the previously verified block header. Recalculating the Patricia Merkle Tree root only requires a subset (only sibling and parent nodes of the transaction receipt containing the event in question) of the Tree, very similar to how a Merkle Tree proof would be verified.
+
 ## Introduction
 
 This section describes how Ethereum events can be turned into EEA-compliant crosschain function calls, that is cryptographically secured by Ethereum event attestation proofs, using block headers.
@@ -25,7 +31,7 @@ An Ethereum block header consists of the following fields:
 The verification of an EEA-compliant Ethereum block header proof consists of:
 
 1. verifying that the block header and block header preimage match up and hash to the block hash that was signed over.
-2. verifying that the receipts root extracted from the verified block header match up with the root provided in the proof.
+2. verifying that the transaction receipts root extracted from the verified block header match up with the root provided in the proof.
 3. verifying a Merkle inclusion proof for the given logs in the receipts tree.
 4. verifying the provided validator signatures over the block header containing the receipts tree root.
 5. verifying that at least half the onboarded validators' signatures are present.

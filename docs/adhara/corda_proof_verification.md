@@ -1,5 +1,9 @@
 # Corda transaction attestation proofs
 
+Every transaction that is finalised on a Corda network results in a shared record stored by every participant of the transaction. A signed Corda transaction is generically structured as a Merkle tree, and its root is signed over by participants. Therefore, we can use a Merkle inclusion proof to prove that a transaction's commands, output states and list of required signers are part of the transaction.
+
+The Corda transaction tree root, or a derived tree root, is signed over by a list of required signers and a required notary, before the transaction is finalised on the network. For Corda proofs, the provided signatures need to match, and add up to, what is required in the transaction. Once signatories are verified, they need to be compared to a known list of trusted notaries, ensuring that one of them signed the transaction, and to a list of trusted participants , ensuring that enough of them signed the transaction.   
+
 ## Introduction 
 
 This section describes how Corda transactions can be turned into EEA-compliant crosschain function calls that is cryptographically secured by Corda transaction attestation proofs.
