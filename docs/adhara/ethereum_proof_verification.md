@@ -4,7 +4,7 @@ Each transaction that is executed on Ethereum results in a transaction receipt, 
 
 Every QBFT block header is signed by (a subset of) validators of the network, and thus the signatories need to be compared to a known list of validators, as well as ensure that enough signatures are present to exceed a certain threshold, for a given network.
 
-In addition, the Patricia Merkle Tree root would need to be recalculated, using the event in question, and then verify that this root matches the transaction receipt root in the previously verified block header. Recalculating the Patricia Merkle Tree root only requires a subset (only sibling and parent nodes of the transaction receipt containing the event in question) of the Tree, very similar to how a Merkle Tree proof would be verified.
+In addition, the Merkle tree root would need to be recalculated, using the event in question, and then verify that this root matches the transaction receipt root in the previously verified block header. Recalculating the Merkle tree root only requires a subset (only sibling and parent nodes of the transaction receipt log containing the event in question) of the tree, very similar to how a Merkle inclusion proof would be verified.
 
 ## Introduction
 
