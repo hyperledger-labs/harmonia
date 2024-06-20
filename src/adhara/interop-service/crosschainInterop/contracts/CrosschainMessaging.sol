@@ -343,7 +343,7 @@ contract CrosschainMessaging is ICrosschainVerifier {
         }
       }
     }
-    if (validSeals < validators.length / 2) {
+    if (validSeals < 2 * validators.length / 3) {
       revert("Not enough valid validator seals");
     }
     return true;
