@@ -2,7 +2,7 @@
 
 Every transaction that is finalised on a Corda network results in a shared record stored by every participant of the transaction. A signed Corda transaction is generically structured as a Merkle tree, and its root is signed over by participants. Therefore, we can use a Merkle inclusion proof to prove that a transaction's commands, output states and list of required signers are part of the transaction.
 
-The Corda transaction tree root, or a derived tree root, is signed over by a list of required signers and a required notary, before the transaction is finalised on the network. For Corda proofs, the provided signatures need to match, and add up to, what is required in the transaction. Once signatories are verified, they need to be compared to a known list of trusted notaries, ensuring that one of them signed the transaction, and to a list of trusted participants , ensuring that enough of them signed the transaction.   
+The Corda transaction tree root, or a derived tree root, is signed over by a list of required signers and a required notary, before the transaction is finalised on the network. For Corda proofs, the provided signatures need to match, and add up to, what is required in the transaction. Once signatories are verified, they need to be compared to a known list of trusted notaries, ensuring that one of them signed the transaction, and to a list of trusted participants, ensuring that enough of them signed the transaction.   
 
 ## Introduction 
 
@@ -12,7 +12,7 @@ The DvP implementation that makes use of Corda proofs to trade a security that i
 
 A transaction is drafted to earmark a security on the Corda network and signatures of all parties involved are collected before the transaction is notarized and finalized on the Corda network. The crosschain interop service will receive a settlement instruction, which includes the encoded wire transaction and signatures, as taken from the Corda network. It constructs a Corda transaction attestation proof from the transaction, to be able to perform a crosschain function call to an Ethereum network. The Ethereum network will receive an attestation proof of the transaction, including the signatures of all parties involved in the transaction, as well as details of the function to call once the proof is verified.
 
-It is important to note that this proving methodology does not achieve the same level of trust achieved by attestation proofs on an Ethereum network. Corda notaries are not necessarily validating notaries. As a result, the Corda proofs used in this PoC are not providing proof that a transaction is valid, only that it occurred and was signed by the parties involved as well as a notary. Whereas Ethereum proofs provide proof that a transaction is valid and that it occurred in a block that was signed by active validators.
+It is important to note that this proving methodology does not achieve the same level of trust achieved by attestation proofs on an Ethereum network. Corda notaries are not necessarily validating notaries. As a result, the Corda proofs used in this PoC are not providing proof that a transaction is valid, only that it occurred and was signed by the parties involved as well as a notary. Whereas Ethereum proofs provide proof that a transaction is valid and that it occurred in a block that was signed by a super-majority of validators.
 
 To mitigate this, it is required and trusted that the receiver of the traded securities on the Corda network has fulfilled the following Corda transaction validation requirements before signing the transaction during the CorDapp flows:
   - The full Corda transaction history (full Merkle tree) has been validated.
@@ -153,7 +153,7 @@ The `Proof` structure contains the EEA-compliant proof consisting of proof data 
 
 ## Verifying the proof
 
-The Corda transaction attestation proof is verified on-chain by a Solidity contract. In alignment with the EEA DTL interoperability specification. The Solidity function that performs the verification is called `decodeAndVerify` and belongs to the `ICrosschainVerifier` interface. This interface and function is defined as follows:
+The Corda transaction attestation proof is verified on-chain by a Solidity contract. In alignment with the EEA DLT interoperability specification. The Solidity function that performs the verification is called `decodeAndVerify` and belongs to the `ICrosschainVerifier` interface. This interface and function signature are defined as follows:
 
 ```solidity
 interface ICrosschainVerifier {

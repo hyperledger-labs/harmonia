@@ -34,11 +34,11 @@ The verification of an EEA-compliant Ethereum block header proof consists of:
 2. verifying that the transaction receipts root extracted from the verified block header match up with the root provided in the proof.
 3. verifying a Merkle inclusion proof for the given logs in the receipts tree.
 4. verifying the provided validator signatures over the block header containing the receipts tree root.
-5. verifying that at least half the onboarded validators' signatures are present.
+5. verifying that a super-majority (greater than or equal to 2/3) of the onboarded validators' signatures are present.
 
 ## Building the proof
 
-The encoding format of the `encodedInfo` and `encodedProof` parameters for  block header event attestation proofs are described below.
+The encoding format of the `encodedInfo` and `encodedProof` parameters for block header event attestation proofs are described below.
 
 The `encodedInfo` parameter contains the combined encoding of the destination network id, the destination contract address and the event data to be used in the proof.
 
@@ -113,7 +113,7 @@ The `Proof` structure contains the EEA-compliant proof consisting of proof data 
 
 ## Verifying the proof
 
-The Ethereum block header proof is verified on-chain by a Solidity contract. In alignment with the EEA DTL interoperability specification, the Solidity function that performs the verification is called `decodeAndVerify` and belongs to the `ICrosschainVerifier` interface. This interface and function is defined as follows:
+The Ethereum block header proof is verified on-chain by a Solidity contract. In alignment with the EEA DLT interoperability specification, the Solidity function that performs the verification is called `decodeAndVerify` and belongs to the `ICrosschainVerifier` interface. This interface and function signature are defined as follows:
 
 ```solidity
 interface ICrosschainVerifier {

@@ -8,7 +8,7 @@ Crosschain interoperability has a number of tradeoffs. The two key tradeoffs inv
 
 If we go too far to the left and trust an intermediary explicitly, we open the door for a single point of failure where a bad actor can fraudulently declare truth on one network that doesn't exist on another.
 
-If we go too far to the right, we risk interlinking two systems, resulting in an interoperability protocol that  cannot scale and becomes too complex to maintain.
+If we go too far to the right, we risk interlinking two systems, resulting in an interoperability protocol that cannot scale and becomes too complex to maintain.
 
 So the real question is, how do we get to a solution that can scale, but doesn't have a single point of failure?
 
@@ -30,7 +30,7 @@ As we will explore below, one can find a middle ground, where an external system
 
 ## Ethereum block header proofs 
 
-There are some standard patterns that can assist with verifying that a transaction or event on an Enterprise Ethereum network is in fact valid. This pattern is repeatable for all types of transactions or events, and is therefor scalable because it doesn't rely on knowledge about the actors involved in the transaction or event, nor the rules of the network, only on the validators of that network.
+There are some standard patterns that can assist with verifying that a transaction or event on an Enterprise Ethereum network is in fact valid. This pattern is repeatable for all types of transactions or events, and is therefore scalable because it doesn't rely on knowledge about the actors involved in the transaction or event, nor the rules of the network, only on the validators of that network.
 
 Every Ethereum transaction has the opportunity to create events, e.g. to indicate that a transfer did occur, or that a certain asset/token has been earmarked. Each event is recorded in such a manner that it can be verified cryptographically to have occurred in a given block. Furthermore, in QBFT networks, block headers that have sufficient validator signatures can be deemed part of the canonical blockchain. This means that if one receives an event and a signed block header, one can verify whether that event did indeed occur. 
 

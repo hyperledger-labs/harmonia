@@ -37,6 +37,8 @@ The general crosschain PvP settlement use case flow for a successful trade is ou
 7. Party B constructs an Ethereum event attestation proof, using it as proof that the follow leg hold was executed on the follower Ethereum network.
 8. Party B executes the crosschain function call on the leading Ethereum network to complete the lead leg which, after successful verification of the proof, executes the lead leg hold. Party B receives the cash on the leading Ethereum network.
 
+Settlement can be started, in the general case, once both holds are in place, by either Party A or Party B.
+
 ### DvP
 
 The crosschain Delivery versus Payment (DvP) flows discussed here involve transferring securities on a Corda network while the corresponding payment for the securities takes place on an Ethereum network.
@@ -67,11 +69,11 @@ The adapted crosschain DvP settlement use case flow for a successful trade is as
 
 The underlying crosschain interop protocol allows for a variety of different execution models, depending on the infrastructure and deployment. The parties executing the crosschain calls can, besides access controls on the network and smart contracts, be relaxed to some extent, as the crosschain interop contracts make use of cryptographically verifiable proofs to authorise a crosschain function call, and not solely the sender of the transaction on the network.
 
-This means that a centralised party, connected to only one of the networks, can perform crosschain function calls on behalf of the parties involved, if sufficient proof can be provided of the event or transaction on the other network involving these parties. It becomes a matter or proof generation capability and routing the corresponding crosschain function calls to a party capable of executing it on the network.
+This means that a centralised party, connected to only one of the networks, can perform crosschain function calls on behalf of the parties involved, if sufficient proof can be provided of the event or transaction on the other network involving these parties. It becomes a matter or proof generation capability and routing the corresponding crosschain function calls to a party capable of executing it on the network. The centralised party does not need to be trusted in this case, as it is merely forwarding cryptographic proofs containing already signed data. 
 
 ### Cancellations
 
-The crosschain PvP/DvP cancellation flows discussed here aim at catering for the edge case where the hold for the lead (resp. delivery) leg, or follower (resp. cash) leg, can not be placed, or corrected, and in order to release the hold, the trade must be cancelled. More specifically, the hold for a trade can only be cancelled on a specific network, after the trade was cancelled on that network. And a trade can only be cancelled on a network, if the hold for that trade is not already placed on that network. This means that a trade, where the hold is already in place, can only be cancelled, through the crosschain interop protocol, by cancelling the trade on the other network where the hold is not yet in place. Cancellation is not possible when both holds are in place.
+The crosschain PvP/DvP cancellation flows discussed here aim at catering for the edge case where the hold for the lead (resp. delivery) leg, or follower (resp. cash) leg, can not be placed, or corrected, and in order to release the hold, the trade must be cancelled. More specifically, the hold for a trade can only be cancelled on a specific network, after the trade was cancelled on that network. And a trade can only be cancelled on a network, if the hold for that trade is not already placed on that network. This means that a trade, where the hold is already in place, can only be cancelled, through the crosschain interop protocol, by cancelling the trade on the other network where the hold is not yet in place. Cancellation is not possible when both holds are in place. 
 
 The XvP contract exposes the functionality to start a trade cancellation and perform a trade cancellation. The trade cancellation can only be started if it is the first step taken on a network, before creation of the hold. The trade cancellation can only be performed if it can be proven that the cancellation was previously started on either of the networks.
 
