@@ -4,80 +4,11 @@ WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
 
 # Crosschain Interoperability
 
-The PoC implemented here illustrates how a trade can be settled across two different DLT networks using the crosschain message protocol described in the [EEA DTL interoperability specification](https://entethalliance.github.io/crosschain-interoperability/draft_dlt-interop_techspec.html). 
+The PoC implemented here illustrates how a trade can be settled across two different DLT networks using the crosschain message protocol described in the [EEA DTL interoperability specification](https://entethalliance.github.io/crosschain-interoperability/draft_dlt-interop_techspec.html).
 
 Payment versus Payment (PvP) crosschain interoperability involves payments taking place across two Ethereum networks.
 
 Delivery versus Payment (DvP) crosschain interoperability involves transferring securities on a Corda network while the corresponding payment for the securities takes place on an Ethereum network.
-
-## Introduction
-
-The crosschain application layer XvP (PvP/DvP) implementation is based on a leader-follower approach in which one network is the leading network and the other is the follower network. Atomic settlement, in the financial sense, is achieved by ensuring that either both legs complete successfully or none does, in which case the trade is cancelled. 
-
-### PvP
-
-The crosschain PvP cash settlement flows, used in this PoC, make use of earmarks, where cash are placed on hold with the intent to transfer it to the entity it was earmarked for after receiving sufficient proof that a previous step in the PvP flow was executed.
-
-The PvP settlement use case flow for a successful trade:
-
-1. Party A and Party B agree to settle a PvP trade via off-chain orchestration.
-2. Party B places the follow leg cash on hold for Party A, marking the XvP contract as notary on the follower Ethereum network.
-3. Party A places the lead leg cash on hold for Party B, marking the XvP contract as notary on the leading Ethereum network.
-4. Party A starts the lead leg on the leading Ethereum network, which will emit an event with a crosschain function call instruction to request the follow leg if, and only if, the lead leg hold is in place.
-5. Party A constructs an Ethereum event attestation proof, using it as proof that the lead leg hold was placed on the leading Ethereum network.
-6. Party A executes a crosschain function call on the follower Ethereum network to request the follow leg which, after successful verification of the proof, emits an event with a crosschain function call instruction to complete the lead leg if, and only if, the follow leg hold was executed. Party A receives the cash on the follower Ethereum network.
-7. Party B constructs an Ethereum event attestation proof, using it as proof that the follow leg hold was executed on the follower Ethereum network.
-8. Party B executes the crosschain function call on the leading Ethereum network to complete the lead leg which, after successful verification of the proof, executes the lead leg hold. Party B receives the cash on the leading Ethereum network.
-
-### DvP
-
-The crosschain DvP repo trade settlement flows, used in this PoC, make use of earmarks, where assets are placed on hold with the intent to transfer them to the entity it was earmarked for after receiving sufficient proof that a previous step in the DvP flow was executed.
-
-The DvP settlement use case flow for a successful trade:
-
-1. Party A and Party B agree to settle a DvP trade via off-chain orchestration.
-2. Party B places the payment leg cash on hold for Party A, marking the XvP contract as notary on the Ethereum network.
-3. Party A places the delivery leg securities on hold on the Corda network.
-4. Party A constructs a Corda transaction attestation proof, using it as proof that the delivery leg hold was placed on the Corda network.
-5. Party A executes a crosschain function call on the Ethereum network to request the payment leg which, after successful verification of the proof, emits an event with a crosschain function call instruction to complete the delivery leg if, and only if, the payment leg hold was executed. Party A receives the cash on the Ethereum network.
-6. Party B constructs an Ethereum event attestation proof, using it as proof of the payment leg hold execution on the Ethereum network.
-7. Party B executes the crosschain function call on the Corda network to complete the delivery leg which, after successful verification of the proof, executes the delivery leg hold. Party B receives the securities on the Corda network. 
-
-### Cancellations
-
-The crosschain cancellation flows, used in this PoC, aims at catering for the edge case where the hold for the lead (resp. delivery) leg, or follower (resp. cash) leg, can not be placed, or corrected, and in order to release the hold, the trade must be cancelled. More specifically, the hold for a trade can only be cancelled on a specific network, after the trade was cancelled on that network. And a trade can only be cancelled on a network, if the hold for that trade is not already placed on that network. This means that a trade, where the hold is already in place, can only be cancelled, through the crosschain interop protocol, by cancelling the trade on the other network.  
-
-The XvP contract exposes the functionality to start a trade cancellation and perform a trade cancellation. The trade cancellation can only be started if it is the first step taken on a network, before creation of the hold. The trade cancellation can only be performed if it can be proven that the cancellation was previously started on either of the networks.
-
-The PvP settlement use case flow for cancellation of a trade is the same whether it is started on the leading network or the following network:
-
-1. Party A and Party B agree to settle a PvP trade via off-chain orchestration.
-2. Party B places the follow leg cash on hold for Party A, marking the XvP contract as notary on the follower Ethereum network.
-3. Party B starts trade cancellation on the leading Ethereum network which will emit an event with a crosschain function call instruction to complete the cancellation if, and only if, the trade was cancelled on the leading Ethereum network.
-4. Party B constructs an Ethereum event attestation proof, using it as proof that the trade cancellation was started on the leading Ethereum network.
-5. Party B executes the crosschain function call on the follower Ethereum network to perform the trade cancellation which, after successful verification of the proof, cancels the trade and follow leg hold on the follower Ethereum network.
-
-The DvP settlement use case flow for starting cancellation of a trade on the leading Corda network:
-
-1. Party A and Party B agree to settle a DvP trade via off-chain orchestration.
-2. Party B places the payment leg cash on hold for Party A, marking the XvP contract as notary on the Ethereum network.
-3. Party B starts trade cancellation on the Corda network which will cancels the trade. 
-4. Party B constructs a Corda transaction attestation proof, using it as proof that the trade cancellation was started on the Corda network.
-5. Party B executes a crosschain function call on the Ethereum network to perform the trade cancellation which, after successful verification of the proof, cancels the trade and payment leg hold on the Ethereum network.
-
-The DvP settlement use case flow for starting cancellation of a trade on the following Ethereum network:
-
-1. Party A and Party B agree to settle a DvP trade via off-chain orchestration.
-2. Party A places the delivery leg securities on hold on the Corda network.
-3. Party A starts trade cancellation on the Ethereum network which will emit an event with a crosschain function call instruction to complete the cancellation if, and only if, the trade was cancelled on the Ethereum network.
-4. Party A constructs an Ethereum event attestation proof, using it as proof that the trade cancellation was started on the Ethereum network.
-5. Party A executes a crosschain function call on the Corda network to perform the trade cancellation which, after successful verification of the proof, cancels the trade and delivery leg hold on the Corda network. 
-
-## Setup
-
-Coordination between steps in the above flows is handled by the crosschain interop service. This service is capable of receiving settlement instructions and, by implementing the crosschain interoperability protocol, is capable of automating a full end-to-end settlement flow across two different DTL networks as described above. 
-
-The crosschain interop service provides API endpoints to interact with the crosschain interop SDKs which are decentralised and trustless, besides for onboarding steps. The service which allows parties to submit settlement instructions is however not trustless or decentralised.
 
 ## Evaluation
 
