@@ -3,11 +3,12 @@
   AND ANY UPDATES ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
 */
 
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 /*
  * RLP library to read and parse RLP encoded data in memory.
- * Source: Andreas Olofsson (androlo1980@gmail.com)
+ * Source: Andreas Olofsson (androlo1980@gmail.com) - https://github.com/androlo/standard-contracts licenced as MIT as of 06/11/2023
  */
 library RLP {
 
@@ -98,7 +99,7 @@ library RLP {
       return RLPItem(0, 0);
     }
     uint memPtr;
-    assembly {
+    assembly ("memory-safe")  {
       memPtr := add(self, 0x20)
     }
     return RLPItem(memPtr, len);
@@ -147,7 +148,7 @@ library RLP {
     if (self.unsafe_length == 0)
       return false;
     uint memPtr = self.unsafe_memPtr;
-    assembly {
+    assembly ("memory-safe")  {
       ret := iszero(lt(byte(0, mload(memPtr)), 0xC0))
     }
   }
@@ -163,7 +164,7 @@ library RLP {
     if (self.unsafe_length == 0)
       return false;
     uint memPtr = self.unsafe_memPtr;
-    assembly {
+    assembly ("memory-safe")  {
       ret := lt(byte(0, mload(memPtr)), 0xC0)
     }
   }
@@ -179,7 +180,7 @@ library RLP {
       return false;
     uint b0;
     uint memPtr = self.unsafe_memPtr;
-    assembly {
+    assembly ("memory-safe")  {
       b0 := byte(0, mload(memPtr))
     }
     return (b0 == DATA_SHORT_START || b0 == LIST_SHORT_START);
@@ -197,7 +198,7 @@ library RLP {
       return 0;
     uint b0;
     uint memPtr = self.unsafe_memPtr;
-    assembly {
+    assembly ("memory-safe")  {
       b0 := byte(0, mload(memPtr))
     }
     uint pos = memPtr + payloadOffset(self);
@@ -311,7 +312,7 @@ library RLP {
       revert();
     else if (len == 0)
       return 0;
-    assembly {
+    assembly ("memory-safe")  {
       data := div(mload(rStartPos), exp(256, sub(32, len)))
     }
   }
@@ -332,7 +333,7 @@ library RLP {
     if (len != 1)
       revert();
     uint temp;
-    assembly {
+    assembly ("memory-safe")  {
       temp := byte(0, mload(rStartPos))
     }
     if (temp > 1)
@@ -356,7 +357,7 @@ library RLP {
     if (len != 1)
       revert();
     bytes1 temp;
-    assembly {
+    assembly ("memory-safe")  {
       temp := byte(0, mload(rStartPos))
     }
     return temp;
@@ -396,7 +397,7 @@ library RLP {
     (rStartPos, len) = decode(self);
     if (len != 20)
       revert();
-    assembly {
+    assembly ("memory-safe")  {
       data := div(mload(rStartPos), exp(256, 12))
     }
   }
@@ -413,7 +414,7 @@ library RLP {
       return 0;
     uint b0;
     uint memPtr = self.unsafe_memPtr;
-    assembly {
+    assembly ("memory-safe")  {
       b0 := byte(0, mload(memPtr))
     }
     if (b0 < DATA_SHORT_START)
@@ -430,7 +431,7 @@ library RLP {
     uint memPtr
   ) private pure returns (uint len) {
     uint b0;
-    assembly {
+    assembly ("memory-safe")  {
       b0 := byte(0, mload(memPtr))
     }
     if (b0 < DATA_SHORT_START)
@@ -438,7 +439,7 @@ library RLP {
     else if (b0 < DATA_LONG_START)
       len = b0 - DATA_SHORT_START + 1;
     else if (b0 < LIST_SHORT_START) {
-      assembly {
+      assembly ("memory-safe")  {
         let bLen := sub(b0, 0xB7) // bytes length (DATA_LONG_OFFSET)
         let dLen := div(mload(add(memPtr, 1)), exp(256, sub(32, bLen))) // data length
         len := add(1, add(bLen, dLen)) // total length
@@ -447,7 +448,7 @@ library RLP {
     else if (b0 < LIST_LONG_START)
       len = b0 - LIST_SHORT_START + 1;
     else {
-      assembly {
+      assembly ("memory-safe")  {
         let bLen := sub(b0, 0xF7) // bytes length (LIST_LONG_OFFSET)
         let dLen := div(mload(add(memPtr, 1)), exp(256, sub(32, bLen))) // data length
         len := add(1, add(bLen, dLen)) // total length
@@ -463,7 +464,7 @@ library RLP {
       revert();
     uint b0;
     uint start = self.unsafe_memPtr;
-    assembly {
+    assembly ("memory-safe")  {
       b0 := byte(0, mload(start))
     }
     if (b0 < DATA_SHORT_START) {
@@ -476,7 +477,7 @@ library RLP {
       memPtr = start + 1;
     } else {
       uint bLen;
-      assembly {
+      assembly ("memory-safe")  {
         bLen := sub(b0, 0xB7) // DATA_LONG_OFFSET
       }
       len = self.unsafe_length - 1 - bLen;
@@ -493,7 +494,7 @@ library RLP {
   ) private pure {
     // Exploiting the fact that 'tgt' was the last thing to be allocated,
     // we can write entire words, and just overwrite any excess.
-    assembly {
+    assembly ("memory-safe")  {
       {
         let words := div(add(btsLen, 31), 32)
         let rOffset := btsPtr
@@ -519,7 +520,7 @@ library RLP {
     uint b0;
     uint b1;
     uint memPtr = self.unsafe_memPtr;
-    assembly {
+    assembly ("memory-safe")  {
       b0 := byte(0, mload(memPtr))
       b1 := byte(1, mload(memPtr))
     }

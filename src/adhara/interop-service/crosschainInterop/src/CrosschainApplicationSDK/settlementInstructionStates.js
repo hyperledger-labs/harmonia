@@ -1,8 +1,8 @@
 module.exports = {
   confirmed: 'confirmed',
   waitingForHold: 'waitingForHold',
-  waitingForCrossBlockchainCallExecuted: 'waitingForCrossBlockchainCallExecuted',
-  waitingForForeignSystemCancellation: 'waitingForForeignSystemCancellation',
+	waitingForCrosschainFunctionCall: 'waitingForCrosschainFunctionCall',
+  waitingForRemoteNetworkCancellation: 'waitingForRemoteNetworkCancellation',
   waitingForExecuteHoldExecuted: 'waitingForExecuteHoldExecuted',
   waitingForCancelHoldExecuted: 'waitingForCancelHoldExecuted',
   waitingForCommunication: 'waitingForCommunication',

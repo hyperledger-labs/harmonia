@@ -5,9 +5,9 @@
 
 pragma solidity ^0.8.13;
 
-import "contracts/../../contracts/CrosschainFunctionCall.sol";
-import "contracts/../../contracts/interfaces/IToken.sol";
-import "contracts/../../contracts/interfaces/IFeeManager.sol";
+import "contracts/CrosschainFunctionCall.sol";
+import "contracts/interfaces/IToken.sol";
+import "contracts/interfaces/IFeeManager.sol";
 
 contract XvP {
   /* Owner of the contract. */
@@ -18,8 +18,8 @@ contract XvP {
   address public tokenContractAddress;
   /* Asset token hold notary identifier. */
   string public notaryId;
-  /* Mapping from foreign identifier to local identification. */
-  mapping(string => string) public foreignToLocalAccountId;
+  /* Mapping from remote identifier to local identification. */
+  mapping(string => string) public remoteToLocalAccountId;
   /* Mapping from trade identifier to trade cancellation status. */
   mapping(string => bool) public isCancelled;
 
@@ -66,48 +66,48 @@ contract XvP {
   }
 
   /*
-   * Add a foreign to local mapping, from the foreign account identifier to the local account identifier, in storage. This method needs access controls.
+   * Add a remote to local mapping, from the remote account identifier to the local account identifier, in storage. This method needs access controls.
    * @param {string} localAccountId Local account identifier.
-   * @param {string} foreignAccountId Foreign account identifier.
-   * @return {bool} Returns true if the foreign to local mapping was successfully added.
+   * @param {string} remoteAccountId Remote account identifier.
+   * @return {bool} Returns true if the remote to local mapping was successfully added.
    */
-  function setForeignAccountIdToLocalAccountId(
+  function setRemoteAccountIdToLocalAccountId(
     string calldata localAccountId,
-    string calldata foreignAccountId
+    string calldata remoteAccountId
   ) public returns (bool) {
     require(
       msg.sender == owner,
-      "Only the owner can call setForeignAccountIdToLocalAccountId"
+      "Only the owner can call setRemoteAccountIdToLocalAccountId"
     );
-    foreignToLocalAccountId[foreignAccountId] = localAccountId;
+    remoteToLocalAccountId[remoteAccountId] = localAccountId;
     return true;
   }
 
   /*
-   * Remove a foreign to local mapping, from the foreign account identifier to the local account identifier, in storage. This method needs access controls.
-   * @param {string} foreignAccountId Foreign account identifier.
-   * @return {bool} Returns true if the foreign to local mapping was successfully removed.
+   * Remove a remote to local mapping, from the remote account identifier to the local account identifier, in storage. This method needs access controls.
+   * @param {string} remoteAccountId Remote account identifier.
+   * @return {bool} Returns true if the remote to local mapping was successfully removed.
    */
-  function removeForeignAccountIdToLocalAccountId(
-    string calldata foreignAccountId
+  function removeRemoteAccountIdToLocalAccountId(
+    string calldata remoteAccountId
   ) public returns (bool) {
     require(
       msg.sender == owner,
-      "Only the owner can call removeForeignAccountIdToLocalAccountId"
+      "Only the owner can call removeRemoteAccountIdToLocalAccountId"
     );
-    delete foreignToLocalAccountId[foreignAccountId];
+    delete remoteToLocalAccountId[remoteAccountId];
     return true;
   }
 
   /*
-   * Retrieve a foreign to local mapping, for the given foreign account identifier, in storage.
-   * @param {string} foreignAccountId Foreign account identifier.
-   * @return {string} Returns the local account identifier as mapped to by the provided foreign account identifier.
+   * Retrieve a remote to local mapping, for the given remote account identifier, in storage.
+   * @param {string} remoteAccountId Remote account identifier.
+   * @return {string} Returns the local account identifier as mapped to by the provided remote account identifier.
    */
-  function getForeignAccountIdToLocalAccountId(
-    string calldata foreignAccountId
+  function getRemoteAccountIdToLocalAccountId(
+    string calldata remoteAccountId
   ) public returns (string memory) {
-    return foreignToLocalAccountId[foreignAccountId];
+    return remoteToLocalAccountId[remoteAccountId];
   }
 
   /*
@@ -254,13 +254,13 @@ contract XvP {
     TradeDetails calldata tradeDetails,
     IToken token
   ) public returns (bool) {
-    string memory holdCheckRevertMessage = string.concat("Hold does not exist: ", hold.operationId);
-    holdCheckRevertMessage = string.concat(holdCheckRevertMessage, " calculated using fromAccount: ");
-    holdCheckRevertMessage = string.concat(holdCheckRevertMessage, hold.fromAccount);
-    holdCheckRevertMessage = string.concat(holdCheckRevertMessage, " toAccount: ");
-    holdCheckRevertMessage = string.concat(holdCheckRevertMessage, hold.toAccount);
-    holdCheckRevertMessage = string.concat(holdCheckRevertMessage, " tradeId: ");
-    holdCheckRevertMessage = string.concat(holdCheckRevertMessage, tradeDetails.tradeId);
+    string memory holdCheckRevertMessage = string(abi.encodePacked("Hold does not exist: ", hold.operationId));
+    holdCheckRevertMessage = string(abi.encodePacked(holdCheckRevertMessage, " calculated using fromAccount: "));
+    holdCheckRevertMessage = string(abi.encodePacked(holdCheckRevertMessage, hold.fromAccount));
+    holdCheckRevertMessage = string(abi.encodePacked(holdCheckRevertMessage, " toAccount: "));
+    holdCheckRevertMessage = string(abi.encodePacked(holdCheckRevertMessage, hold.toAccount));
+    holdCheckRevertMessage = string(abi.encodePacked(holdCheckRevertMessage, " tradeId: "));
+    holdCheckRevertMessage = string(abi.encodePacked(holdCheckRevertMessage, tradeDetails.tradeId));
 
     require(hold.status != token._HOLD_STATUS_NON_EXISTENT(), holdCheckRevertMessage);
     require(hold.status != token._HOLD_STATUS_CANCELLED(), "Hold was cancelled");
@@ -363,17 +363,17 @@ contract XvP {
   }
 
   /*
-   * Start the lead leg of a trade, with the given trade details, by emitting a CrossBlockchainCallExecuted event.
+   * Start the lead leg of a trade, with the given trade details, by emitting a CrosschainFunctionCall event.
    * @param {TradeDetails} tradeDetails The trade details containing the sender and receiver's local account identifiers.
-   * @param {uint256} sourceBlockchainId The source chain identifier.
-   * @param {uint256} destinationBlockchainId The destination chain identifier.
+   * @param {uint256} networkId The source network identifier.
+   * @param {uint256} destinationNetworkId The destination network identifier.
    * @param {address} destinationContract The destination contract address.
    * @return {bool} Returns true if the lead leg was successfully started.
    */
   function startLeadLeg(
     TradeDetails calldata tradeDetails,
-    uint256 sourceBlockchainId,
-    uint256 destinationBlockchainId,
+    uint256 sourceNetworkId,
+    uint256 destinationNetworkId,
     address destinationContract
   ) public returns (bool) {
 
@@ -386,14 +386,14 @@ contract XvP {
       keccak256(bytes("requestFollowLeg(string,string,string,address,uint256,uint256)"))
     );
 
-    // Since we don't know on which foreign chain this will be consumed we can't change the sender and reciever to their foreign account ids
+    // Since we don't know on which remote network this will be consumed we can't change the sender and reciever to their remote account ids
     bytes memory functionCallData = abi.encodeWithSelector(
       SELECTOR,
       tradeDetails.tradeId,
       tradeDetails.receiver,
       tradeDetails.sender,
       address(this),
-      sourceBlockchainId,
+      sourceNetworkId,
       hold.amount
     );
 
@@ -401,8 +401,8 @@ contract XvP {
       functionCallContractAddress
     );
 
-    functionCallContract.crossBlockchainCall(
-      destinationBlockchainId,
+    functionCallContract.outboundCall(
+      destinationNetworkId,
       destinationContract,
       functionCallData
     );
@@ -411,14 +411,14 @@ contract XvP {
   }
 
   /*
-   * Start the follow leg of a trade, with the given trade details, as instructed from a remote chain.
+   * Start the follow leg of a trade, with the given trade details, as instructed from a remote network.
    * The function should only be callable after a proof was verified.
    * @param {string} tradeId The trade identifier.
-   * @param {string} sender The sending party's foreign account identifier
-   * @param {string} receiver The receiving party's foreign account identifier.
+   * @param {string} sender The sending party's remote account identifier
+   * @param {string} receiver The receiving party's remote account identifier.
    * @param {address} destinationContract The destination contract address.
-   * @param {uint256} destinationBlockchainId The destination chain identifier.
-   * @param {uint256} foreignNotional The nominal value of the trade on the remote chain.
+   * @param {uint256} destinationNetworkId The destination network identifier.
+   * @param {uint256} remoteNotional The nominal value of the trade on the remote network.
    * @return {bool} Returns true if the follow leg was successfully started.
    */
   function requestFollowLeg(
@@ -426,17 +426,17 @@ contract XvP {
     string calldata sender,
     string calldata receiver,
     address destinationContract,
-    uint256 destinationBlockchainId,
-    uint256 foreignNotional
+    uint256 destinationNetworkId,
+    uint256 remoteNotional
   ) public returns (bool) {
 
-    TradeDetails memory tradeDetails = TradeDetails(tradeId, sender, receiver, foreignNotional);
+    TradeDetails memory tradeDetails = TradeDetails(tradeId, sender, receiver, remoteNotional);
     // First check that a mapping exists
-    if (keccak256(abi.encodePacked(foreignToLocalAccountId[sender])) != keccak256(abi.encodePacked(""))) {
-      tradeDetails.sender = foreignToLocalAccountId[sender];
+    if (keccak256(abi.encodePacked(remoteToLocalAccountId[sender])) != keccak256(abi.encodePacked(""))) {
+      tradeDetails.sender = remoteToLocalAccountId[sender];
     }
-    if (keccak256(abi.encodePacked(foreignToLocalAccountId[receiver])) != keccak256(abi.encodePacked(""))) {
-      tradeDetails.receiver = foreignToLocalAccountId[receiver];
+    if (keccak256(abi.encodePacked(remoteToLocalAccountId[receiver])) != keccak256(abi.encodePacked(""))) {
+      tradeDetails.receiver = remoteToLocalAccountId[receiver];
     }
 
     IToken token = IToken(tokenContractAddress);
@@ -448,7 +448,7 @@ contract XvP {
     require(token.executeHold(operationId) == true, "Executing follow leg hold failed");
 
     bytes4 SELECTOR = bytes4(keccak256(bytes("completeLeadLeg(string,string,string,uint256)")));
-    // Since we don't know on which foreign chain this will be consumed we can't change the sender and reciever to their foreign account ids
+    // Since we don't know on which remote network this will be consumed we can't change the sender and reciever to their remote account ids
     bytes memory functionCallData = abi.encodeWithSelector(
       SELECTOR,
       tradeDetails.tradeId,
@@ -460,8 +460,8 @@ contract XvP {
     CrosschainFunctionCall functionCallContract = CrosschainFunctionCall(
       functionCallContractAddress
     );
-    functionCallContract.crossBlockchainCall(
-      destinationBlockchainId,
+    functionCallContract.outboundCall(
+      destinationNetworkId,
       destinationContract,
       functionCallData
     );
@@ -470,42 +470,42 @@ contract XvP {
   }
 
   /*
-   * Complete the lead leg of a trade, with the given trade details, as instructed from a remote chain.
+   * Complete the lead leg of a trade, with the given trade details, as instructed from a remote network.
    * @param {string} tradeId The trade identifier.
-   * @param {string} sender The sending party's foreign account identifier
-   * @param {string} receiver The receiving party's foreign account identifier.
-   * @param {uint256} foreignNotional The nominal value of the trade on the remote chain.
+   * @param {string} sender The sending party's remote account identifier
+   * @param {string} receiver The receiving party's remote account identifier.
+   * @param {uint256} remoteNotional The nominal value of the trade on the remote network.
    * @return {bool} Returns true if the lead leg was successfully completed.
    */
   function completeLeadLeg(
     string calldata tradeId,
     string calldata sender,
     string calldata receiver,
-    uint256 foreignNotional
+    uint256 remoteNotional
   ) public returns (bool) {
-    TradeDetails memory tradeDetails = TradeDetails(tradeId, sender, receiver, foreignNotional);
+    TradeDetails memory tradeDetails = TradeDetails(tradeId, sender, receiver, remoteNotional);
     // First check that a mapping exists
-    if (keccak256(abi.encodePacked(foreignToLocalAccountId[sender])) != keccak256(abi.encodePacked(""))) {
-      tradeDetails.sender = foreignToLocalAccountId[sender];
+    if (keccak256(abi.encodePacked(remoteToLocalAccountId[sender])) != keccak256(abi.encodePacked(""))) {
+      tradeDetails.sender = remoteToLocalAccountId[sender];
     }
-    if (keccak256(abi.encodePacked(foreignToLocalAccountId[receiver])) != keccak256(abi.encodePacked(""))) {
-      tradeDetails.receiver = foreignToLocalAccountId[receiver];
+    if (keccak256(abi.encodePacked(remoteToLocalAccountId[receiver])) != keccak256(abi.encodePacked(""))) {
+      tradeDetails.receiver = remoteToLocalAccountId[receiver];
     }
     IToken token = IToken(tokenContractAddress);
     string memory operationId = this.getOperationIdFromTradeId(tradeDetails.tradeId, tradeDetails.sender, tradeDetails.receiver);
     require(this.getIsCancelled(operationId) == false, "OperationId for hold is marked as cancelled");
     require(this.isHoldExecutable(operationId, tokenContractAddress) == true, "Hold was not executable, or does not exist");
-    require(token.executeHold(operationId) == true, "Executing hold on leader chain failed");
+    require(token.executeHold(operationId) == true, "Executing hold on leader network failed");
     return true;
   }
 
   /*
-   * Start the cancellation process of a trade, with the given trade details, by emitting a CrossBlockchainCallExecuted event.
+   * Start the cancellation process of a trade, with the given trade details, by emitting a CrosschainFunctionCall event.
    * @param {string} tradeId The trade identifier.
    * @param {string} sender The sending party's local account identifier
    * @param {string} receiver The receiving party's local account identifier.
-   * @param {uint256} sourceBlockchainId The source chain identifier.
-   * @param {uint256} destinationBlockchainId The destination chain identifier.
+   * @param {uint256} networkId The source network identifier.
+   * @param {uint256} destinationNetworkId The destination network identifier.
    * @param {address} destinationContract The destination contract address.
    * @return {bool} Returns true if the cancellation process was successfully started.
    */
@@ -513,16 +513,16 @@ contract XvP {
     string calldata tradeId,
     string calldata sender,
     string calldata receiver,
-    uint256 sourceBlockchainId,
-    uint256 destinationBlockchainId,
+    uint256 sourceNetworkId,
+    uint256 destinationNetworkId,
     address destinationContract
   ) public returns (bool) {
     TradeDetails memory tradeDetails = TradeDetails(tradeId, sender, receiver, 0);
-    if (keccak256(abi.encodePacked(foreignToLocalAccountId[sender])) != keccak256(abi.encodePacked(""))) {
-      tradeDetails.sender = foreignToLocalAccountId[sender];
+    if (keccak256(abi.encodePacked(remoteToLocalAccountId[sender])) != keccak256(abi.encodePacked(""))) {
+      tradeDetails.sender = remoteToLocalAccountId[sender];
     }
-    if (keccak256(abi.encodePacked(foreignToLocalAccountId[receiver])) != keccak256(abi.encodePacked(""))) {
-      tradeDetails.receiver = foreignToLocalAccountId[receiver];
+    if (keccak256(abi.encodePacked(remoteToLocalAccountId[receiver])) != keccak256(abi.encodePacked(""))) {
+      tradeDetails.receiver = remoteToLocalAccountId[receiver];
     }
     string memory operationId = this.getOperationIdFromTradeId(tradeDetails.tradeId, tradeDetails.sender, tradeDetails.receiver);
 
@@ -533,7 +533,7 @@ contract XvP {
       keccak256(bytes("performCancellation(string,string,string)"))
     );
 
-    // Since we don't know on which foreign chain this will be consumed we can't change the sender and receiver to their foreign account ids
+    // Since we don't know on which remote network this will be consumed we can't change the sender and receiver to their remote account ids
     bytes memory functionCallData = abi.encodeWithSelector(
       SELECTOR,
       tradeDetails.tradeId,
@@ -545,8 +545,8 @@ contract XvP {
       functionCallContractAddress
     );
 
-    functionCallContract.crossBlockchainCall(
-      destinationBlockchainId,
+    functionCallContract.outboundCall(
+      destinationNetworkId,
       destinationContract,
       functionCallData
     );
@@ -555,11 +555,11 @@ contract XvP {
   }
 
   /*
-   * Complete the cancellation process of a trade, with the given trade details, as instructed from a remote chain.
+   * Complete the cancellation process of a trade, with the given trade details, as instructed from a remote network.
    * The function should only be callable after a proof was verified.
    * @param {string} tradeId The trade identifier.
-   * @param {string} sender The sending party's foreign account identifier
-   * @param {string} receiver The receiving party's foreign account identifier.
+   * @param {string} sender The sending party's remote account identifier
+   * @param {string} receiver The receiving party's remote account identifier.
    * @return {bool} Returns true if the cancellation process was successfully completed.
    */
   function performCancellation(
@@ -569,11 +569,11 @@ contract XvP {
   ) public returns (bool) {
 
     TradeDetails memory tradeDetails = TradeDetails(tradeId, sender, receiver, 0);
-    if (keccak256(abi.encodePacked(foreignToLocalAccountId[sender])) != keccak256(abi.encodePacked(""))) {
-      tradeDetails.sender = foreignToLocalAccountId[sender];
+    if (keccak256(abi.encodePacked(remoteToLocalAccountId[sender])) != keccak256(abi.encodePacked(""))) {
+      tradeDetails.sender = remoteToLocalAccountId[sender];
     }
-    if (keccak256(abi.encodePacked(foreignToLocalAccountId[receiver])) != keccak256(abi.encodePacked(""))) {
-      tradeDetails.receiver = foreignToLocalAccountId[receiver];
+    if (keccak256(abi.encodePacked(remoteToLocalAccountId[receiver])) != keccak256(abi.encodePacked(""))) {
+      tradeDetails.receiver = remoteToLocalAccountId[receiver];
     }
     string memory operationId = this.getOperationIdFromTradeId(tradeDetails.tradeId, tradeDetails.sender, tradeDetails.receiver);
 

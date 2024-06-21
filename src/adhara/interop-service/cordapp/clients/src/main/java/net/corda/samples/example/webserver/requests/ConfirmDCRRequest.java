@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ConfirmDCRRequest {
 	private String tradeId;
-	private String systemId;
-	private String sourceSystemId;
+	private String networkId;
+	private String sourceNetworkId;
 	private String encodedInfo;
 	private String signatureOrProof;
 }

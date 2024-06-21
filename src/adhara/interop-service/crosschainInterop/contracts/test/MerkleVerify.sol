@@ -5,9 +5,8 @@
 
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
-pragma abicoder v2;
 
-import "contracts/../../contracts/libraries/Merkle.sol";
+import "contracts/libraries/Merkle.sol";
 
 contract MerkleVerify {
 
@@ -21,5 +20,9 @@ contract MerkleVerify {
 
   function verifyProof(bytes32 root, bytes32[] memory proof, bytes32 value) public pure returns (bool) {
     return Merkle.verifyProof(root, proof, value);
+  }
+
+  function padWithZeros(bytes32[] memory values, bool singleLeaf) public pure returns (bytes32[] memory) {
+    return Merkle.padWithZeros(values, singleLeaf);
   }
 }

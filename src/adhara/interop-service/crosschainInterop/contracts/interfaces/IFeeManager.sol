@@ -16,6 +16,6 @@ interface IFeeManager {
    * Gets all the zero cost contract addresses.
    * @return zeroCostContractArray An address[] with all the zero cost contract addresses.
    */
-  function getZeroCostContracts() external view virtual returns (address[] memory zeroCostContractArray);
+  function getZeroCostContracts() external view returns (address[] memory zeroCostContractArray);
 
 }

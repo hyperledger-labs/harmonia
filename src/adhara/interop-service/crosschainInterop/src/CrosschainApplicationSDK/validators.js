@@ -2,9 +2,9 @@ const fetch = require('node-fetch');
 
 function init(config, dependencies) {
 
-  async function getBlockByBlockHash(chainName, blockHash) {
+  async function getBlockByBlockHash(networkName, blockHash) {
     try {
-      const response = await fetch(config[chainName].httpProvider, {
+      const response = await fetch(config[networkName].httpProvider, {
         method: 'POST',
         body: '{"jsonrpc":"2.0", "method":"eth_getBlockByHash", "params":["' + blockHash + '", false], "id":"53"}'
       })
@@ -14,13 +14,13 @@ function init(config, dependencies) {
     }
   }
 
-  async function getValidatorsByBlockNumber(chainName, blockNumber) {
+  async function getValidatorsByBlockNumber(networkName, blockNumber) {
     try {
       let consensusString = 'qbft'
-      if (!!config[chainName] && config[chainName].consensus === 'ibft') {
+      if (!!config[networkName] && config[networkName].consensus === 'ibft') {
         consensusString = 'ibft'
       }
-      const response = await fetch(config[chainName].httpProvider, {
+      const response = await fetch(config[networkName].httpProvider, {
         method: 'POST',
         body: '{"jsonrpc":"2.0", "method":"' + consensusString + '_getValidatorsByBlockNumber", "params":["' + blockNumber + '", false], "id":"53"}'
       })
@@ -36,21 +36,21 @@ function init(config, dependencies) {
 
   // Returns the validators for a single chain, if the block hash belongs to a chain that has been configured
   async function getValidatorsByBlockHash(blockHash) {
-    for (let chainName of config.chains) {
+    for (let networkName of config.chains) {
       // Only run this for ethereum chains
-      if (config[chainName].type !== 'ethereum') {
+      if (config[networkName].type !== 'ethereum') {
         continue
       }
       // First lookup the block number, if null then this block hash doesn't exist on this chain
-      const block = await getBlockByBlockHash(chainName, blockHash)
+      const block = await getBlockByBlockHash(networkName, blockHash)
       if (!!block && !!block.result && !!block.result.number) {
-        const validatorResult = await getValidatorsByBlockNumber(chainName, block.result.number)
+        const validatorResult = await getValidatorsByBlockNumber(networkName, block.result.number)
         if (!validatorResult || !validatorResult.result) {
-          return Promise.reject(Error(`Could not retrieve validators from chain ${chainName} for block number ${block.result.number}`))
+          return Promise.reject(Error(`Could not retrieve validators from chain ${networkName} for block number ${block.result.number}`))
         }
         // This ensures that only a single chain's validators will be returned
         const obj = {
-          chainId: config[chainName].id,
+          networkId: config[networkName].id,
           ethereumAddresses: validatorResult.result,
         }
         return obj
@@ -62,17 +62,17 @@ function init(config, dependencies) {
 
   async function getAllValidators() {
     let list = []
-    for (let chainName of config.chains) {
+    for (let networkName of config.chains) {
       // Only run this for ethereum chains
-      if (config[chainName].type !== 'ethereum') {
+      if (config[networkName].type !== 'ethereum') {
         continue
       }
-      const validatorResult = await getValidatorsByBlockNumber(chainName, 'latest')
+      const validatorResult = await getValidatorsByBlockNumber(networkName, 'latest')
       if (!validatorResult || !validatorResult.result) {
-        return Promise.reject(Error(`Could not retrieve validators from chain ${chainName} for block number 'latest'`))
+        return Promise.reject(Error(`Could not retrieve validators from chain ${networkName} for block number 'latest'`))
       }
       const obj = {
-        chainId: config[chainName].id,
+        networkId: config[networkName].id,
         ethereumAddresses: validatorResult.result,
       }
       list.push(obj)

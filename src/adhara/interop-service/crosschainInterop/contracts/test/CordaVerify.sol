@@ -5,28 +5,14 @@
 
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
-pragma abicoder v2;
 
-import "contracts/../../contracts/libraries/Corda.sol";
+import "contracts/libraries/Corda.sol";
+import "contracts/libraries/SolidityUtils.sol";
 
 contract CordaVerify {
-
   using Object for Object.Obj;
   using AMQP for AMQP.Buffer;
   using Parser for Parser.Parsed;
-
-  event Bytes1(bytes1, string);
-  event Bytes4(bytes4, string);
-  event Bytes8(bytes8, string);
-  event Bytes32(bytes32, string);
-  event Bytes(bytes, string);
-  event Bool(bool, string);
-  event UInt8(uint8, string);
-  event UInt32(uint32, string);
-  event UInt64(uint64, string);
-  event UInt256(uint256, string);
-  event Address(address, string);
-  event String(string, string);
 
   mapping(uint32 => Corda.ParameterHandler[]) parameterHandlers;
 
@@ -52,51 +38,93 @@ contract CordaVerify {
     return true;
   }
 
-  function computeComponentHash(uint8 groupIndex, uint8 internalIndex, bytes32 privacySalt, bytes memory encodedComponent) public returns (bytes32) {
-    bytes32 hash = Corda.calculateComponentHash(groupIndex, internalIndex, privacySalt, encodedComponent);
-    emit Bytes32(hash, "Hash");
-    return hash;
+  function calculateComponentHash(
+    uint8 groupIndex,
+    uint8 internalIndex,
+    bytes32 privacySalt,
+    bytes memory encodedComponent
+  ) public view returns (bytes32) {
+    return Corda.calculateComponentHash(Corda.ComponentData(groupIndex, internalIndex, encodedComponent), privacySalt);
   }
 
-  function calculateComponentHash(uint8 groupIndex, uint8 internalIndex, bytes32 privacySalt, bytes memory encodedComponent) public view returns (bytes32) {
-    return Corda.calculateComponentHash(groupIndex, internalIndex, privacySalt, encodedComponent);
-  }
-
-  function calculateNonce(uint8 groupIndex, uint8 internalIndex, bytes32 privacySalt) public view returns (bytes32) {
+  function calculateNonce(
+    uint8 groupIndex,
+    uint8 internalIndex,
+    bytes32 privacySalt
+  ) public view returns (bytes32) {
     return Corda.calculateNonce(groupIndex, internalIndex, privacySalt);
   }
 
-  function validateEvent(bytes memory eventData, bytes memory paramHandlers, bytes memory proofData, bytes memory txSignatures) public returns (bool) {
+  function validateEvent(
+    bytes memory eventData,
+    string memory functionPrototype,
+    bytes memory paramHandlers,
+    string memory functionCommand,
+    bytes memory proofData,
+    bytes memory txSignatures
+  ) public returns (bool) {
     Corda.EventData memory data = abi.decode(eventData, (Corda.EventData));
     Corda.ParameterHandler[] memory handlers = abi.decode(paramHandlers, (Corda.ParameterHandler[]));
     Corda.ProofData memory proof = abi.decode(proofData, (Corda.ProofData));
     Corda.Signature[] memory sigs = abi.decode(txSignatures, (Corda.Signature[]));
-    return Corda.validateEvent(data, handlers, proof, sigs);
+    return Corda.validateEvent(Corda.ValidationData(data, functionPrototype, functionCommand, handlers, proof, sigs));
   }
 
-  function extractByFingerprint(bytes memory value, bytes memory paramHandlers) public {
+  function extractByFingerprint(bytes memory value, bytes memory callParameters, string memory functionPrototype, bytes memory paramHandlers) external pure returns (string[] memory) {
     Corda.ParameterHandler[] memory handlers = abi.decode(paramHandlers, (Corda.ParameterHandler[]));
+    Object.Obj[] memory extracted = Corda.extractParameters(callParameters, functionPrototype, handlers);
     Object.Obj[] memory parsed = Corda.extractByFingerprint(value, handlers);
-    for (uint i=0; i<handlers.length; i++) {
-      if (parsed[i].selector == Object.selectorString)
-        emit String(parsed[i].getString(), "Result");
+    string[] memory result = new string[](handlers.length);
+    for (uint256 i = 0; i < handlers.length; i++) {
+      if ((extracted[i].selector != parsed[i].selector) && (!parsed[i].convertTo(extracted[i].selector)))
+        revert("Failed to convert parsed object");
+      if (parsed[i].selector == Object.selectorUInt256) result[i] = SolUtils.UIntToString(parsed[i].getUInt256());
+      if (parsed[i].selector == Object.selectorString) result[i] = parsed[i].getString();
+      if (parsed[i].selector == Object.selectorBytes) result[i] = SolUtils.BytesToHexString(parsed[i].getBytes());
+      if (parsed[i].selector == Object.selectorBytes4) result[i] = SolUtils.Bytes4ToHexString(parsed[i].getBytes4());
     }
+    return result;
   }
 
-  function extractParameters(bytes memory callParameters, bytes memory paramHandlers) external returns (Object.Obj[] memory) {
+  function extractParameters(
+    bytes memory callParameters,
+    string memory functionPrototype,
+    bytes memory paramHandlers
+  ) external view returns (string[] memory) {
     Corda.ParameterHandler[] memory handlers = abi.decode(paramHandlers, (Corda.ParameterHandler[]));
-    Object.Obj[] memory extracted = Corda.extractParameters(callParameters, handlers);
-    for (uint i=0; i<extracted.length; i++) {
-      if (extracted[i].selector == Object.selectorUInt256)
-        emit UInt256(extracted[i].getUInt256(), "Parameter");
-      if (extracted[i].selector == Object.selectorString)
-        emit String(extracted[i].getString(), "Parameter");
-      if (extracted[i].selector == Object.selectorBytes)
-        emit Bytes(extracted[i].getBytes(), "Parameter");
-      if (extracted[i].selector == Object.selectorBytes4)
-        emit Bytes4(extracted[i].getBytes4(), "Parameter");
+    Object.Obj[] memory extracted = Corda.extractParameters(callParameters, functionPrototype, handlers);
+    string[] memory result = new string[](extracted.length);
+    for (uint256 i = 0; i < extracted.length; i++) {
+      if (extracted[i].selector == Object.selectorUInt256) result[i] = SolUtils.UIntToString(extracted[i].getUInt256());
+      if (extracted[i].selector == Object.selectorString) result[i] = extracted[i].getString();
+      if (extracted[i].selector == Object.selectorBytes) result[i] = SolUtils.BytesToHexString(extracted[i].getBytes());
+      if (extracted[i].selector == Object.selectorBytes4) result[i] = SolUtils.Bytes4ToHexString(extracted[i].getBytes4());
     }
+    return result;
+  }
+
+  function getMatchingTokenIndex(string[] memory calldataTypeTokens, uint256 currentIndex) external view returns (uint256 matchingTokenIndex) {
+    return Object.getMatchingTokenIndex(calldataTypeTokens, currentIndex);
+  }
+
+  function getTopLevelTypes(string[] memory calldataTypeTokens) external view returns (string[] memory types) {
+    return Object.getTopLevelTypes(calldataTypeTokens);
+  }
+
+  function extractPublicKeys(bytes memory evtData) external view returns (string[] memory) {
+    Corda.EventData memory eventData = abi.decode(evtData, (Corda.EventData));
+    string[] memory extracted = Corda.extractPublicKeys(eventData.componentData[0].encodedBytes);
+    return extracted;
+  }
+
+  function extractCommands(bytes memory evtData) external view returns (string[] memory) {
+    Corda.EventData memory eventData = abi.decode(evtData, (Corda.EventData));
+    string[] memory extracted = Corda.extractCommands(eventData.componentData[0].encodedBytes);
     return extracted;
   }
 }
+
+
+
+
 

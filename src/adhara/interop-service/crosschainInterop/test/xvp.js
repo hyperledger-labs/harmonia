@@ -61,8 +61,8 @@ contract("XvP", async accounts => {
 
     assert.equal(smartContractOperationId, operationId)
   })
-  it("should be able to set foreign account id to local account id", async () => {
-    const result = await xvp.setForeignAccountIdToLocalAccountId("F-007", "L-007")
+  it("should be able to set remote account id to local account id", async () => {
+    const result = await xvp.setRemoteAccountIdToLocalAccountId("F-007", "L-007")
     assert.equal(result.receipt.status, true)
   })
   it("should be able to check a hold when it does not exist", async () => {
@@ -215,7 +215,7 @@ contract("XvP", async accounts => {
       //console.log({ err })
     }
   })
-  it("should be able to request the follow leg using foreign identities", async () => {
+  it("should be able to request the follow leg using remote identities", async () => {
     const tradeId = 'O-' + random()
     const operationId = web3.utils.soliditySha3({ type: 'string', value: tradeId }, fromAccount, toAccount).substring(2)
     const hd = ({ // Hold details
@@ -235,9 +235,9 @@ contract("XvP", async accounts => {
       receiver: 'AliceX500',
       amount: 1
     });
-    result = await xvp.setForeignAccountIdToLocalAccountId(hd.fromAccount, "BobX500")
+    result = await xvp.setRemoteAccountIdToLocalAccountId(hd.fromAccount, "BobX500")
     assert.equal(result.receipt.status, true)
-    result = await xvp.setForeignAccountIdToLocalAccountId(hd.toAccount, "AliceX500")
+    result = await xvp.setRemoteAccountIdToLocalAccountId(hd.toAccount, "AliceX500")
     assert.equal(result.receipt.status, true)
     result = await token.createHold(hd.operationId, hd.fromAccount, hd.toAccount, hd.notaryId, hd.amount, hd.duration, hd.metaData);
     assert.equal(result.receipt.status, true)
@@ -321,8 +321,8 @@ contract("XvP", async accounts => {
     });
     let tx = await xvp.startCancellation(tradeId, fromAccount, toAccount, fc, sc, xvp.address)
     let selector = web3.utils.sha3("performCancellation(string,string,string)").slice(0, 10)
-    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrossBlockchainCallExecuted(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
-    assert.ok(event, "CrossBlockchainCallExecuted event with performCancellation not emitted");
+    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrosschainFunctionCall(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
+    assert.ok(event, "CrosschainFunctionCall event with performCancellation not emitted");
     assert.equal(tx.receipt.status, true)
 
     let result = await token.createHold(hd.operationId, hd.fromAccount, hd.toAccount, hd.notaryId, hd.amount, hd.duration, hd.metaData);
@@ -369,8 +369,8 @@ contract("XvP", async accounts => {
     });
     let tx = await xvp.startCancellation(tradeId, fromAccount, toAccount, fc, sc, xvp.address)
     let selector = web3.utils.sha3("performCancellation(string,string,string)").slice(0, 10)
-    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrossBlockchainCallExecuted(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
-    assert.ok(event, "CrossBlockchainCallExecuted event with performCancellation not emitted");
+    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrosschainFunctionCall(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
+    assert.ok(event, "CrosschainFunctionCall event with performCancellation not emitted");
     assert.equal(tx.receipt.status, true)
   })
   it("should not be able to request the follow leg if the operation id is cancelled", async () => {
@@ -393,8 +393,8 @@ contract("XvP", async accounts => {
     });
     let tx = await xvp.startCancellation(tradeId, fromAccount, toAccount, fc, sc, xvp.address)
     let selector = web3.utils.sha3("performCancellation(string,string,string)").slice(0, 10)
-    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrossBlockchainCallExecuted(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
-    assert.ok(event, "CrossBlockchainCallExecuted event with performCancellation not emitted");
+    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrosschainFunctionCall(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
+    assert.ok(event, "CrosschainFunctionCall event with performCancellation not emitted");
     assert.equal(tx.receipt.status, true)
 
     let isCancelled = await xvp.getIsCancelled(hd.operationId)
@@ -425,8 +425,8 @@ contract("XvP", async accounts => {
     });
     let tx = await xvp.startCancellation(tradeId, fromAccount, toAccount, fc, sc, xvp.address)
     let selector = web3.utils.sha3("performCancellation(string,string,string)").slice(0, 10)
-    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrossBlockchainCallExecuted(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
-    assert.ok(event, "CrossBlockchainCallExecuted event with performCancellation not emitted");
+    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrosschainFunctionCall(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
+    assert.ok(event, "CrosschainFunctionCall event with performCancellation not emitted");
     assert.equal(tx.receipt.status, true)
 
     let isCancelled = await xvp.getIsCancelled(hd.operationId)
@@ -457,8 +457,8 @@ contract("XvP", async accounts => {
     });
     let tx = await xvp.startCancellation(tradeId, fromAccount, toAccount, fc, sc, xvp.address)
     let selector = web3.utils.sha3("performCancellation(string,string,string)").slice(0, 10)
-    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrossBlockchainCallExecuted(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
-    assert.ok(event, "CrossBlockchainCallExecuted event with performCancellation not emitted");
+    let event = tx.receipt.rawLogs.some(l => { return l.topics[0] == web3.utils.sha3("CrosschainFunctionCall(uint256,address,bytes)") && abiCoder.decode(["uint256", "address", "bytes"], l.data)[2].startsWith(selector) });
+    assert.ok(event, "CrosschainFunctionCall event with performCancellation not emitted");
     assert.equal(tx.receipt.status, true)
 
     let isCancelled = await xvp.getIsCancelled(hd.operationId)

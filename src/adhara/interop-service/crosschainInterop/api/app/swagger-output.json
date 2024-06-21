@@ -1,0 +1,614 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1",
+    "title": "Application API",
+    "description": "Crosschain interop service application API defines endpoints for SettlementObligations, SettlementInstructions, and RepoObligations."
+  },
+  "host": "localhost:3030",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "SettlementObligations",
+      "description": "Settlement Obligations Resource"
+    },
+    {
+      "name": "SettlementInstructions",
+      "description": "Settlement Instructions Resource"
+    },
+    {
+      "name": "RepoObligations",
+      "description": "Repo Obligations Resource"
+    }
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/{networkId}/repoObligations": {
+      "post": {
+        "tags": [
+          "RepoObligations"
+        ],
+        "summary": "Submit a repo obligation.",
+        "description": "",
+        "operationId": "postRepoObligation",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "repoObligation",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/RepoObligation"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created repo obligation.",
+            "schema": {
+              "$ref": "#/definitions/SettlementObligationResponse"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/settlementInstructions": {
+      "get": {
+        "tags": [
+          "SettlementInstructions"
+        ],
+        "summary": "Fetch a settlement instruction by operationId, or by tradeId, fromAccount and toAccount.",
+        "description": "",
+        "operationId": "getSettlementInstruction",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "operationId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "tradeId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fromAccount",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "toAccount",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settlement instruction response.",
+            "schema": {
+              "$ref": "#/definitions/SettlementInstructionResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SettlementInstructions"
+        ],
+        "summary": "Add a settlement instruction.",
+        "description": "",
+        "operationId": "postSettlementInstruction",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "settlementInstruction",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/SettlementInstruction"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created settlement instruction.",
+            "schema": {
+              "$ref": "#/definitions/SettlementProof"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "SettlementInstructions"
+        ],
+        "summary": "Update a settlement instruction by tradeId, fromAccount and toAccount.",
+        "description": "",
+        "operationId": "patchSettlementInstruction",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tradeId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fromAccount",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "toAccount",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "updateSettlementInstruction",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/UpdateSettlementInstruction"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settlement instruction response.",
+            "schema": {
+              "$ref": "#/definitions/SettlementInstructionResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SettlementInstructions"
+        ],
+        "summary": "Delete a settlement instruction by operationId, or by tradeId, fromAccount and toAccount.",
+        "description": "",
+        "operationId": "deleteSettlementInstruction",
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "operationId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "tradeId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fromAccount",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "toAccount",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settlement instruction response.",
+            "schema": {
+              "$ref": "#/definitions/SettlementInstructionResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    },
+    "/{networkId}/settlementObligations": {
+      "post": {
+        "tags": [
+          "SettlementObligations"
+        ],
+        "summary": "Submit a settlement obligation.",
+        "description": "",
+        "operationId": "postSettlementObligation",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "networkId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "settlementObligation",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/SettlementObligation"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created settlement instruction.",
+            "schema": {
+              "$ref": "#/definitions/SettlementObligationResponse"
+            }
+          },
+          "500": {
+            "description": "An error occurred."
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "RepoObligation": {
+      "type": "object",
+      "properties": {
+        "tradeId": {
+          "type": "string",
+          "example": "string"
+        },
+        "notional": {
+          "type": "number",
+          "example": 0
+        },
+        "openingLeg": {
+          "type": "object",
+          "properties": {
+            "fromAccount": {
+              "type": "string",
+              "example": "string"
+            },
+            "toAccount": {
+              "type": "string",
+              "example": "string"
+            },
+            "amount": {
+              "type": "number",
+              "example": 0
+            }
+          }
+        },
+        "closingLeg": {
+          "type": "object",
+          "properties": {
+            "fromAccount": {
+              "type": "string",
+              "example": "string"
+            },
+            "toAccount": {
+              "type": "string",
+              "example": "string"
+            },
+            "amount": {
+              "type": "number",
+              "example": 0
+            },
+            "timestamp": {
+              "type": "number",
+              "example": 0
+            }
+          }
+        }
+      },
+      "required": [
+        "tradeId"
+      ]
+    },
+    "SettlementObligation": {
+      "type": "object",
+      "properties": {
+        "tradeId": {
+          "type": "string",
+          "example": "string"
+        },
+        "fromAccount": {
+          "type": "string",
+          "example": "string"
+        },
+        "toAccount": {
+          "type": "string",
+          "example": "string"
+        },
+        "currency": {
+          "type": "string",
+          "example": "string"
+        },
+        "amount": {
+          "type": "number",
+          "example": 0
+        }
+      },
+      "required": [
+        "tradeId",
+        "fromAccount",
+        "toAccount",
+        "amount"
+      ]
+    },
+    "SettlementObligationResponse": {
+      "type": "object",
+      "properties": {
+        "operationId": {
+          "type": "string",
+          "example": "string"
+        }
+      }
+    },
+    "SettlementInstruction": {
+      "type": "object",
+      "properties": {
+        "remoteNetworkId": {
+          "type": "number",
+          "example": 1
+        },
+        "tradeId": {
+          "type": "string",
+          "example": "string"
+        },
+        "fromAccount": {
+          "type": "string",
+          "example": "string"
+        },
+        "toAccount": {
+          "type": "string",
+          "example": "string"
+        },
+        "currency": {
+          "type": "string",
+          "example": "string"
+        },
+        "amount": {
+          "type": "number",
+          "example": 0
+        },
+        "callbackURL": {
+          "type": "string",
+          "example": "string"
+        },
+        "triggerLeadLeg": {
+          "type": "boolean",
+          "example": true
+        },
+        "useExistingEarmark": {
+          "type": "boolean",
+          "example": true
+        },
+        "useForCancellation": {
+          "type": "boolean",
+          "example": false
+        },
+        "signatureOrProof": {
+          "type": "object",
+          "properties": {
+            "sourceNetworkId": {
+              "type": "number",
+              "example": 0
+            },
+            "encodedEventData": {
+              "type": "string",
+              "example": "string"
+            },
+            "encodedKey": {
+              "type": "string",
+              "example": "string"
+            },
+            "encodedSignature": {
+              "type": "string",
+              "example": "string"
+            },
+            "partialMerkleRoot": {
+              "type": "string",
+              "example": "string"
+            },
+            "platformVersion": {
+              "type": "number",
+              "example": 0
+            },
+            "schemaNumber": {
+              "type": "number",
+              "example": 0
+            }
+          }
+        }
+      },
+      "required": [
+        "tradeId",
+        "fromAccount",
+        "toAccount",
+        "amount",
+        "triggerLeadLeg",
+        "useExistingEarmark"
+      ]
+    },
+    "SettlementInstructionResponse": {
+      "type": "object",
+      "properties": {
+        "networkId": {
+          "type": "number",
+          "example": 0
+        },
+        "remoteNetworkId": {
+          "type": "number",
+          "example": 1
+        },
+        "tradeId": {
+          "type": "string",
+          "example": "string"
+        },
+        "operationId": {
+          "type": "string",
+          "example": "string"
+        },
+        "fromAccount": {
+          "type": "string",
+          "example": "string"
+        },
+        "toAccount": {
+          "type": "string",
+          "example": "string"
+        },
+        "currency": {
+          "type": "string",
+          "example": "string"
+        },
+        "amount": {
+          "type": "number",
+          "example": 0
+        },
+        "callbackURL": {
+          "type": "string",
+          "example": "string"
+        },
+        "triggerLeadLeg": {
+          "type": "boolean",
+          "example": true
+        },
+        "useExistingEarmark": {
+          "type": "boolean",
+          "example": true
+        },
+        "useForCancellation": {
+          "type": "boolean",
+          "example": false
+        },
+        "signatureOrProof": {
+          "type": "object",
+          "properties": {
+            "sourceNetworkId": {
+              "type": "number",
+              "example": 0
+            },
+            "encodedEventData": {
+              "type": "string",
+              "example": "string"
+            }
+          }
+        },
+        "state": {
+          "type": "string",
+          "example": "string"
+        },
+        "creationDate": {
+          "type": "number",
+          "example": 0
+        },
+        "lastUpdate": {
+          "type": "number",
+          "example": 0
+        },
+        "humanReadableTimestamp": {
+          "type": "string",
+          "example": "string"
+        }
+      }
+    },
+    "UpdateSettlementInstruction": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "example": "string"
+        }
+      }
+    },
+    "SettlementProof": {
+      "type": "object",
+      "properties": {
+        "tradeId": {
+          "type": "string",
+          "example": "string"
+        },
+        "networkId": {
+          "type": "number",
+          "example": 0
+        },
+        "sourceNetworkId": {
+          "type": "number",
+          "example": 0
+        },
+        "encodedInfo": {
+          "type": "string",
+          "example": "string"
+        },
+        "signatureOrProof": {
+          "type": "string",
+          "example": "string"
+        }
+      }
+    }
+  }
+}

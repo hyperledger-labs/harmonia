@@ -5,11 +5,15 @@
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
-pragma abicoder v2;
 
-import "contracts/../../contracts/libraries/SECP256R1.sol";
+import "contracts/libraries/SECP256R1.sol";
 
 contract SECP256R1Verify {
+
+  event Bytes(bytes, string);
+  event Bytes32(bytes32, string);
+  event UInt256(uint256, string);
+  event String(string, string);
 
   function verify(
     bytes32 k,

@@ -41,15 +41,18 @@ public class SignatureProof {
 	private static final String DESCRIPTOR_LIDS = "net.corda:rniw7B2Mqi7zlkPpKmJ77A==";
 	private static final String DESCRIPTOR_CONTRACT = "net.corda:Q0zUGN/K6wwwyuIlNf3Raw==";
 
-  private static final String DESCRIPTOR_ADHARA_DCR = "net.corda:DldW9yS4tBOze6qv6U4QTA==";
-  private static final String DESCRIPTOR_ADHARA_XVP = "net.corda:9GdANdKRptKFtq6zQDfG+A==";
+  private static final String DESCRIPTOR_HOMESTEAD_DCR = "net.corda:DldW9yS4tBOze6qv6U4QTA==";
+  private static final String DESCRIPTOR_HOMESTEAD_XVP = "net.corda:9GdANdKRptKFtq6zQDfG+A==";
 
-  private static final String DESCRIPTOR_HQLAX_COMMAND = "net.corda:xW8RtS06zbreNWxv92ly4w=="; // "net.corda:MelVjkkQJGuWcRt/sNVptA==";
-	private static final String DESCRIPTOR_HQLAX_AMOUNT = "net.corda:EX8RRuprLshI1m51O4333A==";
-	private static final int LID_HQLAX_TRADEID_INDEX = 2;
+  private static final String DESCRIPTOR_3RDPARTY_COMMAND = "net.corda:xW8RtS06zbreNWxv92ly4w=="; // "net.corda:MelVjkkQJGuWcRt/sNVptA==";
+	private static final String DESCRIPTOR_3RDPARTY_AMOUNT = "net.corda:EX8RRuprLshI1m51O4333A==";
+	private static final int LID_3RDPARTY_TRADEID_INDEX = 2;
 
 	private static final int NONCE_SIZE = 8;
 	public static final int COMPONENT_GROUP_OUTPUTS = 1;
+	public static final int COMPONENT_GROUP_COMMANDS = 2;
+	public static final int COMPONENT_GROUP_NOTARY = 4;
+	public static final int COMPONENT_GROUP_SIGNERS = 6;
 
 	private String raw;
 	private List<SignatureData> contents = new ArrayList<>();
@@ -64,6 +67,15 @@ public class SignatureProof {
 	private SecureHash hash;
 	private String salt;
 	private MerkleProof proof;
+
+	//private SecureHash outputsComponentHash;
+	private String[] outputsComponentGroup;
+	//private SecureHash commandsComponentHash;
+	private String[] commandsComponentGroup;
+	//private SecureHash signersComponentHash;
+	private String[] signersComponentGroup;
+	//private SecureHash notaryComponentHash;
+	private String[] notaryComponentGroup;
 
 	public SignatureProof()	{
 	}
@@ -81,26 +93,48 @@ public class SignatureProof {
 		logger.debug("Extracted wire transaction: " + raw);
 		SecureHash ones = SecureHash.getOnes(SecureHash.SHA_256);
 		List<SecureHash> componentLeaves = new ArrayList<>();
+		List<SecureHash> componentHashes = new ArrayList<>();
 		for (int ordinal = 0; ordinal < 9; ordinal++) {
 			List<ComponentGroup> group = componentGroups.getOrDefault(ordinal, null);
 			if (group != null && group.size() > 0) {
-				MerkleTree componentGroup = MerkleTree.getMerkleTree(group.stream().map(ComponentGroup::getHash).collect(Collectors.toList()));
-				if (componentGroup != null) {
-					SecureHash hash = componentGroup.getHash();
-					componentLeaves.add(hash);
-				}
+				List<SecureHash> paddedLeaves = group.stream().map(ComponentGroup::getHash).collect(Collectors.toList());
+				MerkleTree componentGroup = MerkleTree.getMerkleTree(paddedLeaves);
+				if (componentGroup == null)
+					throw new IllegalArgumentException("Failed to compute component group Merkle tree");
 				if (ordinal == COMPONENT_GROUP_OUTPUTS) {
-					// We only support one output group
-					assert group.size() == 1;
-					raw = Utils.toHexString(group.get(0).getOpaqueBytes()).replaceFirst("636F726461010000", "");
-					logger.debug("Extracted component group: " + raw);
-					hash = group.get(0).getHash();
+					outputsComponentGroup = new String[group.size()];
+					for (int g = 0; g < group.size(); g++) {
+						outputsComponentGroup[g] = Utils.toHexString(group.get(g).getOpaqueBytes()).replaceFirst("636F726461010000", "");
+						logger.debug("Extracted " + g + "th output component group: " + outputsComponentGroup[g]);
+					}
+					componentHashes.add(componentGroup.getHash());
+				} else if (ordinal == COMPONENT_GROUP_COMMANDS) {
+					commandsComponentGroup = new String[group.size()];
+					for (int g = 0; g < group.size(); g++) {
+						commandsComponentGroup[g] = Utils.toHexString(group.get(g).getOpaqueBytes()).replaceFirst("636F726461010000", "");
+						logger.debug("Extracted " + g + "th command component group: " + commandsComponentGroup[g]);
+					}
+					componentHashes.add(componentGroup.getHash());
+				} else if (ordinal == COMPONENT_GROUP_NOTARY) {
+					notaryComponentGroup = new String[group.size()];
+					for (int g = 0; g < group.size(); g++) {
+						notaryComponentGroup[g] = Utils.toHexString(group.get(g).getOpaqueBytes()).replaceFirst("636F726461010000", "");
+						logger.debug("Extracted " + g + "th notary component group: " + notaryComponentGroup[g]);
+					}
+					componentHashes.add(componentGroup.getHash());
+				} else if (ordinal == COMPONENT_GROUP_SIGNERS) {
+					signersComponentGroup = new String[group.size()];
+					for (int g = 0; g < group.size(); g++) {
+						signersComponentGroup[g] = Utils.toHexString(group.get(g).getOpaqueBytes()).replaceFirst("636F726461010000", "");
+						logger.debug("Extracted " + g + "th signer component group: " + signersComponentGroup[g]);
+					}
+					componentHashes.add(componentGroup.getHash());
 				}
+				componentLeaves.add(componentGroup.getHash());
 			} else {
 				componentLeaves.add(ones);
 			}
 		}
-		logLeaves(componentLeaves);
 
 		MerkleTree componentTree = MerkleTree.getMerkleTree(componentLeaves);
  	  assert componentTree != null;
@@ -108,11 +142,14 @@ public class SignatureProof {
 		logger.info("Recovered transaction root: " + root.toString());
 
 		List<SecureHash> paddedLeaves = MerkleTree.getPaddedLeaves(componentLeaves);
-		proof = MerkleTree.generateMultiProof(paddedLeaves, Collections.singletonList(hash));
+		proof = MerkleTree.generateMultiProof(paddedLeaves, componentHashes); //Collections.singletonList(outputsComponentHash));
+		//logger.debug("Leaves: ");
+		//logLeaves(paddedLeaves);
+		//logger.debug("Proof: ");
+		//logProof(proof);
 		if (!MerkleTree.verifyMultiProof(root, proof.getProof(), proof.getFlags(), proof.getLeaves())) {
 			throw new IllegalArgumentException("Proof did not verify correctly");
 		}
-
 		List<SecureHash> txLeaves = Collections.singletonList(root.rehash());
 		MerkleTree txTree = MerkleTree.getMerkleTree(txLeaves);
 		PartialMerkleTree parTree = PartialMerkleTree.build(txTree, txLeaves);
@@ -132,28 +169,28 @@ public class SignatureProof {
 		List<Object> linearIds = parseOrderedListByFingerprint(components, DESCRIPTOR_LIDS); // 128 bits => 16 bytes
 		parties = parseCordaPartiesByFingerprint(components);
 
-		// These are HQLAx specific fingerprints, hard-coded for DCRs
-		command = parseStringByFingerprint(components, DESCRIPTOR_HQLAX_COMMAND);
-		amount = parseCurrencyAmountByFingerprint(components, DESCRIPTOR_HQLAX_AMOUNT);
+		// These are 3rd party specific fingerprints, hard-coded for DCRs
+		command = parseStringByFingerprint(components, DESCRIPTOR_3RDPARTY_COMMAND);
+		amount = parseCurrencyAmountByFingerprint(components, DESCRIPTOR_3RDPARTY_AMOUNT);
 		if (amount != null) {
 			String[] split = amount.split(":");
 			amount = split[0];
 			currency = split[1];
 		}
-		id = linearIds.size() > LID_HQLAX_TRADEID_INDEX && linearIds.get(LID_HQLAX_TRADEID_INDEX) != null ? linearIds.get(LID_HQLAX_TRADEID_INDEX).toString() : "";
+		id = linearIds.size() > LID_3RDPARTY_TRADEID_INDEX && linearIds.get(LID_3RDPARTY_TRADEID_INDEX) != null ? linearIds.get(LID_3RDPARTY_TRADEID_INDEX).toString() : "";
 
-		// These are Adhara PoC specific fingerprints, hardcoded for DCRs
-		List<Object> adharaDCRFields = parseOrderedListByFingerprint(components, DESCRIPTOR_ADHARA_DCR);
-    if (!adharaDCRFields.isEmpty()) {
-			currency = (String) adharaDCRFields.get(0);
-			command = (String) adharaDCRFields.get(2);
-			id = (String) adharaDCRFields.get(3);
-			amount = (String) adharaDCRFields.get(4);
+		// These are PoC specific fingerprints, hardcoded for DCRs
+		List<Object> homesteadDCRFields = parseOrderedListByFingerprint(components, DESCRIPTOR_HOMESTEAD_DCR);
+    if (!homesteadDCRFields.isEmpty()) {
+			currency = (String) homesteadDCRFields.get(0);
+			command = (String) homesteadDCRFields.get(2);
+			id = (String) homesteadDCRFields.get(3);
+			amount = (String) homesteadDCRFields.get(4);
 		}
-		List<Object> adharaXVPFields = parseOrderedListByFingerprint(components, DESCRIPTOR_ADHARA_XVP);
-		if (!adharaXVPFields.isEmpty()) {
-			command = (String) adharaXVPFields.get(1);
-			id = (String) adharaXVPFields.get(2);
+		List<Object> homesteadXVPFields = parseOrderedListByFingerprint(components, DESCRIPTOR_HOMESTEAD_XVP);
+		if (!homesteadXVPFields.isEmpty()) {
+			command = (String) homesteadXVPFields.get(1);
+			id = (String) homesteadXVPFields.get(2);
 		}
 
 		event = String.format("%s:%s:%s:%s", contract != null ? contract : "", command != null ? command : "", id != null ? id : "", amount != null ? amount : "");
@@ -208,6 +245,21 @@ public class SignatureProof {
 			logger.debug("  [" +i+ "] meta: " + signature.getMeta().toUpperCase());
 			logger.debug("  [" +i+ "] data: " + signature.getData());
 			i++;
+		}
+	}
+
+	private void logProof(MerkleProof proof) {
+		logger.debug("Leaves:");
+		for (SecureHash leaf : proof.getLeaves()) {
+			logger.debug(leaf.toString());
+		}
+		logger.debug("Flags:");
+		for (byte flag : proof.getFlags()) {
+			logger.debug(String.format("%02x", flag).toUpperCase());
+		}
+		logger.debug("Witness:");
+		for (SecureHash witness : proof.getProof()) {
+			logger.debug(witness.toString());
 		}
 	}
 
@@ -523,7 +575,7 @@ public class SignatureProof {
 
 	@Data
 	public static class EncodedInfo {
-		public Uint256 blockchainId; // The ledger identification.
+		public Uint256 networkId; // The ledger identification.
 		public Address crosschainControlContract; // The 160-bit Ethereum address of the cross-chain control contract.
 		public Bytes32 eventSig; // The event function signature.
 		public DynamicBytes eventData; // The event data.

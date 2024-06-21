@@ -6,7 +6,7 @@ function init(config, dependencies) {
   const logger = dependencies.logger
   const web3Store = dependencies.web3Store
 
-  async function signTransaction(txData, chainName) {
+  async function signTransaction(txData, networkName) {
 
     const headers = {
       'User-Agent': 'Super Agent/0.0.1',
@@ -14,7 +14,7 @@ function init(config, dependencies) {
       'Accept': 'application/json-rpc'
     }
 
-    const url = config[chainName].signerBaseURL
+    const url = config[networkName].signerBaseURL
     try {
       let par = []
       par.push(txData)
@@ -34,9 +34,9 @@ function init(config, dependencies) {
     }
   }
 
-  async function signAndSendTx(txData, chainName, web3) {
+  async function signAndSendTx(txData, networkName, web3) {
 
-    const signedTransaction = await signTransaction(txData, chainName)
+    const signedTransaction = await signTransaction(txData, networkName)
 
     try {
       const txReceipt = await web3.eth.sendSignedTransaction(signedTransaction)
@@ -62,11 +62,11 @@ function init(config, dependencies) {
     }
   }
 
-  async function buildAndSendTx(abi, functionName, args, fromAddress, contractAddress, chainName) {
+  async function buildAndSendTx(abi, functionName, args, fromAddress, contractAddress, networkName) {
 
-    const web3 = web3Store[chainName]
+    const web3 = web3Store[networkName]
 
-    const nonce = await getNextNonce(fromAddress, web3, chainName)
+    const nonce = await getNextNonce(fromAddress, web3, networkName)
     const functionCallData = buildFunctionCallData(abi, functionName, args, web3)
 
     let gasEstimation = 70000000
@@ -86,22 +86,22 @@ function init(config, dependencies) {
       to: contractAddress,
       nonce: '0x' + Number(nonce).toString(16),
       gasPrice: '0x' + Number(0).toString(16), // TODO: should this come from config rather?
-      chainId: '0x' + Number(config[chainName].chainId).toString(16),
+      chainId: '0x' + Number(config[networkName].networkId).toString(16),
       gas: '0x' + Number(gasEstimation).toString(16),
       data: functionCallData,
       value: '0x' + Number(0).toString(16)
     }
 
-    logger.log('debug', 'Signing and sending transaction [' + JSON.stringify(txData) + '] for function [' + functionName + '] to chainName [' + chainName + ']')
+    logger.log('debug', 'Signing and sending transaction [' + JSON.stringify(txData) + '] for function [' + functionName + '] to networkName [' + networkName + ']')
 
-    const txReceipt = await signAndSendTx(txData, chainName, web3)
+    const txReceipt = await signAndSendTx(txData, networkName, web3)
     logger.log('debug', 'Obtained receipt [' + JSON.stringify(txReceipt) + '] for function [' + functionName + ']')
     return txReceipt
   }
 
-  async function buildAndCallTx(abi, functionName, args, fromAddress, contractAddress, chainName) {
+  async function buildAndCallTx(abi, functionName, args, fromAddress, contractAddress, networkName) {
 
-    const web3 = web3Store[chainName]
+    const web3 = web3Store[networkName]
 
     const functionCallData = buildFunctionCallData(abi, functionName, args, web3)
     const txData = {
@@ -134,27 +134,27 @@ function init(config, dependencies) {
     }
   }
 
-  async function getNextNonce(address, web3, chainName) {
-    if (!!nonceMap[address] && !!nonceMap[address][chainName]) {
-      const nonce = nonceMap[address][chainName]
+  async function getNextNonce(address, web3, networkName) {
+    if (!!nonceMap[address] && !!nonceMap[address][networkName]) {
+      const nonce = nonceMap[address][networkName]
       if (nonce === -1) { // Nonce is busy being fetched
         await sleep(100)
-        return await getNextNonce(address, web3, chainName)
+        return await getNextNonce(address, web3, networkName)
       }
 
-      nonceMap[address][chainName]++
+      nonceMap[address][networkName]++
       return nonce
     } else {
       try {
         if (!nonceMap[address]) {
           nonceMap[address] = {}
-          nonceMap[address][chainName] = -1
-        } else if (!nonceMap[address][chainName]) {
-          nonceMap[address][chainName] = -1
+          nonceMap[address][networkName] = -1
+        } else if (!nonceMap[address][networkName]) {
+          nonceMap[address][networkName] = -1
         }
 
         const count = await web3.eth.getTransactionCount(address)
-        nonceMap[address][chainName] = count + 1
+        nonceMap[address][networkName] = count + 1
         return count
       } catch (e) {
         logger.log('error', Error(e));
@@ -195,8 +195,8 @@ function init(config, dependencies) {
     }
   }
 
-  async function getPastLogs(fromBlock, toBlock, address, topics, chainName){
-    const web3 = web3Store[chainName]
+  async function getPastLogs(fromBlock, toBlock, address, topics, networkName){
+    const web3 = web3Store[networkName]
     const pastLogs = await web3.eth.getPastLogs({fromBlock, toBlock, address, topics})
     return pastLogs
   }

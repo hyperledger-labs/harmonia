@@ -1,0 +1,144 @@
+@startuml 1_pvp_leader_follower_activity_diagram
+skinparam ActivityBackgroundColor LightBlue
+skinparam activityDiamondBackgroundColor transparent
+skinparam defaultTextAlignment left
+skinparam shadowing false
+skinparam Swimlane {
+  TitleFontColor black
+  TitleFontSize 20
+  BorderColor black
+  BorderThickness 2
+  swimlaneWidth same
+}
+
+ |              **Network A**              \n                    USD  |
+ |           **Local Services**           \n                   Party A |
+ |           **Local Services**           \n                   Party B |
+
+ |           **Local Services**           \n                   Party A |
+
+  start
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
+  :Party A places hold.;
+
+ |              **Network A**              \n                    USD  |
+
+  :Party A places the lead leg cash on
+  hold for Party B, marking the ""XvP""
+  contract as notary.;
+  detach
+
+ |           **Local Services**           \n                   Party B |
+
+  start
+  :Party A and Party B agree to settle a
+  PvP trade using a uniquely generated
+  trade id.;
+  :Party B places hold.;
+
+ |              **Network B**              \n                    GBP  |
+
+  :Party B places the follow leg cash on
+  hold for Party A, marking the ""XvP""
+  contract as notary.;
+  detach
+
+ |           **Local Services**           \n                   Party A |
+
+  start
+  :Party A starts the lead leg.;
+
+ |              **Network A**              \n                    USD  |
+
+  :The ""XvP"" contract checks that the
+  trade is not marked as cancelled and
+  that the hold exists. It calls the
+  ""CrosschainFunctionCall"" contract's
+  ""outboundCall"" function with
+  Network B as destination network,
+  the ""XvP"" contract as destination
+  contract and ""requestFollowLeg""
+  function call data.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  emits the ""CrosschainFunctionCall""
+  event with given data.;
+
+ |           **Local Services**           \n                   Party A |
+
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  monitors for events and once received
+  calls the ""CrosschainMessaging"" SDK;
+  #Pink:The ""CrosschainMessaging"" SDK
+  constructs an Ethereum event attestation
+  proof, to be used as proof that the lead
+  leg hold was placed.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  submits the proof to
+  ""CrosschainFunctionCall"" contract by
+  calling its ""inboundCall"" function.;
+
+ |              **Network B**              \n                    GBP  |
+
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  calls the ""CrosschainMessaging"" contract's
+  ""decodeAndVerify"" function with provided
+  arguments.;
+  #Pink:The ""CrosschainMessaging"" contract
+  verifies the event attestation proof,
+  returning the verified function call
+  data contained within.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  invokes the verified ""requestFollowLeg""
+  function call on the ""XvP"" contract.;
+  :The ""XvP"" contract checks that the trade
+  is not marked as cancelled and that the
+  hold exists. It executes the hold,
+  transferring funds from Party B's
+  account to Party A's account, and calls
+  the ""CrosschainFunctionCall"" contract's
+  ""outboundCall"" function with
+  Network A as destination network, the
+  ""XvP"" contract as destination contract,
+  and ""completeLeadLeg"" function call data.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  emits the ""CrosschainFunctionCall""
+  event with given data.;
+
+ |           **Local Services**           \n                   Party B |
+
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  monitors for events and once received
+  calls the ""CrosschainMessaging"" SDK;
+  #Pink:The ""CrosschainMessaging"" SDK
+  constructs an Ethereum event attestation
+  proof, to be used as proof that the
+  follow leg hold was executed.;
+  #lightGreen:The ""CrosschainFunctionCall"" SDK
+  submits the proof to
+  ""CrosschainFunctionCall"" contract
+  by calling its ""inboundCall"" function.;
+
+ |              **Network A**              \n                    USD  |
+
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  calls the ""CrosschainMessaging"" contract's
+  ""decodeAndVerify"" function with provided
+  arguments.;
+  #Pink:The ""CrosschainMessaging"" contract
+  verifies the event attestation proof,
+  returning the verified function call
+  data contained within.;
+  #lightGreen:The ""CrosschainFunctionCall"" contract
+  invokes the verified ""completeLeadLeg""
+  function call on the ""XvP"" contract.;
+  :The ""XvP"" contract checks that the trade
+  is not marked as cancelled and that the
+  hold exists. It executes the hold,
+  transferring funds from Party A's
+  account to Party B's account.;
+
+stop
+
+@enduml

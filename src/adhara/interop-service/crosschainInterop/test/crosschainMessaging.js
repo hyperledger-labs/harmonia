@@ -1,198 +1,260 @@
 const CrosschainMessaging = artifacts.require("CrosschainMessaging");
-const ta = require('truffle-assertions');
-const {v4: uuidv4} = require("uuid");
-const opId = function () { return uuidv4().substring(0,16) }
+const ethers = require('ethers');
+const ethJsUtil = require('ethereumjs-util')
 
 contract("CrosschainMessaging", async accounts => {
   let instance = null
+
+  const testData = {
+    eventLogs: '0xf903e4018401eac6fab9010000000000000008000000000000000000000800400000000000000000400000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000008000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002001000000000000000000000000f902d8f8b994d920222bc1741461a651c6c3af456660a66e618ae1a0f0e25c63981e9a617375c8244c8ac144e4e520acc2cb08e2d4c3781b1a02c067b8800000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004039306464333835316539363932313963613733316139656263656364643065363930393434643062646633393461613238663537353639393362316661636464f9021a94764b29d5b807fe725b2607007b230a1eb53bfca9e1a07a752c4d100a96be23f60f072fed1f33da2890fbe45eb15af52750faa2772a92b901e0000000000000000000000000000000000000000000000000000000000000000300000000000000000000000037bcb3cac66f4d859a4ef77dcd97eec146bbc425000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000001448903901f000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000003a9800000000000000000000000000000000000000000000000000000000000000104532452d7474766c373874773975377700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b4854555355533030474250000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b485447424742303047425000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+    blockHash: '0x789874e5aeb303c1f73b49223cd3f1d1c78178eed36ee62bbf3c9ca4684294d8',
+    receiptsRoot: '0xbebb5a604846804f1c5c9db1728eff0999b777e278e50431fab206e1a9e5d29e',
+    witnesses: '0xf903f0f903ed822080b903e7f903e4018401eac6fab9010000000000000008000000000000000000000800400000000000000000400000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000008000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002001000000000000000000000000f902d8f8b994d920222bc1741461a651c6c3af456660a66e618ae1a0f0e25c63981e9a617375c8244c8ac144e4e520acc2cb08e2d4c3781b1a02c067b8800000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004039306464333835316539363932313963613733316139656263656364643065363930393434643062646633393461613238663537353639393362316661636464f9021a94764b29d5b807fe725b2607007b230a1eb53bfca9e1a07a752c4d100a96be23f60f072fed1f33da2890fbe45eb15af52750faa2772a92b901e0000000000000000000000000000000000000000000000000000000000000000300000000000000000000000037bcb3cac66f4d859a4ef77dcd97eec146bbc425000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000001448903901f000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000003a9800000000000000000000000000000000000000000000000000000000000000104532452d7474766c373874773975377700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b4854555355533030474250000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b485447424742303047425000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+    rlpBlockHeader: '0xf90220a0949f74633f9dee323b510e7e307a7b1ea0cd12b68682a33979ff018cb11f5626a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d4934794ca31306798b41bc81c43094a1e0462890ce7a673a0dfb06d6c0723d9b4013c14fd8c07f8b0e6db4175c29c8f04b1b4f4320f7ce548a0250c7960f1714e97d0c0283609722b5d251ef3ccb11daecebe98a6f0e4a59a63a0bebb5a604846804f1c5c9db1728eff0999b777e278e50431fab206e1a9e5d29eb90100000000000000080000000000000000000008004000000000000000004000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000080000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020010000000000000000000000000182012e8405f5e1008401eac6fa8466040e26a5e4a00000000000000000000000000000000000000000000000000000000000000000c0c080a063746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365880000000000000000',
+    rlpBlockHeaderPreimage: '0xf90221a0949f74633f9dee323b510e7e307a7b1ea0cd12b68682a33979ff018cb11f5626a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d4934794ca31306798b41bc81c43094a1e0462890ce7a673a0dfb06d6c0723d9b4013c14fd8c07f8b0e6db4175c29c8f04b1b4f4320f7ce548a0250c7960f1714e97d0c0283609722b5d251ef3ccb11daecebe98a6f0e4a59a63a0bebb5a604846804f1c5c9db1728eff0999b777e278e50431fab206e1a9e5d29eb90100000000000000080000000000000000000008004000000000000000004000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000080000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020010000000000000000000000000182012e8405f5e1008401eac6fa8466040e26a6e5a00000000000000000000000000000000000000000000000000000000000000000c0c080c0a063746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365880000000000000000',
+    rlpValidatorSignatures: '0xf843b841a27e8dc683cf2dd4c2c56d4ba6a1bc2a0a2c53e4099f07860c8a6394e560295c0df732ff957c1b5e8dfef7e8c91fdc1bc06ba2d8746555a24039db75d0025c7901',
+    networkId: '3',
+    contractAddress: '0x37bCb3CAc66F4d859a4eF77dcD97EEc146BBC425',
+    callParameters: '0x8903901f000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000003a9800000000000000000000000000000000000000000000000000000000000000104532452d7474766c373874773975377700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b4854555355533030474250000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b4854474247423030474250000000000000000000000000000000000000000000',
+    sourceHash: '0x60c358ad239809bbb9637df32d0e9937a237eb0d67ea5349abb8dc618d142e47'
+  }
 
   beforeEach(async () => {
     instance = await CrosschainMessaging.new()
   })
 
   it("should be able to set the validator list", async () => {
-    const chainId = 1
+    const networkId = 1
     const validatorList = ['0xca31306798b41bc81c43094a1e0462890ce7a673']
-    await instance.setValidatorList(chainId, opId(), validatorList)
+    await instance.setValidatorList(networkId, 5, validatorList)
 
-    const validator = (await instance.chainHeadValidators(chainId, 0)).toLowerCase()
-    assert.equal(validator, validatorList[0])
+    const fetchedvalidatorList = await instance.getValidatorList(networkId, 5)
+    assert.equal(validatorList[0], fetchedvalidatorList[0].toLowerCase())
+  })
+
+  it("should be able to get the validator list", async () => {
+    const networkId = 1
+    const validatorList = ['0xca31306798b41bc81c43094a1e0462890ce7a673']
+    await instance.setValidatorList(networkId, 5, validatorList)
+
+    const sameBlockValidatorList = await instance.getValidatorList(networkId, 5)
+    assert.equal(validatorList[0], sameBlockValidatorList[0].toLowerCase())
+
+    const aheadBlockValidatorList = await instance.getValidatorList(networkId, 6)
+    assert.equal(validatorList[0], aheadBlockValidatorList[0].toLowerCase())
+    try {
+      await instance.getValidatorList(networkId, 4)
+      assert.fail('Should fail to retrieve validators for old blocks before validator updates')
+    } catch (e) {}
   })
 
   it("should be able to set the validator list to multiple validators", async () => {
-    const chainId = 1
+    const networkId = 1
     const validatorList = ['0xca31306798b41bc81c43094a1e0462890ce7a673', '0x049eb617fba599e3d455da70c6730abc8cc4221d', '0x06c3f482f18711be95adf106afa25cd13897fbe7']
-    await instance.setValidatorList(chainId, opId(), validatorList)
+    await instance.setValidatorList(networkId, 5, validatorList)
 
-    for(let index in validatorList){
-      const validator = (await instance.chainHeadValidators(chainId, index)).toLowerCase()
-      assert.equal(validator, validatorList[index])
-    }
-    await ta.reverts(instance.chainHeadValidators(chainId, validatorList.length), "Execution reverted")
+    const sameBlockValidatorList = await instance.getValidatorList(networkId, 6)
+    assert.equal(validatorList[0], sameBlockValidatorList[0].toLowerCase())
+    assert.equal(validatorList[1], sameBlockValidatorList[1].toLowerCase())
+    assert.equal(validatorList[2], sameBlockValidatorList[2].toLowerCase())
   })
 
   it("should be able to increase the number of validators", async () => {
-    const chainId = 1
+    const networkId = 1
     const validatorList0 = ['0xca31306798b41bc81c43094a1e0462890ce7a673']
     const validatorList1 = ['0xca31306798b41bc81c43094a1e0462890ce7a673', '0x049eb617fba599e3d455da70c6730abc8cc4221d', '0x06c3f482f18711be95adf106afa25cd13897fbe7']
 
-    await instance.setValidatorList(chainId, opId(), validatorList0)
-    for(let index in validatorList0){
-      const validator = (await instance.chainHeadValidators(chainId, index)).toLowerCase()
-      assert.equal(validator, validatorList0[index])
-    }
-    await ta.reverts(instance.chainHeadValidators(chainId, validatorList0.length), "Execution reverted")
-
-    await instance.setValidatorList(chainId, opId(), validatorList1)
-    for(let index in validatorList1){
-      const validator = (await instance.chainHeadValidators(chainId, index)).toLowerCase()
-      assert.equal(validator, validatorList1[index])
-    }
-    await ta.reverts(instance.chainHeadValidators(chainId, validatorList1.length), "Execution reverted")
+    await instance.setValidatorList(networkId, 5, validatorList0)
+    await instance.setValidatorList(networkId, 15, validatorList1)
+    const firstValidatorList = await instance.getValidatorList(networkId, 6)
+    assert.equal(firstValidatorList.length, 1)
+    assert.equal(validatorList0[0], firstValidatorList[0].toLowerCase())
+    const secondValidatorList = await instance.getValidatorList(networkId, 16)
+    assert.equal(secondValidatorList.length, 3)
+    assert.equal(validatorList1[0], secondValidatorList[0].toLowerCase())
+    assert.equal(validatorList1[1], secondValidatorList[1].toLowerCase())
+    assert.equal(validatorList1[2], secondValidatorList[2].toLowerCase())
+    try {
+      await instance.getValidatorList(networkId, 4)
+      assert.fail('Should fail to retrieve validators for old blocks before validator updates')
+    } catch (e) {}
   })
 
   it("should be able to increase and then decrease the number of validators", async () => {
-    const chainId = 1
+    const networkId = 1
     const validatorList0 = ['0xca31306798b41bc81c43094a1e0462890ce7a673']
     const validatorList1 = ['0xca31306798b41bc81c43094a1e0462890ce7a673', '0x049eb617fba599e3d455da70c6730abc8cc4221d', '0x06c3f482f18711be95adf106afa25cd13897fbe7']
     const validatorList2 = ['0x049eb617fba599e3d455da70c6730abc8cc4221d']
 
-    await instance.setValidatorList(chainId, opId(), validatorList0)
-    for(let index in validatorList0){
-      const validator = (await instance.chainHeadValidators(chainId, index)).toLowerCase()
-      assert.equal(validator, validatorList0[index])
-    }
-    await ta.reverts(instance.chainHeadValidators(chainId, validatorList0.length), "Execution reverted")
-
-    await instance.setValidatorList(chainId, opId(), validatorList1)
-    for(let index in validatorList1){
-      const validator = (await instance.chainHeadValidators(chainId, index)).toLowerCase()
-      assert.equal(validator, validatorList1[index])
-    }
-    await ta.reverts(instance.chainHeadValidators(chainId, validatorList1.length), "Execution reverted")
-
-    await instance.setValidatorList(chainId, opId(), validatorList2)
-    for(let index in validatorList2){
-      const validator = (await instance.chainHeadValidators(chainId, index)).toLowerCase()
-      assert.equal(validator, validatorList2[index])
-    }
-    await ta.reverts(instance.chainHeadValidators(chainId, validatorList2.length), "Execution reverted")
+    await instance.setValidatorList(networkId, 5, validatorList0)
+    await instance.setValidatorList(networkId, 15, validatorList1)
+    await instance.setValidatorList(networkId, 20, validatorList2)
+    const firstValidatorList = await instance.getValidatorList(networkId, 6)
+    assert.equal(firstValidatorList.length, 1)
+    assert.equal(validatorList0[0], firstValidatorList[0].toLowerCase())
+    const secondValidatorList = await instance.getValidatorList(networkId, 16)
+    assert.equal(secondValidatorList.length, 3)
+    assert.equal(validatorList1[0], secondValidatorList[0].toLowerCase())
+    assert.equal(validatorList1[1], secondValidatorList[1].toLowerCase())
+    assert.equal(validatorList1[2], secondValidatorList[2].toLowerCase())
+    const thirdValidatorList = await instance.getValidatorList(networkId, 21)
+    assert.equal(thirdValidatorList.length, 1)
+    assert.equal(validatorList2[0], thirdValidatorList[0].toLowerCase())
+    try {
+      await instance.getValidatorList(networkId, 4)
+      assert.fail('Should fail to retrieve validators for old blocks before validator updates')
+    } catch (e) {}
   })
 
-  it("should be able to decode encodedInfo and signatureOrProof", async () => {
-    const encodedInfo = web3.eth.abi.encodeParameters(
-      ['uint256', 'address', 'bytes32', 'bytes'],
-      [0, '0x0000000000000000000000000000000000000000', '0x1234', '0x2345']
-    )
+  it("should be able to remove a set of validators", async () => {
+    const networkId = 1
+    const validatorList0 = ['0xca31306798b41bc81c43094a1e0462890ce7a673']
+    const validatorList1 = ['0x049eb617fba599e3d455da70c6730abc8cc4221d', '0x06c3f482f18711be95adf106afa25cd13897fbe7']
 
-    const blockHash = blockHash_hex
-    const rlpBlockHeader = Buffer.from(rlpBlockHeader_Base64, 'base64')
-    const rlpBlockHeaderExcludingRound = Buffer.from(rlpBlockHeaderExcludingRound_Base64, 'base64')
-    const rlpValidatorSignatures = rlpValidatorSignatures_hex
-
-    const signatureOrProof = web3.eth.abi.encodeParameters(
-      ['bytes', 'bytes32', 'bytes32', 'bytes', 'bytes', 'bytes'],
-      ['0x3456', '0x4567', blockHash, rlpBlockHeader, rlpBlockHeaderExcludingRound, rlpValidatorSignatures]
-    )
-    const result = await instance.decodeBlockHeaderTransferEventAndProof(encodedInfo, signatureOrProof)
-
-    assert.equal(result.value, '0x2345')
-    assert.equal(result.rlpSiblingNodes, '0x3456')
-    assert.equal(result.receiptsRoot, '0x4567000000000000000000000000000000000000000000000000000000000000')
-    assert.equal(result.blockHash, blockHash)
-    assert.equal(result.rlpBlockHeader, '0x'+rlpBlockHeader.toString('hex'))
-    assert.equal(result.rlpBlockHeaderExcludingRound, '0x'+rlpBlockHeaderExcludingRound.toString('hex'))
-    assert.equal(result.rlpValidatorSignatures, rlpValidatorSignatures)
+    await instance.setValidatorList(networkId, 5, validatorList0)
+    await instance.setValidatorList(networkId, 15, validatorList1)
+    await instance.removeValidatorList(networkId, 5)
+    try {
+      await instance.removeValidatorList(networkId, 16)
+      assert.fail('Should fail to remove validators when block number does not match exactly')
+    } catch (e) {}
+    const firstValidatorList = await instance.getValidatorList(networkId, 16)
+    assert.equal(firstValidatorList.length, 2)
+    assert.equal(validatorList1[0], firstValidatorList[0].toLowerCase())
+    assert.equal(validatorList1[1], firstValidatorList[1].toLowerCase())
+    try {
+      await instance.getValidatorList(networkId, 6)
+      assert.fail('Should fail to retrieve validators for old blocks where validator updates weer deleted')
+    } catch (e) {}
   })
 
-  it("should be able to verifyEVMEvent", async () => {
-
-    const eventData = rlpEncodedReceipt_hex
-    const rlpSiblingNodes = rlpSiblingNodes_hex
-    const receiptsRoot = receiptsRoot_hex
-
-    const result = await instance.verifyEVMEvent(eventData, rlpSiblingNodes, receiptsRoot)
-
-    assert.equal(result, true)
-  })
-
-  it("should be able to verifyBFTBlockHeader", async () => {
-
-    const chainId = 1
+  it("should be able to handle Ethereum block header proving scheme", async () => {
     const validatorList = ['0xca31306798b41bc81c43094a1e0462890ce7a673']
-    await instance.setValidatorList(chainId, opId(), validatorList)
-    let testData = [
-      { // QBFT Block header validator selection
-        blockHash:                          '0xd10ec91e84ef400f1a0f248c6563bdec5d0e98fb493419218a59efafe15329b7',
-        rlpEncodedBlockHeader:              '0xf90236a0b7f9c1d334b61668799fa00bec7fc23514c031df594b1e0db75ac0838dd8e559a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d4934794ca31306798b41bc81c43094a1e0462890ce7a673a0557396809edb3fa9b8b60f1ea9288b216ea1edfeb56e2fe4381dbc6e2e831f55a028c14b5507676a07c732ebe020704e9f0d5cf331dc65662a9460bbae06504ac9a0df914c01812b825c0ce905eb06990bb61ac6699a6e5e7c291b215bf8737142e2b9010000000000000000000001000000000000000800400000000000000000000000000004000000000000000000000000000200000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000002001008400000040000000004000000000000000100000008000000000000000000000000000000000000000000000000041000000000000000000000000000000000000000100000000000000000100000000000000000000000000000000040000000000000040000000000000000000004000001100000000000000000000000018201a68405f5e100830a8bc08464994141b83bf839a00000000000000000000000000000000000000000000000000000000000000000d594ca31306798b41bc81c43094a1e0462890ce7a673c080a063746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365880000000000000000',
-        rlpEncodedBlockHeaderNoRoundNumber: '0xf90237a0b7f9c1d334b61668799fa00bec7fc23514c031df594b1e0db75ac0838dd8e559a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d4934794ca31306798b41bc81c43094a1e0462890ce7a673a0557396809edb3fa9b8b60f1ea9288b216ea1edfeb56e2fe4381dbc6e2e831f55a028c14b5507676a07c732ebe020704e9f0d5cf331dc65662a9460bbae06504ac9a0df914c01812b825c0ce905eb06990bb61ac6699a6e5e7c291b215bf8737142e2b9010000000000000000000001000000000000000800400000000000000000000000000004000000000000000000000000000200000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000002001008400000040000000004000000000000000100000008000000000000000000000000000000000000000000000000041000000000000000000000000000000000000000100000000000000000100000000000000000000000000000000040000000000000040000000000000000000004000001100000000000000000000000018201a68405f5e100830a8bc08464994141b83cf83aa00000000000000000000000000000000000000000000000000000000000000000d594ca31306798b41bc81c43094a1e0462890ce7a673c080c0a063746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365880000000000000000',
-        rlpValidatorSignatures:             '0xf843b841a33acd31b2917e95de43c257b152be28fbbf1564848c8fcc765d3562d7b8420b1df3a07a235ed8dfab0a1f2cff66b12456dc4fc16f6cf6e89a8c4d85db887e2e00',
-        chainId: chainId,
-      },
-      { // QBFT Contract validator selection
-        blockHash: '0xf51b0be4d7434a4d5ca7cbb9801cd88f71c08c1e3ce463e6547ff38aee84c9a9',
-        rlpEncodedBlockHeader:              '0xf9021fa048ea1e0e2bc652a31f709559a0d46bd424cb07f184a41cc53d5c2f3056fe5d0fa01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d4934794ca31306798b41bc81c43094a1e0462890ce7a673a0eeee286cf03765bd3365e0b9915999225a4ce26ec5d09824170c159ddbebe82ea031a5fe7e7e7c96bb504d07eb5414a57193647635d7364e73b52f6a4a08c5a474a078050f3b89ccff8df8addbc53b9360bf7c2740c7cf206336fe7d945de8308da5b9010000000000000000000001000000000000000800400000000000000000000000000004000000000000000000000000000200000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000002001008400000040000000004000000000000000100000008000000000000000000000000000000000000000000000000041000000000000000000000000000000000000000100000000000000000100000000000000000000000000000000040000000000000040000000000000000000004000001100000000000000000000000018201b08405f5e100830ec43084649947d8a5e4a00000000000000000000000000000000000000000000000000000000000000000c0c080a063746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365880000000000000000',
-        rlpEncodedBlockHeaderNoRoundNumber: '0xf90220a048ea1e0e2bc652a31f709559a0d46bd424cb07f184a41cc53d5c2f3056fe5d0fa01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d4934794ca31306798b41bc81c43094a1e0462890ce7a673a0eeee286cf03765bd3365e0b9915999225a4ce26ec5d09824170c159ddbebe82ea031a5fe7e7e7c96bb504d07eb5414a57193647635d7364e73b52f6a4a08c5a474a078050f3b89ccff8df8addbc53b9360bf7c2740c7cf206336fe7d945de8308da5b9010000000000000000000001000000000000000800400000000000000000000000000004000000000000000000000000000200000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000002001008400000040000000004000000000000000100000008000000000000000000000000000000000000000000000000041000000000000000000000000000000000000000100000000000000000100000000000000000000000000000000040000000000000040000000000000000000004000001100000000000000000000000018201b08405f5e100830ec43084649947d8a6e5a00000000000000000000000000000000000000000000000000000000000000000c0c080c0a063746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365880000000000000000',
-        rlpValidatorSignatures:             '0xf843b8419867a2792b31131108136c24bec5dc59fc0134a17a825fc63ec9eb2f1a218b8300fcb1039a7564d7e6e321ac47f2a768e1abbf5852602e872dc39394eb9ddb7b01',
-        chainId: chainId,
+    await instance.setValidatorList(0, 5, validatorList)
+    let index = -1
+    const encodedReceipt = ethers.utils.RLP.decode(testData.eventLogs)
+    const eventSig = web3.utils.soliditySha3('CrossBlockchainCallExecuted(uint256,address,bytes)')
+    const toNetworkId = 3;
+    for (let i = 0; i < encodedReceipt[3].length; i++) {
+      const encodedLog = encodedReceipt[3][i];
+      const topic = encodedLog[1];
+      if (topic[0] === eventSig) {
+        const eventData = ''+encodedLog[2]
+        const eventParameters = web3.eth.abi.decodeParameters(['uint256', 'address', 'bytes'], eventData);
+        const destinationNetworkId = Number(eventParameters['0'])
+        if (toNetworkId === destinationNetworkId) {
+          index = i;
+          break;
+        }
       }
-    ];
-    for (let t=0; t<testData.length; t++) {
-      let test = testData[t]
-      const result = await instance.verifyBFTBlockHeader(test.blockHash, test.rlpEncodedBlockHeader, test.rlpEncodedBlockHeaderNoRoundNumber, test.rlpValidatorSignatures, test.chainId)
-      assert.equal(result.success, true)
     }
+    assert.equal(index >= 0, true, 'No remote function call events were found for destination network')
+
+    let validatorSignatures = ethers.utils.RLP.decode(testData.rlpValidatorSignatures)
+    const signatures = []
+    for (let i = 0; i < validatorSignatures.length; i++) {
+      let res = ethJsUtil.fromRpcSig(validatorSignatures[i])
+      let publicKey = ethJsUtil.ecrecover(ethJsUtil.toBuffer(ethers.utils.keccak256(testData.rlpBlockHeaderPreimage)), res.v, res.r, res.s);
+      let address = ethJsUtil.pubToAddress(publicKey).toString("hex");
+      let signature = {
+        by: '0x'+address,
+        sigR: '0x'+ res.r.toString('hex'),
+        sigS: '0x' + res.s.toString('hex'),
+        sigV: '0x000000000000000000000000000000000000000000000000000000000000000'+(res.v-27),
+        meta: '0x'
+      }
+      signatures.push(signature);
+    }
+    const eventData = web3.eth.abi.encodeParameters([ eventDataStruct ], [
+      {
+        index: '0x' + index.toString(16),
+        signature: eventSig,
+        logs: testData.eventLogs
+      }
+    ])
+    const blockHeaderMeta = web3.eth.abi.encodeParameters([ blockHeaderMetaStruct ], [
+      {
+        rlpBlockHeader: testData.rlpBlockHeader,
+        rlpBlockHeaderPreimage: testData.rlpBlockHeaderPreimage
+      }
+    ])
+    const encodedInfo = web3.eth.abi.encodeParameters(['uint256', 'address', 'bytes'], [0, '0x0000000000000000000000000000000000000000', eventData])
+    const encodedProof = web3.eth.abi.encodeParameters([ encodedProofStruct ], [
+      {
+        typ: 0,
+        ProofData: {
+          witnesses: testData.witnesses,
+          root: testData.receiptsRoot,
+          blockHash: testData.blockHash,
+          blockHeaderMeta: blockHeaderMeta,
+        },
+        Signature: signatures
+      }
+    ])
+    const result = await instance.handleEthereumBlockHeaderProvingScheme(0, encodedInfo, encodedProof)
+    assert.equal(result.networkId, testData.networkId)
+    assert.equal(result.contractAddress, testData.contractAddress)
+    assert.equal(result.callParameters, testData.callParameters)
+    assert.equal(result.sourceHash, testData.sourceHash)
   })
 
-  it("should not be able to verifyBFTBlockHeader if no validators were set", async () => {
-    const chainId = 1
-    const blockHash = blockHash_hex
-    const rlpBlockHeader = Buffer.from(rlpBlockHeader_Base64, 'base64')
-    const rlpBlockHeaderExcludingRound = Buffer.from(rlpBlockHeaderExcludingRound_Base64, 'base64')
-    const rlpValidatorSignatures = rlpValidatorSignatures_hex
-
-    await ta.reverts(instance.verifyBFTBlockHeader(blockHash, rlpBlockHeader, rlpBlockHeaderExcludingRound, rlpValidatorSignatures, chainId))
-  })
-
-  it("should be able to decodeAndVerifyEvent for a block header transfer based proof", async () => {
-
-    const blockchainId = 0
+  it("should be able to decode and verify for a block header transfer based proof", async () => {
+    const networkId = 0
     const validatorList = ['0xca31306798b41bc81c43094a1e0462890ce7a673']
-    await instance.setValidatorList(blockchainId, opId(), validatorList)
+    await instance.setValidatorList(networkId, 5, validatorList)
+    await instance.onboardProvingScheme(networkId, 2)
 
-    await instance.onboardProvingScheme(blockchainId, 2)
-
-    const crosschainControlContract = '0x0000000000000000000000000000000000000000' // not used
-    const eventSig = '0x1234' // not used
-    const eventData = rlpEncodedReceipt_hex
-
-    const encodedInfo = web3.eth.abi.encodeParameters(
-      ['uint256', 'address', 'bytes32', 'bytes'],
-      [blockchainId, crosschainControlContract, eventSig, eventData]
-    )
-
-    const rlpSiblingNodes = rlpSiblingNodes_hex
-    const receiptsRoot = receiptsRoot_hex
-    const blockHash = blockHash_hex
-    const rlpBlockHeader = Buffer.from(rlpBlockHeader_Base64, 'base64')
-    const rlpBlockHeaderExcludingRound = Buffer.from(rlpBlockHeaderExcludingRound_Base64, 'base64')
-    const rlpValidatorSignatures = rlpValidatorSignatures_hex
-
-    const signatureOrProof = web3.eth.abi.encodeParameters(
-      ['bytes', 'bytes32', 'bytes32', 'bytes', 'bytes', 'bytes'],
-      [rlpSiblingNodes, receiptsRoot, blockHash, rlpBlockHeader, rlpBlockHeaderExcludingRound, rlpValidatorSignatures]
-    )
+    let validatorSignatures = ethers.utils.RLP.decode(testData.rlpValidatorSignatures)
+    const signatures = []
+    for (let i = 0; i < validatorSignatures.length; i++) {
+      let res = ethJsUtil.fromRpcSig(validatorSignatures[i])
+      let publicKey = ethJsUtil.ecrecover(ethJsUtil.toBuffer(ethers.utils.keccak256(testData.rlpBlockHeaderPreimage)), res.v, res.r, res.s);
+      let address = ethJsUtil.pubToAddress(publicKey).toString("hex");
+      let signature = {
+        by: '0x'+address,
+        sigR: '0x'+ res.r.toString('hex'),
+        sigS: '0x' + res.s.toString('hex'),
+        sigV: '0x000000000000000000000000000000000000000000000000000000000000000'+(res.v-27),
+        meta: '0x'
+      }
+      signatures.push(signature);
+    }
+    const eventData = web3.eth.abi.encodeParameters([ eventDataStruct ], [
+      {
+        index: 1,
+        signature: web3.utils.soliditySha3('CrossBlockchainCallExecuted(uint256,address,bytes)'),
+        logs: testData.eventLogs
+      }
+    ])
+    const blockHeaderMeta = web3.eth.abi.encodeParameters([ blockHeaderMetaStruct ], [
+      {
+        rlpBlockHeader: testData.rlpBlockHeader,
+        rlpBlockHeaderPreimage: testData.rlpBlockHeaderPreimage
+      }
+    ])
+    const encodedInfo = web3.eth.abi.encodeParameters(['uint256', 'address', 'bytes'], [0, '0x0000000000000000000000000000000000000000', eventData])
+    const encodedProof = web3.eth.abi.encodeParameters([ encodedProofStruct ], [
+      {
+        typ: 0,
+        ProofData: {
+          witnesses: testData.witnesses,
+          root: testData.receiptsRoot,
+          blockHash: testData.blockHash,
+          blockHeaderMeta: blockHeaderMeta,
+        },
+        Signature: signatures
+      }
+    ])
 
     try{
-      const result = await instance.decodeAndVerifyEvent(blockchainId, eventSig, encodedInfo, signatureOrProof)
-
+      await instance.decodeAndVerify(networkId, encodedInfo, encodedProof)
     } catch (err){
       assert.fail('No revert expected:', err)
     }
   })
 
   it("should be able to onboard parameter handlers for a new callable function", async () => {
-    const blockchainId = 0
+    const networkId = 0
     const handlers = [{
       'fingerprint': 'net.corda:rniw7B2Mqi7zlkPpKmJ77A==',
       'componentIndex': '0x01',
@@ -200,13 +262,16 @@ contract("CrosschainMessaging", async accounts => {
       'describedType': 'String',
       'describedPath': '0x06',
       'solidityType': 'string',
+      'calldataPath': '0x00',
       'parser': 'PathParser',
     }]
-    const signature = '0x45678000'
+    const functionPrototype = 'doXYZ(string)'
+    const functionSignature = web3.eth.abi.encodeFunctionSignature(functionPrototype);
+    const functionCommand = 'net.corda.samples.example.contracts.XVPContract$Commands$XYZ'
     try {
-      let result = await instance.setParameterHandlers(blockchainId, signature, handlers);
+      let result = await instance.setParameterHandlers(networkId, functionSignature, functionPrototype, functionCommand, handlers);
       assert.equal(result.receipt.status, true)
-      let query = await instance.getParameterHandler(blockchainId, signature, 0);
+      let query = await instance.getParameterHandler(networkId, functionSignature, 0);
       let decoded = web3.eth.abi.decodeParameters([{
         'ParameterHandler': {
           'fingerprint': 'string',
@@ -215,6 +280,7 @@ contract("CrosschainMessaging", async accounts => {
           'describedType': 'string',
           'describedPath': 'bytes',
           'solidityType': 'string',
+          'calldataPath': 'bytes',
           'parser': 'string',
         },
       }], query);
@@ -225,6 +291,7 @@ contract("CrosschainMessaging", async accounts => {
         'describedType': decoded['0'].describedType,
         'describedPath': decoded['0'].describedPath,
         'solidityType': decoded['0'].solidityType,
+        'calldataPath': decoded['0'].calldataPath,
         'parser': decoded['0'].parser,
       };
       assert.equal(response.fingerprint, handlers[0].fingerprint)
@@ -233,245 +300,115 @@ contract("CrosschainMessaging", async accounts => {
       assert.equal(response.describedType, handlers[0].describedType)
       assert.equal(response.describedPath, handlers[0].describedPath)
       assert.equal(response.solidityType, handlers[0].solidityType)
+      assert.equal(response.calldataPath, handlers[0].calldataPath)
       assert.equal(response.parser, handlers[0].parser)
+      let prototype = await instance.getFunctionPrototype(networkId, functionSignature);
+      assert.equal(prototype, functionPrototype)
+      let command = await instance.getFunctionCommand(networkId, functionSignature);
+      assert.equal(command, functionCommand)
     } catch (err){
       console.log({err})
       assert.fail('No revert expected:', err)
     }
   })
 
-  it("should be able to decodeAndVerifyCordaTransactionSignatures for a 3rd party signature-based proof", async () => {
-    const sourceBlockchainId = '0x04'
-    const participants = [
-      '0xDEC989D1F7D08669F9078624458038BB0BD4857E812F0532EC1EC2655D90B99B',
-      '0x5D69FA3D4D9C29280CF6B048C4B7C2E63CFB7CD73FBCD7B9AB6C4CFD2191CFC5',
-    ]
-    const notary = '0x48A450E7A340C810034F36C6CE78197CBEC20D123858813F7E27A881BDDFDCFA'
+  it("should be able to handle Corda multivalued Merkle proving scheme", async () => {
     const testData = [{
-      id: 'HQLAx 4',
-      receiver: 'Tz1IUUxBeC10ZXN0IEJhbmsgQjIsIEw9WnVnLCBDPUNI', // O=HQLAx-test Bank B2, L=Zug, C=CH
-      sender: 'Tz1IUUxBeC10ZXN0IEJhbmsgQTEsIEw9WnVnLCBDPUNI', // O=HQLAx-test Bank A1, L=Zug, C=CH
-      controlContract: '0xc23cdfef6ec7b1b39c6cb898d7acc71437f167bd',
-      sourceBlockchainId: '0x04',
-      holdAmount: '0x3039', //12345;
-      tradeId: 'DS_3_31-10-2022',
-      eventSig: '0x0000000000000000000000000000000000000000000000000000000000000000',
-      componentGroup: '0x0080C562000000000001D00000276A0000000300A3226E65742E636F7264613A51307A55474E2F4B367777777975496C4E66335261773D3DD0000009140000000500A3226E65742E636F7264613A372B30747468524E384B742B546255446266663837413D3DC0820100A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A05B3059301306072A8648CE3D020106082A8648CE3D03010703420004175D4CC68C1CABE5E3ADAE46E33B7B1E8B8428E208233B08FE291E81864F1D7C3EEF538E0F25CB032A9775CFD3DA2B69FAB7F0B076606A0E226BA8106299387CA12D636F6D2E68716C61782E636F72646170702E7374617465732E636F6E74726163742E444352436F6E747261637400A3226E65742E636F7264613A6C384E444C4337546D6F66572B417A566968564766773D3DD0000006FA0000000D00A3226E65742E636F7264613A716C4F746A6D6A77534A33326D48672F412B687248513D3DC07102A1334175746F2D6372656174656420627920274F3D48514C41782D746573742042616E6B2042322C204C3D5A75672C20433D434827A1396175746F5F44535F335F33312D31302D323032325F63303239666232372D383539302D343237302D626538612D61616538623137333261396400A3226E65742E636F7264613A6554414961694E4B66362F467979494B2F5A61684B413D3DD0000002080000000300A31B6E65742E636F7264613A6A6176612E74696D652E496E7374616E74C00C028100000000635FB80C540000A3226E65742E636F7264613A523477446C646D7063617430714A69614D6F6B4C71673D3DD00000010400000004A105313233343500A3226E65742E636F7264613A59547946443473417359744A363870585A6174782B413D3DC00802A1035454505400A10343424C00A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC09E0200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0240640A1024348A1035A7567A11548514C41782D7465737420437573746F6469616E31404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100459F403625FFA7BB6C8A134C6A5948F827C0C183C2895F188931FED9A3534C4200A3226E65742E636F7264613A45583852527570724C736849316D35314F34333333413D3DC08302A10C44453030304132595A50583100A3226E65742E636F7264613A706F656271466B4E7A723766524144726C4B526770413D3DC04D0200A31C6E65742E636F7264613A6A6176612E7574696C2E43757272656E6379A10347425000A31E6E65742E636F7264613A6A6176612E6D6174682E426967446563696D616CA105313233343500A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0F20200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC07806A129556E636F6E6E65637465642055415420427573696E657373204E6574776F726B204F70657261746F72A1024C55A10A4C7578656D626F757267A10E48514C417820532E612E722E6C2EA129556E636F6E6E65637465642055415420427573696E657373204E6574776F726B204F70657261746F724000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100B19BD2E78B2AFF73CA6DA53A48A1E4D31DD266C05C2B390A1CE6E88359DB208200A31B6E65742E636F7264613A6A6176612E74696D652E496E7374616E74C00F028100000000635FB7D971134096C000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC09B0200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0210640A1024348A1035A7567A11248514C41782D746573742042616E6B204131404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100DEC989D1F7D08669F9078624458038BB0BD4857E812F0532EC1EC2655D90B99B00A3226E65742E636F7264613A4D656C566A6B6B514A4775576352742F734E567074413D3DC01C02A1174443525F4541524D41524B5F464F525F4C454E44494E4754234000A3226E65742E636F7264613A30314A2B42395A6E33693266557852656258614742773D3DC04004414200A3226E65742E636F7264613A715951623867366D674C4F2F664A62775132576B6A673D3DC01502A11050454E44494E475F454E43554D42455254054000A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3DC013024098A21B15BE3E7D428B8F0C161CBEFE2D7200A31B6E65742E636F7264613A6A6176612E74696D652E496E7374616E74C00F028100000000635FB7E77127660F4000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC09B0200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0210640A1024348A1035A7567A11248514C41782D746573742042616E6B204232404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B65700321005D69FA3D4D9C29280CF6B048C4B7C2E63CFB7CD73FBCD7B9AB6C4CFD2191CFC5540300A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3DC02302A10F44535F335F33312D31302D3230323298C029FB2785904270BE8AAAE8B1732A9D4000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0EC0200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC04306A1214E6F6E2D76616C69646174696E67205541542053554231204841204E6F74617279A1025553A1084E657720596F726BA10D523320486F6C64436F204C4C43404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A05B3059301306072A8648CE3D020106082A8648CE3D0301070342000448A450E7A340C810034F36C6CE78197CBEC20D123858813F7E27A881BDDFDCFACF21A4115FA93CD9C9A6CCEEFCF548DD3CD4A0EE6CAA7F57EB08AC23E54B6AAC0080C562000000000002D000001CBE00000001D000001CB5000000160080C562000000000005D00000018400000005A1296E65742E636F7264612E636F72652E636F6E7472616374732E5472616E73616374696F6E537461746540450080C562000000000003C02602A3226E65742E636F7264613A51307A55474E2F4B367777777975496C4E66335261773D3D40D00000011C000000050080C562000000000004C04607A10A636F6E73747261696E74A1012AC03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E74404041420080C562000000000004C01807A108636F6E7472616374A106737472696E6745404041420080C562000000000004C03907A10464617461A1012AC02901A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E74726163745374617465404041420080C562000000000004C01807A10B656E63756D6272616E6365A103696E7445404042420080C562000000000004C02D07A1066E6F74617279A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000005C09605A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E7440C03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E740080C562000000000003C02602A3226E65742E636F7264613A4D6766362F7332416A6B5A6154382F6255396E4E53513D3D40450080C562000000000005C08805A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E7472616374537461746540C02901A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A5A326932426D6F35324566756346585A3842324350513D3D40450080C562000000000005C0D105A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747940450080C562000000000003C02602A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3D40C07B020080C562000000000004C03307A1046E616D65A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6545404041420080C562000000000004C02F07A1096F776E696E674B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000014400000005A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6540450080C562000000000003C02602A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3D40C0E3060080C562000000000004C01A07A10A636F6D6D6F6E4E616D65A106737472696E6745404042420080C562000000000004C01707A107636F756E747279A106737472696E6745404041420080C562000000000004C01807A1086C6F63616C697479A106737472696E6745404041420080C562000000000004C01C07A10C6F7267616E69736174696F6EA106737472696E6745404041420080C562000000000004C02007A1106F7267616E69736174696F6E556E6974A106737472696E6745404042420080C562000000000004C01507A1057374617465A106737472696E6745404042420080C562000000000005C0D605A1366E65742E636F7264612E636F72652E636F6E7472616374732E5369676E61747572654174746163686D656E74436F6E73747261696E7440C03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E740080C562000000000003C02602A3226E65742E636F7264613A372B30747468524E384B742B546255446266663837413D3D40C036010080C562000000000004C02907A1036B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000044A00000005A127636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E444352537461746540C0AE04A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C655374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E74726163745374617465A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E436F6E7472616374436F6D70617261626C655374617465A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E65617253746174650080C562000000000003C02602A3226E65742E636F7264613A6C384E444C4337546D6F66572B417A566968564766773D3D40D0000003350000000D0080C562000000000004C04307A10B616E6E6F746174696F6E73A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E55736572416E6E6F746174696F6E7345404041420080C562000000000004C04107A1056173736574A132636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E44435241737365744465736372697074696F6E45404041420080C562000000000004C02A07A103626E6FA11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000004C02207A10763726561746564A1116A6176612E74696D652E496E7374616E7445404041420080C562000000000004C03307A10C6561726D61726B6564466F72A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404042420080C562000000000004C03B07A1096576656E7454797065A128636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4576656E745479706545404041420080C562000000000004C02D07A1066C656E646572A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404042420080C562000000000004C04907A1096C6966656379636C65A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4443525374617465244C6966656379636C65537461746545404041420080C562000000000004C03B07A1086C696E6561724964A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657245404041420080C562000000000004C02307A1086D6F646966696564A1116A6176612E74696D652E496E7374616E7445404041420080C562000000000004C02C07A1056F776E6572A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000004C01D07A10E73657175656E63654E756D626572A103696E7445A101304041420080C562000000000004C03A07A10774726164654964A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657245404042420080C562000000000005C0AE05A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C65537461746540C05002A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C655374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A42383263534636543034544350666C67587332626B673D3D40450080C562000000000005C0D005A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E436F6E7472616374436F6D70617261626C65537461746540C06102A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E436F6E7472616374436F6D70617261626C655374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A2B784B334151745A313959556F35627A356447502B513D3D40450080C562000000000005C0AC05A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E656172537461746540C04F02A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E6561725374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A416A4D5A704D6F6A5268685A36364A6B7433576243413D3D40450080C562000000000005C0AF05A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E55736572416E6E6F746174696F6E7340450080C562000000000003C02602A3226E65742E636F7264613A716C4F746A6D6A77534A33326D48672F412B687248513D3D40C048020080C562000000000004C01B07A10B6465736372697074696F6EA106737472696E6745404041420080C562000000000004C01407A1046E616D65A106737472696E6745404041420080C562000000000005D00000015100000005A132636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E44435241737365744465736372697074696F6E40450080C562000000000003C02602A3226E65742E636F7264613A6554414961694E4B66362F467979494B2F5A61684B413D3D40C0E3030080C562000000000004C03007A115636F6C6C61746572616C697A6174696F6E54696D65A1116A6176612E74696D652E496E7374616E7445404041420080C562000000000004C04707A10F637573746F64794C6F636174696F6EA12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E437573746F64794C6F636174696F6E45404041420080C562000000000004C04707A10F696E76656E746F7279546172676574A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E496E76656E746F727954617267657445404041420080C562000000000005D00000014000000005A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E437573746F64794C6F636174696F6E40450080C562000000000003C02602A3226E65742E636F7264613A523477446C646D7063617430714A69614D6F6B4C71673D3D40C0D6040080C562000000000004C01907A1096163636F756E744964A106737472696E6745404041420080C562000000000004C04607A10B6163636F756E7454797065A131636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E437573746F64794163636F756E745479706545404041420080C562000000000004C01B07A10B637573746F6469616E4964A106737472696E6745404042420080C562000000000004C02B07A1046E6F6465A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000006C0BD06A131636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E437573746F64794163636F756E74547970654045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A59547946443473417359744A363870585A6174782B413D3D40C04D030080C562000000000007C00902A103545450A101300080C562000000000007C01102A10B435553544F4D4552524546A101310080C562000000000007C00E02A108504C4154464F524DA101320080C562000000000005C06605A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E496E76656E746F727954617267657440450080C562000000000003C02602A3226E65742E636F7264613A6B4B6E3979547A4871534D747557756F35307A7769413D3D40450080C562000000000006D00000055C00000006A128636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4576656E74547970654045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A4D656C566A6B6B514A4775576352742F734E567074413D3D40D0000004EF000000260080C562000000000007C01502A10F554E444546494E45445F4556454E54A101300080C562000000000007C01302A10D53544154455F55504752414445A101310080C562000000000007C01402A10E53544154455F44454C4554494F4EA101320080C562000000000007C01002A10A4443525F435245415445A101330080C562000000000007C01102A10B4443525F434F4E4649524DA101340080C562000000000007C01002A10A4443525F52454A454354A101350080C562000000000007C01F02A1194443525F5345545F434F4C4C41544552414C495A4154494F4EA101360080C562000000000007C01002A10A4443525F465245455A45A101370080C562000000000007C01202A10C4443525F554E465245455A45A101380080C562000000000007C01602A1104443525F4154544143485F5452414445A101390080C562000000000007C00F02A1084443525F4C454E44A10231300080C562000000000007C01302A10C4443525F454E43554D424552A10231310080C562000000000007C01102A10A4443525F504C45444745A10231320080C562000000000007C01102A10A4443525F554E57494E44A10231330080C562000000000007C01502A10E4443525F554E454E43554D424552A10231340080C562000000000007C00F02A1084443525F4641494CA10231350080C562000000000007C01702A1104443525F4445544143485F5452414445A10231360080C562000000000007C01802A1114443525F4348414E47455F414D4F554E54A10231370080C562000000000007C01B02A1144443525F524551554553545F44454C4554494F4EA10231380080C562000000000007C01302A10C54524144455F435245415445A10231390080C562000000000007C01302A10C54524144455F52454A454354A10232300080C562000000000007C01502A10E54524144455F5343484544554C45A10232310080C562000000000007C01502A10E54524144455F4143544956415445A10232320080C562000000000007C01302A10C54524144455F4D4154555245A10232330080C562000000000007C01102A10A54524144455F4641494CA10232340080C562000000000007C01302A10C54524144455F43414E43454CA10232350080C562000000000007C01C02A11554524144455F4348414E47455F4D41545552495459A10232360080C562000000000007C01A02A11354524144455F4348414E47455F414D4F554E54A10232370080C562000000000007C01602A10F50524F504F53414C5F435245415445A10232380080C562000000000007C01402A10D50524F504F53414C5F5349474EA10232390080C562000000000007C01502A10E50524F504F53414C5F4150504C59A10233300080C562000000000007C01602A10F50524F504F53414C5F52454A454354A10233310080C562000000000007C01602A10F50524F504F53414C5F455850495245A10233320080C562000000000007C01D02A1164443525F494E535452554354494F4E5F435245415445A10233330080C562000000000007C01302A10C4443525F5452414E53464552A10233340080C562000000000007C01E02A1174443525F4541524D41524B5F464F525F4C454E44494E47A10233350080C562000000000007C01D02A1164443525F4541524D41524B5F464F525F554E57494E44A10233360080C562000000000007C01A02A1134443525F554E444F5F4541524D41524B494E47A10233370080C562000000000005D00000016D00000005A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4443525374617465244C6966656379636C65537461746540450080C562000000000003C02602A3226E65742E636F7264613A30314A2B42395A6E33693266557852656258614742773D3D40C0FB040080C562000000000004C02707A1106973436F6C6C61746572616C697A6564A107626F6F6C65616E45A10566616C73654041420080C562000000000004C01F07A108697346726F7A656EA107626F6F6C65616E45A10566616C73654041420080C562000000000004C03E07A106737461747573A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E44435253746174652453746174757345404041420080C562000000000004C04607A10C7472616E7366657254797065A130636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E6465616C2E5472616E736665725479706545404042420080C562000000000006D00000013F00000006A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4443525374617465245374617475734045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A715951623867366D674C4F2F664A62775132576B6A673D3D40C0CF070080C562000000000007C00D02A10743524541544544A101300080C562000000000007C00E02A10852454A4543544544A101310080C562000000000007C00F02A109434F4E4649524D4544A101320080C562000000000007C01002A10A454E43554D4245524544A101330080C562000000000007C01602A11050454E44494E475F44454C4554494F4EA101340080C562000000000007C01602A11050454E44494E475F454E43554D424552A101350080C562000000000007C01402A10E50454E44494E475F554E57494E44A101360080C562000000000006C0DD06A130636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E6465616C2E5472616E73666572547970654045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A347A6E7A666D366F346263477256766E714B5A7147773D3D40C06E040080C562000000000007C01402A10E5449544C455F5452414E53464552A101300080C562000000000007C00C02A106504C45444745A101310080C562000000000007C01302A10D434153485F45584348414E4745A101320080C562000000000007C00A02A1044E4F4E45A101330080C562000000000005C0A505A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657240450080C562000000000003C02602A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3D40C043020080C562000000000004C01A07A10A65787465726E616C4964A106737472696E6745404042420080C562000000000004C01007A1026964A1047575696445404041420080C562000000000005C0DD05A134636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4261736B6574496E76656E746F727954617267657440450080C562000000000003C02602A3226E65742E636F7264613A45583852527570724C736849316D35314F34333333413D3D40C070020080C562000000000004C01607A1066261736B6574A106737472696E6745404042420080C562000000000004C04107A10D6E6F74696F6E616C56616C7565A12A636F6D2E68716C61782E636F72646170702E7374617465732E6D6F64656C2E4D6F6E6579416D6F756E7445404041420080C562000000000005C0C605A12A636F6D2E68716C61782E636F72646170702E7374617465732E6D6F64656C2E4D6F6E6579416D6F756E7440450080C562000000000003C02602A3226E65742E636F7264613A706F656271466B4E7A723766524144726C4B526770413D3D40C063020080C562000000000004C02407A10863757272656E6379A1126A6176612E7574696C2E43757272656E637945404041420080C562000000000004C02607A1087175616E74697479A1146A6176612E6D6174682E426967446563696D616C45404041420080C562000000000009D10000014C00000002A128636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4576656E7454797065D100000119000000020080C56200000000000B5401D000000104000000040080C56200000000000AC03803A10B456E756D44656661756C74A10F554E444546494E45445F4556454E54A1174443525F4541524D41524B5F464F525F4C454E44494E470080C56200000000000AC03703A10B456E756D44656661756C74A10F554E444546494E45445F4556454E54A1164443525F4541524D41524B5F464F525F554E57494E440080C56200000000000AC03403A10B456E756D44656661756C74A10F554E444546494E45445F4556454E54A1134443525F554E444F5F4541524D41524B494E470080C56200000000000AC02D03A10B456E756D44656661756C74A10F554E444546494E45445F4556454E54A10C4443525F5452414E53464552',
-      hashAlgorithm: 'SHA-256',
-      privacySalt: '0x6567B49F66C97D84FBCCAC5AA0745254794B82893903F87088318A6FA766F30E',
-      root: '0xD2480D8C4941734AE85F06C00DBD5F032EB717B24A885860194DD3FAE074CC93',
-      witnesses: [
-        '0x05604C0719D372D7FE0A14BAC94CD50E41F9A36D58BD6DC460EB00D8DC6DD2F1',
-        '0xEE14719330D3952BE4963A27F691D2008549D90B2010042E6966AAF86D29F8CA',
-        '0x2CFD8BE96803732F1E709CC88302353BB6D7558D9B7F0F61EC561FAAD234B00F',
-        '0xFBED1CDD69BCDAEA7ADF649F91185B5D4945824A5A85E49A0A47E761127DD629',
+      id: "Adhara Full Proof",
+      prefix: '636F726461010000',
+      participants: [
+        '0x05121082FDB58A7200CD3A2C5E0D6EE0F7359BB1DE3D564AFAA4B6EA48215553',
+        '0x10846F893F927F9280CE43B8D7AFF71A27ABABF4CEEF4AF0473445C82760EB1F',
       ],
-      flags: ['0x03', '0x01', '0x01', '0x01'],
-      values: ['0x0695A96B2CC4DC6451EA6210EBFA65D71A527E79D77EE6F8A5E5DD4CE6192585'],
-      signatures: [{
-        'by':   '0x5D69FA3D4D9C29280CF6B048C4B7C2E63CFB7CD73FBCD7B9AB6C4CFD2191CFC5',
-        'sigR': '0x8AAF2E8B5BFB177AA0328EE6C372BDCEF2527FD75A2D9B89195CD62165B83553',
-        'sigS': '0xAA9779FC1D67DA803910AFCB59A03975C34CB87A91CEC14B5F01A47A5B6A7E09',
-        'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000B00000004D2480D8C4941734AE85F06C00DBD5F032EB717B24A885860194DD3FAE074CC93'
-      }, {
-        'by':   '0x459F403625FFA7BB6C8A134C6A5948F827C0C183C2895F188931FED9A3534C42',
-        'sigR': '0xF6D1DE1086E5CFFD6618C89D33F7BCB7AD42B583D8F9F5101FB8F43B93B4F951',
-        'sigS': '0x2E8872D19C8A7F5CFB7820E827E8FEE11F9556BA8D6B372094C22A1489228200',
-        'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000B00000004D2480D8C4941734AE85F06C00DBD5F032EB717B24A885860194DD3FAE074CC93'
-      }, {
-        'by':   '0xDEC989D1F7D08669F9078624458038BB0BD4857E812F0532EC1EC2655D90B99B',
-        'sigR': '0x220B34974980FEFC0F06222E6505BB9A32EBC3233B7EC28659A596ADB3ED4304',
-        'sigS': '0xD1714C918D201CC05538CAB715CB68E2141986B626D59F54826B20755B13DD09',
-        'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000B00000004D2480D8C4941734AE85F06C00DBD5F032EB717B24A885860194DD3FAE074CC93'
-      }, {
-        'by':   '0x48A450E7A340C810034F36C6CE78197CBEC20D123858813F7E27A881BDDFDCFA',
-        'sigR': '0x963880C86872D7B986CA608F61A8ECC1E9A5F84EDCE93AA6D64BD1B3A568B687',
-        'sigS': '0xC29CFB0F105318F884E858DF5AC8043C402F45ABF9ABF08BDCAE414FD14D8990',
-        'sigV': '0x0000000000000000000000000000000000000000000000000000000000000002',
-        'meta': '0x0000000B00000003A56831E5E71D2EF41D6B7286D795080FDBF93050D640A8DF0520BF96E592F224'
-      }]
-    }, {
-      id: 'HQLAx 5',
-      receiver: 'Tz1IUUxBeC10ZXN0IEJhbmsgQjIsIEw9WnVnLCBDPUNI',
-      sender: 'Tz1IUUxBeC10ZXN0IEJhbmsgQTEsIEw9WnVnLCBDPUNI',
+      notary: '0x914F6A6C07B746ED9250F09BF282BC624678DFC799CA7987C539936610C5E51B',
+      components: [
+        '0x0080C562000000000001D000000E3F0000000300A3226E65742E636F7264613A51307A55474E2F4B367777777975496C4E66335261773D3DD0000003950000000500A3226E65742E636F7264613A372B30747468524E384B742B546255446266663837413D3DC0820100A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A05B3059301306072A8648CE3D020106082A8648CE3D03010703420004038D226DCD0FA574316DA478AA75225E6CE18F65CBD96E60BF3C8251B196541756E5DCF7CCAB21B712601ED0278501F2F33D0B5FDAA4C09E62639464E4910871A12F6E65742E636F7264612E73616D706C65732E6578616D706C652E636F6E7472616374732E444352436F6E747261637400A3226E65742E636F7264613A446C64573979533474424F7A653671763655345154413D3DD0000001D300000008A10347425000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0920200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0180640A1024742A1064C6F6E646F6EA106506172747941404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B657003210005121082FDB58A7200CD3A2C5E0D6EE0F7359BB1DE3D564AFAA4B6EA4821555300A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3DC013024098B5F3CB02261946F883DC660FDED0DA6E00A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0940200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC01A0640A1025553A1084E657720596F726BA106506172747942404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B657003210010846F893F927F9280CE43B8D7AFF71A27ABABF4CEEF4AF0473445C82760EB1FA100A1094541524D41524B4544A1083363393833383437A1033130304000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0920200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0180640A1024742A1064C6F6E646F6EA1064E6F74617279404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100914F6A6C07B746ED9250F09BF282BC624678DFC799CA7987C539936610C5E51B0080C562000000000002D000000A6000000001D000000A570000000A0080C562000000000005D00000018400000005A1296E65742E636F7264612E636F72652E636F6E7472616374732E5472616E73616374696F6E537461746540450080C562000000000003C02602A3226E65742E636F7264613A51307A55474E2F4B367777777975496C4E66335261773D3D40D00000011C000000050080C562000000000004C04607A10A636F6E73747261696E74A1012AC03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E74404041420080C562000000000004C01807A108636F6E7472616374A106737472696E6745404041420080C562000000000004C03907A10464617461A1012AC02901A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E74726163745374617465404041420080C562000000000004C01807A10B656E63756D6272616E6365A103696E7445404042420080C562000000000004C02D07A1066E6F74617279A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000005C09605A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E7440C03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E740080C562000000000003C02602A3226E65742E636F7264613A4D6766362F7332416A6B5A6154382F6255396E4E53513D3D40450080C562000000000005C08805A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E7472616374537461746540C02901A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A5A326932426D6F35324566756346585A3842324350513D3D40450080C562000000000005C0D105A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747940450080C562000000000003C02602A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3D40C07B020080C562000000000004C03307A1046E616D65A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6545404041420080C562000000000004C02F07A1096F776E696E674B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000014400000005A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6540450080C562000000000003C02602A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3D40C0E3060080C562000000000004C01A07A10A636F6D6D6F6E4E616D65A106737472696E6745404042420080C562000000000004C01707A107636F756E747279A106737472696E6745404041420080C562000000000004C01807A1086C6F63616C697479A106737472696E6745404041420080C562000000000004C01C07A10C6F7267616E69736174696F6EA106737472696E6745404041420080C562000000000004C02007A1106F7267616E69736174696F6E556E6974A106737472696E6745404042420080C562000000000004C01507A1057374617465A106737472696E6745404042420080C562000000000005C0D605A1366E65742E636F7264612E636F72652E636F6E7472616374732E5369676E61747572654174746163686D656E74436F6E73747261696E7440C03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E740080C562000000000003C02602A3226E65742E636F7264613A372B30747468524E384B742B546255446266663837413D3D40C036010080C562000000000004C02907A1036B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000024600000005A1296E65742E636F7264612E73616D706C65732E6578616D706C652E7374617465732E444352537461746540C07603A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E6561725374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E74726163745374617465A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C6553746174650080C562000000000003C02602A3226E65742E636F7264613A446C64573979533474424F7A653671763655345154413D3D40D000000167000000080080C562000000000004C01807A10863757272656E6379A106737472696E6745404042420080C562000000000004C02D07A106697373756572A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404042420080C562000000000004C03B07A1086C696E6561724964A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657245404041420080C562000000000004C02C07A1056F776E6572A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404042420080C562000000000004C01507A10570726F6F66A106737472696E6745404042420080C562000000000004C01607A106737461747573A106737472696E6745404042420080C562000000000004C01707A10774726164654964A106737472696E6745404042420080C562000000000004C01507A10576616C7565A106737472696E6745404042420080C562000000000005C0AC05A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E656172537461746540C04F02A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E6561725374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A416A4D5A704D6F6A5268685A36364A6B7433576243413D3D40450080C562000000000005C0AE05A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C65537461746540C05002A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C655374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A42383263534636543034544350666C67587332626B673D3D40450080C562000000000005C0A505A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657240450080C562000000000003C02602A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3D40C043020080C562000000000004C01A07A10A65787465726E616C4964A106737472696E6745404042420080C562000000000004C01007A1026964A1047575696445404041420080C562000000000009C10100',
+        '0x0080C562000000000001D0000002A70000000300A3226E65742E636F7264613A33454B49487669704B69412F6642684C74716F6C76513D3D450080C562000000000002D00000026100000001D000000258000000030080C562000000000005C0DA05A1406E65742E636F7264612E73616D706C65732E6578616D706C652E636F6E7472616374732E444352436F6E747261637424436F6D6D616E6473244561726D61726B40C06102A1386E65742E636F7264612E73616D706C65732E6578616D706C652E636F6E7472616374732E444352436F6E747261637424436F6D6D616E6473A1246E65742E636F7264612E636F72652E636F6E7472616374732E436F6D6D616E64446174610080C562000000000003C02602A3226E65742E636F7264613A33454B49487669704B69412F6642684C74716F6C76513D3D40450080C562000000000005C0D205A1386E65742E636F7264612E73616D706C65732E6578616D706C652E636F6E7472616374732E444352436F6E747261637424436F6D6D616E647340C06102A1386E65742E636F7264612E73616D706C65732E6578616D706C652E636F6E7472616374732E444352436F6E747261637424436F6D6D616E6473A1246E65742E636F7264612E636F72652E636F6E7472616374732E436F6D6D616E64446174610080C562000000000003C02602A3226E65742E636F7264613A6B56767256712F65384E6B79464359466273457563773D3D40450080C562000000000005C08405A1246E65742E636F7264612E636F72652E636F6E7472616374732E436F6D6D616E644461746140C02701A1246E65742E636F7264612E636F72652E636F6E7472616374732E436F6D6D616E64446174610080C562000000000003C02602A3226E65742E636F7264613A66713652502F6633746A44686F6A30597836697041673D3D40450080C562000000000009C10100',
+        '0x0080C562000000000001D0000003160000000300A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0920200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0180640A1024742A1064C6F6E646F6EA1064E6F74617279404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100914F6A6C07B746ED9250F09BF282BC624678DFC799CA7987C539936610C5E51B0080C562000000000002D00000023D00000001D000000234000000020080C562000000000005C0D105A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747940450080C562000000000003C02602A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3D40C07B020080C562000000000004C03307A1046E616D65A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6545404041420080C562000000000004C02F07A1096F776E696E674B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000014400000005A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6540450080C562000000000003C02602A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3D40C0E3060080C562000000000004C01A07A10A636F6D6D6F6E4E616D65A106737472696E6745404042420080C562000000000004C01707A107636F756E747279A106737472696E6745404041420080C562000000000004C01807A1086C6F63616C697479A106737472696E6745404041420080C562000000000004C01C07A10C6F7267616E69736174696F6EA106737472696E6745404041420080C562000000000004C02007A1106F7267616E69736174696F6E556E6974A106737472696E6745404042420080C562000000000004C01507A1057374617465A106737472696E6745404042420080C562000000000009C10100',
+        '0x0080C562000000000001D0000001570000000300A3226E65742E636F7264613A31424C504A674E7673786476506362724951643837673D3DC0A50200A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B657003210005121082FDB58A7200CD3A2C5E0D6EE0F7359BB1DE3D564AFAA4B6EA4821555300A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B657003210010846F893F927F9280CE43B8D7AFF71A27ABABF4CEEF4AF0473445C82760EB1F0080C562000000000002C06E01C06B010080C562000000000006C05E06A1206A6176612E7574696C2E4C6973743C6A6176612E6C616E672E4F626A6563743E4045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A31424C504A674E7673786476506362724951643837673D3D40450080C562000000000009C10100'],
+      groupIndices: ['0x01', '0x02', '0x04', '0x06'],
+      internalIndices: ['0x00', '0x00', '0x00', '0x00'],
+      salt: '0xC1BC6BDED3F6C53AF524899E3D3F4802ACD83641098D8045B24AF78CDDD97127',
+      root: '0xB4806B29A30DDC3D3101A6D3815C7ADC5AE9D2146BB2D9B2DE285164C5949D68',
+      tradeId: '3c983847',
+      receiver: 'Tz1QYXJ0eUEsIEw9TG9uZG9uLCBDPUdC',
+      sender: 'Tz1QYXJ0eUIsIEw9TmV3IFlvcmssIEM9VVM=',
       controlContract: '0xc23cdfef6ec7b1b39c6cb898d7acc71437f167bd',
-      sourceBlockchainId: '0x04',
-      holdAmount: '0x3039', //12345;
-      tradeId: '2022-11-02_1',
-      eventSig: '0x0000000000000000000000000000000000000000000000000000000000000000',
-      componentGroup: '0x0080C562000000000001D0000027640000000300A3226E65742E636F7264613A51307A55474E2F4B367777777975496C4E66335261773D3DD00000090E0000000500A3226E65742E636F7264613A372B30747468524E384B742B546255446266663837413D3DC0820100A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A05B3059301306072A8648CE3D020106082A8648CE3D03010703420004175D4CC68C1CABE5E3ADAE46E33B7B1E8B8428E208233B08FE291E81864F1D7C3EEF538E0F25CB032A9775CFD3DA2B69FAB7F0B076606A0E226BA8106299387CA12D636F6D2E68716C61782E636F72646170702E7374617465732E636F6E74726163742E444352436F6E747261637400A3226E65742E636F7264613A6C384E444C4337546D6F66572B417A566968564766773D3DD0000006F40000000D00A3226E65742E636F7264613A716C4F746A6D6A77534A33326D48672F412B687248513D3DC06E02A1334175746F2D6372656174656420627920274F3D48514C41782D746573742042616E6B2042322C204C3D5A75672C20433D434827A1366175746F5F323032322D31312D30325F315F36633130333164612D353632352D343635352D623936322D39333430373764626239643100A3226E65742E636F7264613A6554414961694E4B66362F467979494B2F5A61684B413D3DD0000002080000000300A31B6E65742E636F7264613A6A6176612E74696D652E496E7374616E74C00C02810000000063628C08540000A3226E65742E636F7264613A523477446C646D7063617430714A69614D6F6B4C71673D3DD00000010400000004A105313233343500A3226E65742E636F7264613A59547946443473417359744A363870585A6174782B413D3DC00802A1035454505400A10343424C00A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC09E0200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0240640A1024348A1035A7567A11548514C41782D7465737420437573746F6469616E31404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100459F403625FFA7BB6C8A134C6A5948F827C0C183C2895F188931FED9A3534C4200A3226E65742E636F7264613A45583852527570724C736849316D35314F34333333413D3DC08302A10C44453030304132595A50583100A3226E65742E636F7264613A706F656271466B4E7A723766524144726C4B526770413D3DC04D0200A31C6E65742E636F7264613A6A6176612E7574696C2E43757272656E6379A10347425000A31E6E65742E636F7264613A6A6176612E6D6174682E426967446563696D616CA105313233343500A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0F20200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC07806A129556E636F6E6E65637465642055415420427573696E657373204E6574776F726B204F70657261746F72A1024C55A10A4C7578656D626F757267A10E48514C417820532E612E722E6C2EA129556E636F6E6E65637465642055415420427573696E657373204E6574776F726B204F70657261746F724000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100B19BD2E78B2AFF73CA6DA53A48A1E4D31DD266C05C2B390A1CE6E88359DB208200A31B6E65742E636F7264613A6A6176612E74696D652E496E7374616E74C00F02810000000063628A96712A9E08C000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC09B0200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0210640A1024348A1035A7567A11248514C41782D746573742042616E6B204131404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100DEC989D1F7D08669F9078624458038BB0BD4857E812F0532EC1EC2655D90B99B00A3226E65742E636F7264613A4D656C566A6B6B514A4775576352742F734E567074413D3DC01C02A1174443525F4541524D41524B5F464F525F4C454E44494E4754234000A3226E65742E636F7264613A30314A2B42395A6E33693266557852656258614742773D3DC04004414200A3226E65742E636F7264613A715951623867366D674C4F2F664A62775132576B6A673D3DC01502A11050454E44494E475F454E43554D42455254054000A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3DC01302409854FEDF0F32D1420FA0A38DB74AED80B100A31B6E65742E636F7264613A6A6176612E74696D652E496E7374616E74C00F02810000000063628ADE71110C038000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC09B0200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0210640A1024348A1035A7567A11248514C41782D746573742042616E6B204232404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B65700321005D69FA3D4D9C29280CF6B048C4B7C2E63CFB7CD73FBCD7B9AB6C4CFD2191CFC5540300A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3DC02002A10C323032322D31312D30325F31986C1031DA56254655B962934077DBB9D14000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0EC0200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC04306A1214E6F6E2D76616C69646174696E67205541542053554231204841204E6F74617279A1025553A1084E657720596F726BA10D523320486F6C64436F204C4C43404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A05B3059301306072A8648CE3D020106082A8648CE3D0301070342000448A450E7A340C810034F36C6CE78197CBEC20D123858813F7E27A881BDDFDCFACF21A4115FA93CD9C9A6CCEEFCF548DD3CD4A0EE6CAA7F57EB08AC23E54B6AAC0080C562000000000002D000001CBE00000001D000001CB5000000160080C562000000000005D00000018400000005A1296E65742E636F7264612E636F72652E636F6E7472616374732E5472616E73616374696F6E537461746540450080C562000000000003C02602A3226E65742E636F7264613A51307A55474E2F4B367777777975496C4E66335261773D3D40D00000011C000000050080C562000000000004C04607A10A636F6E73747261696E74A1012AC03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E74404041420080C562000000000004C01807A108636F6E7472616374A106737472696E6745404041420080C562000000000004C03907A10464617461A1012AC02901A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E74726163745374617465404041420080C562000000000004C01807A10B656E63756D6272616E6365A103696E7445404042420080C562000000000004C02D07A1066E6F74617279A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000005C09605A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E7440C03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E740080C562000000000003C02602A3226E65742E636F7264613A4D6766362F7332416A6B5A6154382F6255396E4E53513D3D40450080C562000000000005C08805A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E7472616374537461746540C02901A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A5A326932426D6F35324566756346585A3842324350513D3D40450080C562000000000005C0D105A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747940450080C562000000000003C02602A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3D40C07B020080C562000000000004C03307A1046E616D65A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6545404041420080C562000000000004C02F07A1096F776E696E674B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000014400000005A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6540450080C562000000000003C02602A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3D40C0E3060080C562000000000004C01A07A10A636F6D6D6F6E4E616D65A106737472696E6745404042420080C562000000000004C01707A107636F756E747279A106737472696E6745404041420080C562000000000004C01807A1086C6F63616C697479A106737472696E6745404041420080C562000000000004C01C07A10C6F7267616E69736174696F6EA106737472696E6745404041420080C562000000000004C02007A1106F7267616E69736174696F6E556E6974A106737472696E6745404042420080C562000000000004C01507A1057374617465A106737472696E6745404042420080C562000000000005C0D605A1366E65742E636F7264612E636F72652E636F6E7472616374732E5369676E61747572654174746163686D656E74436F6E73747261696E7440C03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E740080C562000000000003C02602A3226E65742E636F7264613A372B30747468524E384B742B546255446266663837413D3D40C036010080C562000000000004C02907A1036B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000044A00000005A127636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E444352537461746540C0AE04A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C655374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E74726163745374617465A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E436F6E7472616374436F6D70617261626C655374617465A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E65617253746174650080C562000000000003C02602A3226E65742E636F7264613A6C384E444C4337546D6F66572B417A566968564766773D3D40D0000003350000000D0080C562000000000004C04307A10B616E6E6F746174696F6E73A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E55736572416E6E6F746174696F6E7345404041420080C562000000000004C04107A1056173736574A132636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E44435241737365744465736372697074696F6E45404041420080C562000000000004C02A07A103626E6FA11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000004C02207A10763726561746564A1116A6176612E74696D652E496E7374616E7445404041420080C562000000000004C03307A10C6561726D61726B6564466F72A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404042420080C562000000000004C03B07A1096576656E7454797065A128636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4576656E745479706545404041420080C562000000000004C02D07A1066C656E646572A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404042420080C562000000000004C04907A1096C6966656379636C65A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4443525374617465244C6966656379636C65537461746545404041420080C562000000000004C03B07A1086C696E6561724964A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657245404041420080C562000000000004C02307A1086D6F646966696564A1116A6176612E74696D652E496E7374616E7445404041420080C562000000000004C02C07A1056F776E6572A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000004C01D07A10E73657175656E63654E756D626572A103696E7445A101304041420080C562000000000004C03A07A10774726164654964A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657245404042420080C562000000000005C0AE05A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C65537461746540C05002A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C655374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A42383263534636543034544350666C67587332626B673D3D40450080C562000000000005C0D005A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E436F6E7472616374436F6D70617261626C65537461746540C06102A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E436F6E7472616374436F6D70617261626C655374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A2B784B334151745A313959556F35627A356447502B513D3D40450080C562000000000005C0AC05A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E656172537461746540C04F02A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E6561725374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A416A4D5A704D6F6A5268685A36364A6B7433576243413D3D40450080C562000000000005C0AF05A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E55736572416E6E6F746174696F6E7340450080C562000000000003C02602A3226E65742E636F7264613A716C4F746A6D6A77534A33326D48672F412B687248513D3D40C048020080C562000000000004C01B07A10B6465736372697074696F6EA106737472696E6745404041420080C562000000000004C01407A1046E616D65A106737472696E6745404041420080C562000000000005D00000015100000005A132636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E44435241737365744465736372697074696F6E40450080C562000000000003C02602A3226E65742E636F7264613A6554414961694E4B66362F467979494B2F5A61684B413D3D40C0E3030080C562000000000004C03007A115636F6C6C61746572616C697A6174696F6E54696D65A1116A6176612E74696D652E496E7374616E7445404041420080C562000000000004C04707A10F637573746F64794C6F636174696F6EA12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E437573746F64794C6F636174696F6E45404041420080C562000000000004C04707A10F696E76656E746F7279546172676574A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E496E76656E746F727954617267657445404041420080C562000000000005D00000014000000005A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E437573746F64794C6F636174696F6E40450080C562000000000003C02602A3226E65742E636F7264613A523477446C646D7063617430714A69614D6F6B4C71673D3D40C0D6040080C562000000000004C01907A1096163636F756E744964A106737472696E6745404041420080C562000000000004C04607A10B6163636F756E7454797065A131636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E437573746F64794163636F756E745479706545404041420080C562000000000004C01B07A10B637573746F6469616E4964A106737472696E6745404042420080C562000000000004C02B07A1046E6F6465A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000006C0BD06A131636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E437573746F64794163636F756E74547970654045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A59547946443473417359744A363870585A6174782B413D3D40C04D030080C562000000000007C00902A103545450A101300080C562000000000007C01102A10B435553544F4D4552524546A101310080C562000000000007C00E02A108504C4154464F524DA101320080C562000000000005C06605A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E496E76656E746F727954617267657440450080C562000000000003C02602A3226E65742E636F7264613A6B4B6E3979547A4871534D747557756F35307A7769413D3D40450080C562000000000006D00000055C00000006A128636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4576656E74547970654045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A4D656C566A6B6B514A4775576352742F734E567074413D3D40D0000004EF000000260080C562000000000007C01502A10F554E444546494E45445F4556454E54A101300080C562000000000007C01302A10D53544154455F55504752414445A101310080C562000000000007C01402A10E53544154455F44454C4554494F4EA101320080C562000000000007C01002A10A4443525F435245415445A101330080C562000000000007C01102A10B4443525F434F4E4649524DA101340080C562000000000007C01002A10A4443525F52454A454354A101350080C562000000000007C01F02A1194443525F5345545F434F4C4C41544552414C495A4154494F4EA101360080C562000000000007C01002A10A4443525F465245455A45A101370080C562000000000007C01202A10C4443525F554E465245455A45A101380080C562000000000007C01602A1104443525F4154544143485F5452414445A101390080C562000000000007C00F02A1084443525F4C454E44A10231300080C562000000000007C01302A10C4443525F454E43554D424552A10231310080C562000000000007C01102A10A4443525F504C45444745A10231320080C562000000000007C01102A10A4443525F554E57494E44A10231330080C562000000000007C01502A10E4443525F554E454E43554D424552A10231340080C562000000000007C00F02A1084443525F4641494CA10231350080C562000000000007C01702A1104443525F4445544143485F5452414445A10231360080C562000000000007C01802A1114443525F4348414E47455F414D4F554E54A10231370080C562000000000007C01B02A1144443525F524551554553545F44454C4554494F4EA10231380080C562000000000007C01302A10C54524144455F435245415445A10231390080C562000000000007C01302A10C54524144455F52454A454354A10232300080C562000000000007C01502A10E54524144455F5343484544554C45A10232310080C562000000000007C01502A10E54524144455F4143544956415445A10232320080C562000000000007C01302A10C54524144455F4D4154555245A10232330080C562000000000007C01102A10A54524144455F4641494CA10232340080C562000000000007C01302A10C54524144455F43414E43454CA10232350080C562000000000007C01C02A11554524144455F4348414E47455F4D41545552495459A10232360080C562000000000007C01A02A11354524144455F4348414E47455F414D4F554E54A10232370080C562000000000007C01602A10F50524F504F53414C5F435245415445A10232380080C562000000000007C01402A10D50524F504F53414C5F5349474EA10232390080C562000000000007C01502A10E50524F504F53414C5F4150504C59A10233300080C562000000000007C01602A10F50524F504F53414C5F52454A454354A10233310080C562000000000007C01602A10F50524F504F53414C5F455850495245A10233320080C562000000000007C01D02A1164443525F494E535452554354494F4E5F435245415445A10233330080C562000000000007C01302A10C4443525F5452414E53464552A10233340080C562000000000007C01E02A1174443525F4541524D41524B5F464F525F4C454E44494E47A10233350080C562000000000007C01D02A1164443525F4541524D41524B5F464F525F554E57494E44A10233360080C562000000000007C01A02A1134443525F554E444F5F4541524D41524B494E47A10233370080C562000000000005D00000016D00000005A136636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4443525374617465244C6966656379636C65537461746540450080C562000000000003C02602A3226E65742E636F7264613A30314A2B42395A6E33693266557852656258614742773D3D40C0FB040080C562000000000004C02707A1106973436F6C6C61746572616C697A6564A107626F6F6C65616E45A10566616C73654041420080C562000000000004C01F07A108697346726F7A656EA107626F6F6C65616E45A10566616C73654041420080C562000000000004C03E07A106737461747573A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E44435253746174652453746174757345404041420080C562000000000004C04607A10C7472616E7366657254797065A130636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E6465616C2E5472616E736665725479706545404042420080C562000000000006D00000013F00000006A12E636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4443525374617465245374617475734045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A715951623867366D674C4F2F664A62775132576B6A673D3D40C0CF070080C562000000000007C00D02A10743524541544544A101300080C562000000000007C00E02A10852454A4543544544A101310080C562000000000007C00F02A109434F4E4649524D4544A101320080C562000000000007C01002A10A454E43554D4245524544A101330080C562000000000007C01602A11050454E44494E475F44454C4554494F4EA101340080C562000000000007C01602A11050454E44494E475F454E43554D424552A101350080C562000000000007C01402A10E50454E44494E475F554E57494E44A101360080C562000000000006C0DD06A130636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E6465616C2E5472616E73666572547970654045A1046C6973740080C562000000000003C02602A3226E65742E636F7264613A347A6E7A666D366F346263477256766E714B5A7147773D3D40C06E040080C562000000000007C01402A10E5449544C455F5452414E53464552A101300080C562000000000007C00C02A106504C45444745A101310080C562000000000007C01302A10D434153485F45584348414E4745A101320080C562000000000007C00A02A1044E4F4E45A101330080C562000000000005C0A505A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657240450080C562000000000003C02602A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3D40C043020080C562000000000004C01A07A10A65787465726E616C4964A106737472696E6745404042420080C562000000000004C01007A1026964A1047575696445404041420080C562000000000005C0DD05A134636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4261736B6574496E76656E746F727954617267657440450080C562000000000003C02602A3226E65742E636F7264613A45583852527570724C736849316D35314F34333333413D3D40C070020080C562000000000004C01607A1066261736B6574A106737472696E6745404042420080C562000000000004C04107A10D6E6F74696F6E616C56616C7565A12A636F6D2E68716C61782E636F72646170702E7374617465732E6D6F64656C2E4D6F6E6579416D6F756E7445404041420080C562000000000005C0C605A12A636F6D2E68716C61782E636F72646170702E7374617465732E6D6F64656C2E4D6F6E6579416D6F756E7440450080C562000000000003C02602A3226E65742E636F7264613A706F656271466B4E7A723766524144726C4B526770413D3D40C063020080C562000000000004C02407A10863757272656E6379A1126A6176612E7574696C2E43757272656E637945404041420080C562000000000004C02607A1087175616E74697479A1146A6176612E6D6174682E426967446563696D616C45404041420080C562000000000009D10000014C00000002A128636F6D2E68716C61782E636F72646170702E7374617465732E73746174652E4576656E7454797065D100000119000000020080C56200000000000B5401D000000104000000040080C56200000000000AC03803A10B456E756D44656661756C74A10F554E444546494E45445F4556454E54A1174443525F4541524D41524B5F464F525F4C454E44494E470080C56200000000000AC03703A10B456E756D44656661756C74A10F554E444546494E45445F4556454E54A1164443525F4541524D41524B5F464F525F554E57494E440080C56200000000000AC03403A10B456E756D44656661756C74A10F554E444546494E45445F4556454E54A1134443525F554E444F5F4541524D41524B494E470080C56200000000000AC02D03A10B456E756D44656661756C74A10F554E444546494E45445F4556454E54A10C4443525F5452414E53464552',
-      hashAlgorithm: 'SHA-256',
-      privacySalt: '0xD30CB6D01ED31A436B9AA753C50BBF96E0EA57F0F33FB0CF7B315327CAD60698',
-      root: '0xAA7AF2ABDAA2E37785B23AEC36F73A3280FF1326595D0F976532FF8246D8536C',
-      witnesses: [
-        '0x2F248BBBE40D5BC1EFCF85CAF7EA0C226006CD4CED5461277CC0060F44DAF773',
-        '0x363A43F93DB7589F8DE925E322BC669A9AD0FB382E62DB71A19456690E0B55C4',
-        '0xE2100C398C86665B6F8579EAA8B6CB371F18722C5BF71E1AD9954793A1495E29',
-        '0x87224CB8D9C596CA77CDA32DED2446A9567BC98F5C951086EB20E81BF6DD07D0',
+      sourceNetworkId: '0x03',
+      holdAmount: '0x64', // 100.00;
+      leaves: [
+        '0xB8BB30F55628E724B79B2CB37AD4AA37770372A1A05B9F7DC20D2268CE800B52',
+        '0xA9A1A5A3C52D202A2A8E01467A1BD2CAAE2ADBA9439034D715FE6DAA1A1714A7',
+        '0x67484A7345BB3A74B460F3BE50EC2E2932C75DDC5CC54E3B5A2E9DE5EE950839',
+        '0xE75B1375A5F0E9340202ACA639ED23CC615975CED94DFEC6CB33503E05CE980F',
+        '0x279157F88B8F92BD2A1422B0329E7EF5F077819DBB5676D71FD88B29E85AF10E',
+        '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
+        '0x279157F88B8F92BD2A1422B0329E7EF5F077819DBB5676D71FD88B29E85AF10E',
+        '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
+        '0x09863B8396B6CCAB72B062D32F9DE0BEF35A4088D638DB0FF3CF915D55C0E6C3',
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
       ],
-      flags: ['0x03', '0x01', '0x01', '0x01'],
-      values: ['0x60601A16F49D0C6E8BD14415F466F8BD4B0981F58A15BDB06A1FA1E3DC49553F'],
+      witnesses: [
+        '0xB8BB30F55628E724B79B2CB37AD4AA37770372A1A05B9F7DC20D2268CE800B52',
+        '0xE75B1375A5F0E9340202ACA639ED23CC615975CED94DFEC6CB33503E05CE980F',
+        '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
+        '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
+        '0x459857381F609585A7DD2CB215562E70D6B3D4A742DAFA871BE8285017CD7004',
+      ],
+      flags: ['0x03', '0x01', '0x01', '0x01', '0x00', '0x00', '0x00', '0x01'],
+      values: [
+        '0xA9A1A5A3C52D202A2A8E01467A1BD2CAAE2ADBA9439034D715FE6DAA1A1714A7',
+        '0x67484A7345BB3A74B460F3BE50EC2E2932C75DDC5CC54E3B5A2E9DE5EE950839',
+        '0x279157F88B8F92BD2A1422B0329E7EF5F077819DBB5676D71FD88B29E85AF10E',
+        '0xAC9907227A54CDD6CF0FC718465CEB1247998A015CAAC2260AEACC18573AE3D3'
+      ],
       signatures: [{
-        'by'  : '0x5D69FA3D4D9C29280CF6B048C4B7C2E63CFB7CD73FBCD7B9AB6C4CFD2191CFC5',
-        'sigR': '0x9A43F0649AFE731FA570AD483AA69A03F5E0502BD5C0FD58831080537E4873FB',
-        'sigS': '0x84830BBCD052BA65DB808CD92E6E98F914A6329590A0660419F822C10235FC0B',
+        'by': '0x05121082FDB58A7200CD3A2C5E0D6EE0F7359BB1DE3D564AFAA4B6EA48215553',
+        'sigR': '0xDB6BFE41DA08DE43C05712084DDF1AE752F32E1E92F6E4DDA4DFC9188A73C3E4',
+        'sigS': '0xD25B7C2060C4548BA355BFD107B10008474D5090E0A20199A2A33BD2A713D500',
         'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000B00000004AA7AF2ABDAA2E37785B23AEC36F73A3280FF1326595D0F976532FF8246D8536C',
+        'meta': '0x0000000A00000004B4806B29A30DDC3D3101A6D3815C7ADC5AE9D2146BB2D9B2DE285164C5949D68',
       }, {
-        'by'  : '0x459F403625FFA7BB6C8A134C6A5948F827C0C183C2895F188931FED9A3534C42',
-        'sigR': '0x10848A754AB513C63EC7D4D1EBB114776AD5F61504E3CF9F48993D9A5499EF4B',
-        'sigS': '0xE6A9BBEDE14ABB13457E7BB43B05B37BE58AF40C4764F75778A70DEA9B6A1605',
+        'by': '0x10846F893F927F9280CE43B8D7AFF71A27ABABF4CEEF4AF0473445C82760EB1F',
+        'sigR': '0x74688DFCC622049755F5EF4772ACAE524905EF8C642FE016C77496124ADD3C2E',
+        'sigS': '0x359240642E137F87B20E11A7FA4A056CA05DCD5DC40E34DE1DABEAC22CDE670A',
         'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000B00000004AA7AF2ABDAA2E37785B23AEC36F73A3280FF1326595D0F976532FF8246D8536C',
+        'meta': '0x0000000A00000004B4806B29A30DDC3D3101A6D3815C7ADC5AE9D2146BB2D9B2DE285164C5949D68',
       }, {
-        'by'  : '0xDEC989D1F7D08669F9078624458038BB0BD4857E812F0532EC1EC2655D90B99B',
-        'sigR': '0xE1AAAA7A4E105A3B415282C4C305347337C09A43472C9D151A36E1E0D67A78AF',
-        'sigS': '0xD20C96D79E595EC2E3E6AF64E13F98F1E1D7FAC5E9B994F3EAF09AFF5E66890C',
+        'by': '0x914F6A6C07B746ED9250F09BF282BC624678DFC799CA7987C539936610C5E51B',
+        'sigR': '0x6CDC95342596FCA0A01D11246B646511A3D193CF523EE1B6C87157B1C794EE45',
+        'sigS': '0xB95C41E8ED320FF0A062B7B7623EB3FAFC9704972B3E43F6302085F8913D6605',
         'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000B00000004AA7AF2ABDAA2E37785B23AEC36F73A3280FF1326595D0F976532FF8246D8536C',
-      }, {
-        'by'  : '0x48A450E7A340C810034F36C6CE78197CBEC20D123858813F7E27A881BDDFDCFA',
-        'sigR': '0xED1FB3E9662181EFBDC1203ABBF781C663ED078D9F975A40D3E214A5ED1FAC68',
-        'sigS': '0x805F0C5A77271133AAE179CE9AC121BDC6B42DD257DE57B346BE41BFF79E0F24',
-        'sigV': '0x0000000000000000000000000000000000000000000000000000000000000002',
-        'meta': '0x0000000B000000030BAED5ED8B8BA1A10432EF5CB62525868E5569B8E9088993990F69C78047C0DE',
-      }]
+        'meta': '0x0000000A00000004DA1B788A9B8F32E3D10F21A35FEAEDCDC77F74B040E7A8FDB2DD676CF42AB61A',
+      }],
+      eventSig: '0x0000000000000000000000000000000000000000000000000000000000000000',
+      handlers: configurationAdhara.handlers,
+      prototype: configurationAdhara.prototype,
+      command: configurationAdhara.command,
+      callParameters: '0xc6755b7c00000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000160000000000000000000000000c23cdfef6ec7b1b39c6cb898d7acc71437f167bd00000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000064000000000000000000000000000000000000000000000000000000000000000833633938333834370000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024547a315159584a306555497349457739546d563349466c76636d737349454d3956564d3d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020547a315159584a306555457349457739544739755a4739754c43424450556443',
+      sourceHash: '0x4f8cf727bb3add5720c146c119d12351f81f2a15d07b46309f8dae6a4fe5e0e2'
     }]
-    const handlers = [{
-      'fingerprint': 'net.corda:rniw7B2Mqi7zlkPpKmJ77A==',
-      'componentIndex': '0x01',
-      'describedSize': '0x02',
-      'describedType': 'String',
-      'describedPath': '0x00',
-      'solidityType': 'string',
-      'parser': 'PathParser',
-    }, {
-      'fingerprint': 'net.corda:ngdwbt6kRT0l5nn16uf87A==',
-      'componentIndex': '0x02',
-      'describedSize': '0x06',
-      'describedType': 'String',
-      'describedPath': '0x00',
-      'solidityType': 'string',
-      'parser': 'PartyParser',
-    }, {
-      'fingerprint': 'net.corda:ngdwbt6kRT0l5nn16uf87A==',
-      'componentIndex': '0x03',
-      'describedSize': '0x06',
-      'describedType': 'String',
-      'describedPath': '0x00',
-      'solidityType': 'string',
-      'parser': 'PartyParser',
-    }, {
-      'fingerprint': '',
-      'componentIndex': '0x00',
-      'describedSize': '0x00',
-      'describedType': '',
-      'describedPath': '0x00',
-      'solidityType': 'address',
-      'parser': 'NoParser',
-    }, {
-      'fingerprint': '',
-      'componentIndex': '0x00',
-      'describedSize': '0x00',
-      'describedType': '',
-      'describedPath': '0x00',
-      'solidityType': 'uint256',
-      'parser': 'NoParser',
-    }, {
-      'fingerprint': 'net.corda:EX8RRuprLshI1m51O4333A==',
-      'componentIndex': '0x00',
-      'describedSize': '0x02',
-      'describedType': 'String',
-      'describedPath': '0x0101',
-      'solidityType': 'uint256',
-      'parser': 'PathParser',
-    },
-    ];
-
-    await instance.addNotary(sourceBlockchainId, notary)
-    for (let p=0; p<participants.length; p++) {
-      await instance.addParticipant(sourceBlockchainId, participants[p])
-    }
-    await instance.setParameterHandlers(sourceBlockchainId, "0xc6755b7c", handlers);
-
     for (let t=0; t<testData.length; t++) {
       const td = testData[t];
-      const functionSignature = web3.eth.abi.encodeFunctionSignature('requestFollowLeg(string,string,string,address,uint256,uint256)');
-      const functionParameters = web3.eth.abi.encodeParameters(
-        ['string', 'string', 'string', 'address', 'uint256', 'uint256'],
-        [td.tradeId, td.sender, td.receiver, td.controlContract, td.sourceBlockchainId, td.holdAmount]
-      )
-      const callParameters = functionSignature + functionParameters.substring(2);
-      const eventData = web3.eth.abi.encodeParameters(
-        [
-          {
-            'EventData': {
-              'callParameters': 'bytes',
-              'hashAlgorithm': 'string',
-              'privacySalt': 'bytes32',
-              'ComponentData': {
-                'groupIndex': 'uint8',
-                'internalIndex': 'uint8',
-                'encodedBytes': 'bytes',
-              },
-            },
-          },
-        ],
-        [
-          {
-            'callParameters': callParameters,
-            'hashAlgorithm': td.hashAlgorithm,
-            'privacySalt': td.privacySalt,
-            'ComponentData': {
-              'groupIndex': '0x1',
-              'internalIndex': '0x0',
-              'encodedBytes': td.componentGroup,
-            }
-          }
-        ]
-      )
-      const encodedInfo = web3.eth.abi.encodeParameters(
-        ['uint256', 'address', 'bytes32', 'bytes'],
-        [td.sourceBlockchainId, td.controlContract, td.eventSig, eventData]
-      )
-      const signatureOrProof = web3.eth.abi.encodeParameters(
-        [
-          {
-            'Signatures': {
-              'ProofData': {
-                'root': 'bytes32',
-                'witnesses': 'bytes32[]',
-                'flags': 'uint8[]',
-                'values': 'bytes32[]',
-              },
-              'Signature[]': {
-                'by': 'uint256',
-                'sigR': 'uint256',
-                'sigS': 'uint256',
-                'sigV': 'uint256',
-                'meta': 'bytes',
-              }
-            },
-          },
-        ],
-        [
-          {
-            'ProofData': {
-              'root': td.root,
-              'witnesses': td.witnesses,
-              'flags': td.flags,
-              'values': td.values,
-            },
-            'Signature': td.signatures,
-          }
-        ]
-      )
+      await instance.addNotary(td.sourceNetworkId, td.notary)
+      for (let p=0; p<td.participants.length; p++) {
+        await instance.addParticipant(td.sourceNetworkId, td.participants[p])
+      }
+      const signature = web3.eth.abi.encodeFunctionSignature(td.prototype)
+      await instance.setParameterHandlers(td.sourceNetworkId, signature, td.prototype, td.command, td.handlers);
+      let eeaProof = encodeMultiComponentProofData(td)
       try {
-        const result = await instance.decodeAndVerifyCordaTransactionSignatures(td.sourceBlockchainId, encodedInfo, signatureOrProof)
-        assert.equal(result, true)
+        const result = await instance.handleCordaTransactionProvingScheme(td.sourceNetworkId, eeaProof.encodedInfo, eeaProof.encodedProof)
+        assert.equal('0x0' +result.networkId, td.sourceNetworkId)
+        assert.equal(result.contractAddress.toLowerCase(), td.controlContract)
+        assert.equal(result.callParameters, td.callParameters)
+        assert.equal(result.sourceHash, td.sourceHash)
       } catch (err) {
         console.log({err})
         assert.fail('No revert expected:', err)
@@ -479,200 +416,15 @@ contract("CrosschainMessaging", async accounts => {
     }
   })
 
-  it("should be able to decodeAndVerifyCordaTransactionSignatures for a Adhara signature-based proof", async () => {
-    const sourceBlockchainId = '0x03'
-    const participants = [
-      '0x5918F8DB2515D38F0074543A3AC2BDB5B18A40DD733EBE42B7F75E388F66F487',
-      '0xF415ECD394E50C1752AD515773880CD5F6FB78FA0481ACCDBFA600D05B7E5497',
-    ]
-    const notary = '0xA8CEA277AA9102D266D04BC3B5C7CB2B2C144EA42937E0128186FC65F256B64F'
-    const testData = [{
-      id: 'Adhara 2',
-      receiver: 'Tz1QYXJ0eUEsIEw9TG9uZG9uLCBDPUdC', // O=PartyA, L=London, C=GB
-      sender: 'Tz1QYXJ0eUIsIEw9TmV3IFlvcmssIEM9VVM=', // O=PartyB, L=New York, C=US
-      controlContract: '0xc23cdfef6ec7b1b39c6cb898d7acc71437f167bd',
-      sourceBlockchainId: '0x03',
-      holdAmount: '0xF4240', //1000000;
-      tradeId: '475a36b9',
-      eventSig: '0x0000000000000000000000000000000000000000000000000000000000000000',
-      componentGroup: '0x0080C562000000000001D000000E420000000300A3226E65742E636F7264613A51307A55474E2F4B367777777975496C4E66335261773D3DD0000003980000000500A3226E65742E636F7264613A372B30747468524E384B742B546255446266663837413D3DC0820100A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A05B3059301306072A8648CE3D020106082A8648CE3D03010703420004038D226DCD0FA574316DA478AA75225E6CE18F65CBD96E60BF3C8251B196541756E5DCF7CCAB21B712601ED0278501F2F33D0B5FDAA4C09E62639464E4910871A12F6E65742E636F7264612E73616D706C65732E6578616D706C652E636F6E7472616374732E444352436F6E747261637400A3226E65742E636F7264613A446C64573979533474424F7A653671763655345154413D3DD0000001D600000008A10347425000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0920200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0180640A1024742A1064C6F6E646F6EA106506172747941404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B65700321005918F8DB2515D38F0074543A3AC2BDB5B18A40DD733EBE42B7F75E388F66F48700A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3DC013024098FCF70523051C49968C8E4033A15AD49000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0940200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC01A0640A1025553A1084E657720596F726BA106506172747942404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100F415ECD394E50C1752AD515773880CD5F6FB78FA0481ACCDBFA600D05B7E549740A1094541524D41524B4544A1083437356133366239A107313030303030304000A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3DC0920200A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3DC0180640A1024742A1064C6F6E646F6EA1064E6F74617279404000A3216E65742E636F7264613A6A6176612E73656375726974792E5075626C69634B6579A02C302A300506032B6570032100A8CEA277AA9102D266D04BC3B5C7CB2B2C144EA42937E0128186FC65F256B64F0080C562000000000002D000000A6000000001D000000A570000000A0080C562000000000005D00000018400000005A1296E65742E636F7264612E636F72652E636F6E7472616374732E5472616E73616374696F6E537461746540450080C562000000000003C02602A3226E65742E636F7264613A51307A55474E2F4B367777777975496C4E66335261773D3D40D00000011C000000050080C562000000000004C04607A10A636F6E73747261696E74A1012AC03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E74404041420080C562000000000004C01807A108636F6E7472616374A106737472696E6745404041420080C562000000000004C03907A10464617461A1012AC02901A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E74726163745374617465404041420080C562000000000004C01807A10B656E63756D6272616E6365A103696E7445404042420080C562000000000004C02D07A1066E6F74617279A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404041420080C562000000000005C09605A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E7440C03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E740080C562000000000003C02602A3226E65742E636F7264613A4D6766362F7332416A6B5A6154382F6255396E4E53513D3D40450080C562000000000005C08805A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E7472616374537461746540C02901A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A5A326932426D6F35324566756346585A3842324350513D3D40450080C562000000000005C0D105A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747940450080C562000000000003C02602A3226E65742E636F7264613A48394B4F69386167557573674B4B69334D45423378673D3D40C07B020080C562000000000004C03307A1046E616D65A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6545404041420080C562000000000004C02F07A1096F776E696E674B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000014400000005A1256E65742E636F7264612E636F72652E6964656E746974792E436F726461583530304E616D6540450080C562000000000003C02602A3226E65742E636F7264613A6E6764776274366B5254306C356E6E313675663837413D3D40C0E3060080C562000000000004C01A07A10A636F6D6D6F6E4E616D65A106737472696E6745404042420080C562000000000004C01707A107636F756E747279A106737472696E6745404041420080C562000000000004C01807A1086C6F63616C697479A106737472696E6745404041420080C562000000000004C01C07A10C6F7267616E69736174696F6EA106737472696E6745404041420080C562000000000004C02007A1106F7267616E69736174696F6E556E6974A106737472696E6745404042420080C562000000000004C01507A1057374617465A106737472696E6745404042420080C562000000000005C0D605A1366E65742E636F7264612E636F72652E636F6E7472616374732E5369676E61747572654174746163686D656E74436F6E73747261696E7440C03001A12D6E65742E636F7264612E636F72652E636F6E7472616374732E4174746163686D656E74436F6E73747261696E740080C562000000000003C02602A3226E65742E636F7264613A372B30747468524E384B742B546255446266663837413D3D40C036010080C562000000000004C02907A1036B6579A1012AC01A01A1176A6176612E73656375726974792E5075626C69634B6579404041420080C562000000000005D00000024600000005A1296E65742E636F7264612E73616D706C65732E6578616D706C652E7374617465732E444352537461746540C07603A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E6561725374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E74726163745374617465A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C6553746174650080C562000000000003C02602A3226E65742E636F7264613A446C64573979533474424F7A653671763655345154413D3D40D000000167000000080080C562000000000004C01807A10863757272656E6379A106737472696E6745404042420080C562000000000004C02D07A106697373756572A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404042420080C562000000000004C03B07A1086C696E6561724964A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657245404041420080C562000000000004C02C07A1056F776E6572A11D6E65742E636F7264612E636F72652E6964656E746974792E506172747945404042420080C562000000000004C01507A10570726F6F66A106737472696E6745404042420080C562000000000004C01607A106737461747573A106737472696E6745404042420080C562000000000004C01707A10774726164654964A106737472696E6745404042420080C562000000000004C01507A10576616C7565A106737472696E6745404042420080C562000000000005C0AC05A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E656172537461746540C04F02A1246E65742E636F7264612E636F72652E636F6E7472616374732E4C696E6561725374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A416A4D5A704D6F6A5268685A36364A6B7433576243413D3D40450080C562000000000005C0AE05A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C65537461746540C05002A1256E65742E636F7264612E636F72652E736368656D61732E517565727961626C655374617465A1266E65742E636F7264612E636F72652E636F6E7472616374732E436F6E747261637453746174650080C562000000000003C02602A3226E65742E636F7264613A42383263534636543034544350666C67587332626B673D3D40450080C562000000000005C0A505A1296E65742E636F7264612E636F72652E636F6E7472616374732E556E697175654964656E74696669657240450080C562000000000003C02602A3226E65742E636F7264613A726E69773742324D7169377A6C6B50704B6D4A3737413D3D40C043020080C562000000000004C01A07A10A65787465726E616C4964A106737472696E6745404042420080C562000000000004C01007A1026964A1047575696445404041420080C562000000000009C10100',
-      hashAlgorithm: 'SHA-256',
-      privacySalt: '0x39F4600478DAF2773F914E7CCC5230E678C4DDDD2E7F51AD43659B1645B89CFF',
-      root: '0xA46E9FDC6E6DD4A659E10C1B42619CE078996AB009C8EA82BEDAEDF20C0B939A',
-      witnesses: [
-        '0x1A3357D5D28F6BD415D64CED45D9975D7992FCEB997DA33227E0242A36792257',
-        '0x91BA378A1776FB1CDF669C9E36AA35F1CEFCAF6EF3F9F2D0013937EFC2A747E8',
-        '0x868E2E6CB6197ECFF92825120DCDCB923BAA4BCD38DB9C69DFE65FE9673C8DA9',
-        '0x1B58857B3475DD6B65F27F85D993C97AAB833B66E8C5270A190A50311CE11CCE',
-      ],
-      flags: ['0x03', '0x01', '0x01', '0x01'],
-      values: ['0x67DE8C49537263FBF81A69FA214DF3903EBA581B63A9D8071DD83270887FC61D'],
-      signatures: [{
-        'by':   '0x5918F8DB2515D38F0074543A3AC2BDB5B18A40DD733EBE42B7F75E388F66F487',
-        'sigR': '0x63787BED632C6F7F963D5D813A582BE50D671EBB1289FCFFCCB1BA319DE212F1',
-        'sigS': '0xD1C29ADBABB70F8F617981F9ED7999167695C040C2741C488B0706BE7D9FB90F',
-        'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000A00000004A46E9FDC6E6DD4A659E10C1B42619CE078996AB009C8EA82BEDAEDF20C0B939A'
-      }, {
-        'by':   '0xF415ECD394E50C1752AD515773880CD5F6FB78FA0481ACCDBFA600D05B7E5497',
-        'sigR': '0x14EAE51395AF6D278B5174D701689C3B7CF86030642392C9371CB60E3C907FC4',
-        'sigS': '0xDE9FBDE6C01CBDED2F8FBF9E9399E8731F825E10B3D7341ED73C74E0FC96AB08',
-        'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000A00000004A46E9FDC6E6DD4A659E10C1B42619CE078996AB009C8EA82BEDAEDF20C0B939A'
-      }, {
-        'by':   '0xA8CEA277AA9102D266D04BC3B5C7CB2B2C144EA42937E0128186FC65F256B64F',
-        'sigR': '0x4FA8BAAF04CA29502BB4D51A267E64B9657C01E88A14969DC9D30C4C43003B57',
-        'sigS': '0x6DE689B91B87ADD6D354013CC7CF454435078B4EF22F4940881090FCD6E2420A',
-        'sigV': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        'meta': '0x0000000A00000004CEF6CD791B094A69160E3CCACCDA07527EB594F1FE92B9044A3BCC96BA45B440'
-      }]
-    }]
-    const handlers = [{
-      'fingerprint': 'net.corda:DldW9yS4tBOze6qv6U4QTA==',
-      'componentIndex': '0x00',
-      'describedSize': '0x08',
-      'describedType': 'String',
-      'describedPath': '0x06',
-      'solidityType': 'string',
-      'parser': 'PathParser',
-    }, {
-      'fingerprint': 'net.corda:ngdwbt6kRT0l5nn16uf87A==',
-      'componentIndex': '0x01',
-      'describedSize': '0x06',
-      'describedType': 'String',
-      'describedPath': '0x00',
-      'solidityType': 'string',
-      'parser': 'PartyParser',
-    }, {
-      'fingerprint': 'net.corda:ngdwbt6kRT0l5nn16uf87A==',
-      'componentIndex': '0x00',
-      'describedSize': '0x06',
-      'describedType': 'String',
-      'describedPath': '0x00',
-      'solidityType': 'string',
-      'parser': 'PartyParser',
-    }, {
-      'fingerprint': '',
-      'componentIndex': '0x00',
-      'describedSize': '0x00',
-      'describedType': '',
-      'describedPath': '0x00',
-      'solidityType': 'address',
-      'parser': 'NoParser',
-    }, {
-      'fingerprint': '',
-      'componentIndex': '0x00',
-      'describedSize': '0x00',
-      'describedType': '',
-      'describedPath': '0x00',
-      'solidityType': 'uint256',
-      'parser': 'NoParser',
-    }, {
-      'fingerprint': 'net.corda:DldW9yS4tBOze6qv6U4QTA==',
-      'componentIndex': '0x00',
-      'describedSize': '0x08',
-      'describedType': 'String',
-      'describedPath': '0x07',
-      'solidityType': 'uint256',
-      'parser': 'PathParser',
-    }
-    ];
-
-    await instance.addNotary(sourceBlockchainId, notary)
-    for (let p=0; p<participants.length; p++) {
-      await instance.addParticipant(sourceBlockchainId, participants[p])
-    }
-    await instance.setParameterHandlers(sourceBlockchainId, "0xc6755b7c", handlers);
-
-    for (let t=0; t<testData.length; t++) {
-      const td = testData[t];
-      const functionSignature = web3.eth.abi.encodeFunctionSignature('requestFollowLeg(string,string,string,address,uint256,uint256)');
-      const functionParameters = web3.eth.abi.encodeParameters(
-        ['string', 'string', 'string', 'address', 'uint256', 'uint256'],
-        [td.tradeId, td.sender, td.receiver, td.controlContract, td.sourceBlockchainId, td.holdAmount]
-      )
-      const callParameters = functionSignature + functionParameters.substring(2);
-      const eventData = web3.eth.abi.encodeParameters(
-        [
-          {
-            'EventData': {
-              'callParameters': 'bytes',
-              'hashAlgorithm': 'string',
-              'privacySalt': 'bytes32',
-              'ComponentData': {
-                'groupIndex': 'uint8',
-                'internalIndex': 'uint8',
-                'encodedBytes': 'bytes',
-              },
-            },
-          },
-        ],
-        [
-          {
-            'callParameters': callParameters,
-            'hashAlgorithm': td.hashAlgorithm,
-            'privacySalt': td.privacySalt,
-            'ComponentData': {
-              'groupIndex': '0x1',
-              'internalIndex': '0x0',
-              'encodedBytes': td.componentGroup,
-            }
-          }
-        ]
-      )
-      const encodedInfo = web3.eth.abi.encodeParameters(
-        ['uint256', 'address', 'bytes32', 'bytes'],
-        [td.sourceBlockchainId, td.controlContract, td.eventSig, eventData]
-      )
-      const signatureOrProof = web3.eth.abi.encodeParameters(
-        [
-          {
-            'Signatures': {
-              'ProofData': {
-                'root': 'bytes32',
-                'witnesses': 'bytes32[]',
-                'flags': 'uint8[]',
-                'values': 'bytes32[]',
-              },
-              'Signature[]': {
-                'by': 'uint256',
-                'sigR': 'uint256',
-                'sigS': 'uint256',
-                'sigV': 'uint256',
-                'meta': 'bytes',
-              }
-            },
-          },
-        ],
-        [
-          {
-            'ProofData': {
-              'root': td.root,
-              'witnesses': td.witnesses,
-              'flags': td.flags,
-              'values': td.values,
-            },
-            'Signature': td.signatures,
-          }
-        ]
-      )
-      try {
-        const result = await instance.decodeAndVerifyCordaTransactionSignatures(td.sourceBlockchainId, encodedInfo, signatureOrProof)
-        assert.equal(result, true)
-      } catch (err) {
-        console.log({err})
-        assert.fail('No revert expected:', err)
-      }
-    }
-  })
-
-  it("should be able to decodeAndVerifyCordaTradeSignatures for a Corda signature-based proof", async () => {
+  it("should be able to handle Corda signature-based proving scheme", async () => {
     const notary = '0x6D506B9617E2191E63F8B1C1EDF2125FE2FA7911B3B04D1BBD3E4E4EC456EAB6'
     const contract = '0xc23cdfef6ec7b1b39c6cb898d7acc71437f167bd'
-    const blockchainId = '0x00'
+    const networkId = '0x00'
     const eventSig = '0x0000000000000000000000000000000000000000000000000000000000000000'
     const callData = '0xc6755b7c00000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000000160000000000000000000000000c23cdfef6ec7b1b39c6cb898d7acc71437f167bd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004030353066383336316239373465326436633031323234333536623363396462336466323566643332643161326336356666376136346233646163613331613532000000000000000000000000000000000000000000000000000000000000000b464e555355533030555344000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b464e474247423030555344000000000000000000000000000000000000000000'
     const txRoot = '0x050f8361b974e2d6c01224356b3c9db3df25fd32d1a2c65ff7a64b3daca31a52'
+    const command = 'net.corda.samples.example.contracts.DCRContract$Commands$Earmark'
+    const prototype = 'requestFollowLeg(string,string,string,address,uint256,uint256)'
     const handlers = [{
       'fingerprint': 'tradeId',
       'componentIndex': '0x00',
@@ -680,6 +432,7 @@ contract("CrosschainMessaging", async accounts => {
       'describedType': 'bytes32',
       'describedPath': '0x00',
       'solidityType': 'string',
+      'calldataPath': '0x00',
       'parser': 'NoParser',
     }];
     const eventData = web3.eth.abi.encodeParameters([
@@ -688,7 +441,7 @@ contract("CrosschainMessaging", async accounts => {
         'callParameters': 'bytes',
         'hashAlgorithm': 'string',
         'privacySalt': 'bytes32',
-        'ComponentData': {
+        'ComponentData[]': {
           'groupIndex': 'uint8',
           'internalIndex': 'uint8',
           'encodedBytes': 'bytes',
@@ -699,20 +452,21 @@ contract("CrosschainMessaging", async accounts => {
       'callParameters': callData,
       'hashAlgorithm': 'SHA-256',
       'privacySalt': '0x0000000000000000000000000000000000000000000000000000000000000000',
-      'ComponentData': {
+      'ComponentData': [{
         'groupIndex': '0x00',
         'internalIndex': '0x00',
         'encodedBytes': '0x00',
-      }
+      }]
     }])
     const encodedInfo = web3.eth.abi.encodeParameters(
-      ['uint256', 'address', 'bytes32', 'bytes'],
-      [blockchainId, contract, eventSig, eventData]
+      ['uint256', 'address', 'bytes'],
+      [networkId, contract, eventData]
     )
     const signatureOrProof = web3.eth.abi.encodeParameters(
       [
         {
-          'Signatures':{
+          'Proof':{
+            'typ': 'uint256',
             'ProofData':{
               'root':'bytes32',
               'witnesses':'bytes32[]',
@@ -731,6 +485,7 @@ contract("CrosschainMessaging", async accounts => {
       ],
       [
         {
+          'typ': 0,
           'ProofData': {
             'root': txRoot,
             'witnesses': [],
@@ -747,11 +502,12 @@ contract("CrosschainMessaging", async accounts => {
         }
       ]
     )
-    await instance.addNotary(blockchainId, notary)
-    await instance.setParameterHandlers(blockchainId, "0xc6755b7c", handlers);
+    await instance.addNotary(networkId, notary)
+    const signature = web3.eth.abi.encodeFunctionSignature(prototype)
+    await instance.setParameterHandlers(networkId, signature, prototype, command, handlers);
     try {
-      const result = await instance.decodeAndVerifyCordaTradeSignatures(blockchainId, encodedInfo, signatureOrProof)
-      assert.equal(result, true)
+      const result = await instance.handleCordaTradeProvingScheme(networkId, encodedInfo, signatureOrProof)
+      assert.equal(result.sourceHash, '0x7aaf26eb310ceffac4ecebcccf033cc64e28a20a87ccfe3a0ef4ed311a527edb')
     } catch (err){
       console.log({err})
       assert.fail('No revert expected:', err)
@@ -759,11 +515,176 @@ contract("CrosschainMessaging", async accounts => {
   })
 })
 
-const rlpEncodedReceipt_hex = '0xf9028801830c3f5fb9010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000020800000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f9017df9017a94619b6b5eb17b0f647df6d9fd26c75a12c3c7276ce1a03789f700c0cfbb3b920a6afb90b2907df60e661afa04918dd243a34de3257b71b90140000000000000000000000000bc16f681b917a8d014b1b9dba7c9c44f308c8891000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000c4fba53d4d000000000000000000000000000000000000000000000000000000000000007b00000000000000000000000006c3f482f18711be95adf106afa25cd13897fbe7000000000000000000000000049eb617fba599e3d455da70c6730abc8cc4221d000000000000000000000000886a4c3c763b0d5d5823a3f55e30d03c52d41c4c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000'
-const rlpSiblingNodes_hex = '0xf90358f851a005c4fc636786e33469ff65e3623caa538f69d55586e8d7852a52a9cd343c685680808080808080a0ea1269780ad78480884d8d5b33757e02868514e6cc134c4592f308c883615f788080808080808080f87180a0992bf39386c2bbb546d2c453e469cf6929f4dbe43100092e38fed8022726f78aa0093a284c186b85eabaa463959e0b74c342da619d8216f9d07904cce2aa0f3d7aa07740782beb4669a8eecf602d70dbe665ff7dcf1d59928f401d88da7db4dce46f80808080808080808080808080f9028f20b9028bf9028801830c3f5fb9010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000020800000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f9017df9017a94619b6b5eb17b0f647df6d9fd26c75a12c3c7276ce1a03789f700c0cfbb3b920a6afb90b2907df60e661afa04918dd243a34de3257b71b90140000000000000000000000000bc16f681b917a8d014b1b9dba7c9c44f308c8891000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000c4fba53d4d000000000000000000000000000000000000000000000000000000000000007b00000000000000000000000006c3f482f18711be95adf106afa25cd13897fbe7000000000000000000000000049eb617fba599e3d455da70c6730abc8cc4221d000000000000000000000000886a4c3c763b0d5d5823a3f55e30d03c52d41c4c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000'
-const receiptsRoot_hex = '0x4c2ec5eef8896cefdc14a9f421bb4b7b590fec102155e4b210bdac6ec1158823'
-const blockHash_hex = '0xbd9c7459897cbdcf3d0202c7fa12510a153eb0d06ceb949fd7c133b6e06bfd82'
-const rlpBlockHeader_Base64 = '+QI7oOfMKwkGXtm2gMz3eoprIEeBIjgx3pI7uyaKa2IW4v+loB3MTejex116q4W1Z7bM1BrTEkUblIp0E/ChQv1A1JNHlMoxMGeYtBvIHEMJSh4EYokM56ZzoN5zPo+8QaVroF++ng5nxtO/MQApCLqQPVR/16mebKrtoIy3TX7bLZ2hUWUn+GWctEfOBC6JifaFDJHX1fP383RdoEwuxe74iWzv3BSp9CG7S3tZD+wQIVXkshC9rG7BFYgjuQEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAiAAAIIAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAACAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAEAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAgAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAGDBIFfhAX14QCDDD9fhGKGWHO4P/g9oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1ZTKMTBnmLQbyBxDCUoeBGKJDOemc4CEAAAAAKBjdGljYWwgYnl6YW50aW5lIGZhdWx0IHRvbGVyYW5jZYgAAAAAAAAAAA=='
-const rlpBlockHeaderExcludingRound_Base64 = '+QI2oOfMKwkGXtm2gMz3eoprIEeBIjgx3pI7uyaKa2IW4v+loB3MTejex116q4W1Z7bM1BrTEkUblIp0E/ChQv1A1JNHlMoxMGeYtBvIHEMJSh4EYokM56ZzoN5zPo+8QaVroF++ng5nxtO/MQApCLqQPVR/16mebKrtoIy3TX7bLZ2hUWUn+GWctEfOBC6JifaFDJHX1fP383RdoEwuxe74iWzv3BSp9CG7S3tZD+wQIVXkshC9rG7BFYgjuQEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAiAAAIIAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAACAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAEAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAgAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAGDBIFfhAX14QCDDD9fhGKGWHO4Ovg4oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1ZTKMTBnmLQbyBxDCUoeBGKJDOemc4CgY3RpY2FsIGJ5emFudGluZSBmYXVsdCB0b2xlcmFuY2WIAAAAAAAAAAA='
-const rlpValidatorSignatures_hex = '0xf843b8410d6292f01075bb80f47aa50d962c9ffb4d1e374a66cfcbc87960bd73be3af9eb30c386da174027e372986fe5a17737248fc9abbf2216abdcbc771a83bd20212300'
+const configurationAdhara = {
+  handlers: [{
+    'fingerprint': 'net.corda:DldW9yS4tBOze6qv6U4QTA==',
+    'componentIndex': '0x00',
+    'describedSize': '0x08',
+    'describedType': 'String',
+    'describedPath': '0x06',
+    'solidityType': 'string',
+    'calldataPath': '0x00',
+    'parser': 'PathParser',
+  }, {
+    'fingerprint': 'net.corda:ngdwbt6kRT0l5nn16uf87A==',
+    'componentIndex': '0x01',
+    'describedSize': '0x06',
+    'describedType': 'String',
+    'describedPath': '0x00',
+    'solidityType': 'string',
+    'calldataPath': '0x01',
+    'parser': 'PartyParser',
+  }, {
+    'fingerprint': 'net.corda:ngdwbt6kRT0l5nn16uf87A==',
+    'componentIndex': '0x00',
+    'describedSize': '0x06',
+    'describedType': 'String',
+    'describedPath': '0x00',
+    'solidityType': 'string',
+    'calldataPath': '0x02',
+    'parser': 'PartyParser',
+  }, {
+    'fingerprint': '',
+    'componentIndex': '0x00',
+    'describedSize': '0x00',
+    'describedType': '',
+    'describedPath': '0x00',
+    'solidityType': 'address',
+    'calldataPath': '0x03',
+    'parser': 'NoParser',
+  }, {
+    'fingerprint': '',
+    'componentIndex': '0x00',
+    'describedSize': '0x00',
+    'describedType': '',
+    'describedPath': '0x00',
+    'solidityType': 'uint256',
+    'calldataPath': '0x04',
+    'parser': 'NoParser',
+  }, {
+    'fingerprint': 'net.corda:DldW9yS4tBOze6qv6U4QTA==',
+    'componentIndex': '0x00',
+    'describedSize': '0x08',
+    'describedType': 'String',
+    'describedPath': '0x07',
+    'solidityType': 'uint256',
+    'calldataPath': '0x05',
+    'parser': 'PathParser',
+  }],
+  prototype: 'requestFollowLeg(string,string,string,address,uint256,uint256)',
+  command: 'net.corda.samples.example.contracts.DCRContract$Commands$Earmark'
+}
 
+function encodeMultiComponentProofData(td) {
+  const functionSignature = web3.eth.abi.encodeFunctionSignature('requestFollowLeg(string,string,string,address,uint256,uint256)');
+  const functionParameters = web3.eth.abi.encodeParameters(
+    ['string', 'string', 'string', 'address', 'uint256', 'uint256'],
+    [td.tradeId, td.sender, td.receiver, td.controlContract, td.sourceNetworkId, td.holdAmount]
+  )
+  const callParameters = functionSignature + functionParameters.substring(2);
+  const eventData = web3.eth.abi.encodeParameters(
+    [
+      {
+        'EventData': {
+          'callParameters': 'bytes',      // Parameters of the function we want to call through the interop service.
+          'hashAlgorithm': 'string',      // Hash algorithm used in the Merkle tree. Only SHA-256 is currently supported.
+          'privacySalt': 'bytes32',       // Salt needed to compute a Merkle tree leaf.
+          'ComponentGroup[]': {
+            'groupIndex': 'uint8',
+            'internalIndex': 'uint8',
+            'encodedBytes': 'bytes',      // Hash of this component becomes the value we want to proof Merkle tree membership of.
+          },
+        },
+      },
+    ],
+    [
+      {
+        'callParameters': callParameters,
+        'hashAlgorithm': 'SHA-256',
+        'privacySalt': td.salt,
+        'ComponentGroup': [{
+          'groupIndex': td.groupIndices[0],
+          'internalIndex': td.internalIndices[0],
+          'encodedBytes': td.components[0],
+        }, {
+          'groupIndex': td.groupIndices[1],
+          'internalIndex': td.internalIndices[1],
+          'encodedBytes': td.components[1],
+        }, {
+          'groupIndex': td.groupIndices[2],
+          'internalIndex': td.internalIndices[2],
+          'encodedBytes': td.components[2],
+        }, {
+          'groupIndex': td.groupIndices[3],
+          'internalIndex': td.internalIndices[3],
+          'encodedBytes': td.components[3],
+        }]
+      }
+    ]
+  )
+  const encodedInfo = web3.eth.abi.encodeParameters(['uint256', 'address', 'bytes'], [td.sourceNetworkId, td.controlContract, eventData])
+  const encodedProof = web3.eth.abi.encodeParameters([{
+    Proof: {
+      typ: 'uint256',
+      ProofData: {
+        root: 'bytes32',
+        witnesses: 'bytes32[]',
+        flags: 'uint8[]',
+        values: 'bytes32[]',
+      },
+      'Signature[]': {
+        by: 'uint256',
+        sigR: 'uint256',
+        sigS: 'uint256',
+        sigV: 'uint256',
+        meta: 'bytes',
+      }
+    }
+  }], [
+    {
+      typ: 0,
+      ProofData: {
+        root: td.root,
+        witnesses: td.witnesses,
+        flags: td.flags,
+        values: td.values,
+      },
+      Signature: td.signatures,
+    }
+  ])
+  return { encodedInfo, encodedProof };
+}
+
+const eventDataStruct = {
+  EventData: {
+    index: 'uint256',
+    signature: 'bytes32',
+    logs: 'bytes',
+  },
+}
+
+const blockHeaderMetaStruct = {
+  BlockHeaderMeta: {
+    rlpBlockHeader: 'bytes',
+    rlpBlockHeaderPreimage: 'bytes'
+  }
+}
+
+const encodedProofStruct = {
+  Proof: {
+    typ: 'uint256',
+    ProofData: {
+      witnesses: 'bytes',
+      root: 'bytes32',
+      blockHash: 'bytes32',
+      blockHeaderMeta: 'bytes',
+    },
+    'Signature[]': {
+      by: 'uint256',
+      sigR: 'uint256',
+      sigS: 'uint256',
+      sigV: 'uint256',
+      meta: 'bytes',
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "logLevel": "debug",
+  "fileDBDirectory": "file-db",
+  "chains": [
+    "bc-sec",
+    "bc-local-gbp",
+    "bc-local-usd"
+  ],
+  "tradeDetails": {
+    "notaryId": "NOTARY00XVP"
+  },
+  "networkIdToNetworkName": {
+    "0": "bc-sec",
+    "1": "bc-local-gbp",
+    "2": "bc-local-usd"
+  },
+  "performCallbackHttpsRewrite": false,
+  "rejectUnauthorizedSSL": false,
+  "callbackAuthorizationToken": "",
+  "bc-sec": {
+    "type": "corda",
+    "id": 0,
+    "providers": [
+      "http://localhost:50005",
+      "http://localhost:50006"
+    ],
+    "decoderService": "http://localhost:8080/constructProofFromTransaction/",
+    "accountIds": [
+      "HTGBGB00GBP",
+      "HTUSUS00GBP"
+    ]
+  },
+  "bc-local-gbp": {
+    "type": "ethereum",
+    "consensus": "qbft",
+    "id": 1,
+    "httpProvider": "http://localhost:8545",
+    "signerBaseURL": "http://localhost:4545",
+    "blockPeriod": 1,
+    "networkId": "44844",
+    "accountIds": [
+      "HTGBGB00GBP",
+      "HTUSUS00GBP"
+    ],
+    "contexts": {
+      "interopService": "0x131B9A8BF7f4BFd8cBdB0423C1e8AB66F064F41E",
+      "tokenAdmin": "0x049eb617fBa599E3D455Da70C6730ABc8Cc4221d"
+    },
+    "contracts": {
+      "crosschainXvP": {
+        "address": "0x037CDa131F443A9E1F4bbc92c77e6719A7Bd54aE"
+      },
+      "crosschainFunctionCall": {
+        "address": "0x90Fc51B828E9E200Df9c68737e1f634a6575B8a9"
+      },
+      "crosschainMessaging": {
+        "address": "0xf4ED762e8B4B5b1d14173d94b89696BdD2CcCcCD"
+      },
+      "assetTokenContract": {
+        "address": "0x9B39cdeA7583618A196378a49b81664AC5162731"
+      },
+      "validatorSetManager": {
+        "address": "0x30721E0A093527a2fc2441e58fF0f1edAa6b15B6"
+      },
+      "interopManager": {
+        "address": "0xC9a6cdFfBc3Ec76D62fF6Ee3b78cC01ebFF929E8"
+      }
+    }
+  },
+  "bc-local-usd": {
+    "type": "ethereum",
+    "consensus": "qbft",
+    "id": 2,
+    "httpProvider": "http://localhost:7545",
+    "signerBaseURL": "http://localhost:4545",
+    "blockPeriod": 1,
+    "networkId": "55755",
+    "accountIds": [
+      "HTUSUS00USD",
+      "HTGBGB00USD"
+    ],
+    "contexts": {
+      "interopService": "0x1657e3999D263706aF7349D1Af7c6cb88D7E7ffa",
+      "tokenAdmin": "0x06c3f482f18711be95adf106afa25cd13897fbe7"
+    },
+    "contracts": {
+      "crosschainXvP": {
+        "address": "0x40c13A03f1aCB4ee1e826ceB557B26e8b3161395"
+      },
+      "crosschainFunctionCall": {
+        "address": "0xc6C96b07d40f4231547e1975504EaC77C7D10A13"
+      },
+      "crosschainMessaging": {
+        "address": "0x7ee15eE060e6F654a6F6Dfddd73BE5AFF9B7cBa5"
+      },
+      "assetTokenContract": {
+        "address": "0x7433f9A38948aD120DE9EA94BaFD257BcC619eB4"
+      },
+      "validatorSetManager": {
+        "address": "0xe415c8BfEEAbaf27F95a47E81b6Dda77f84683f4"
+      },
+      "interopManager": {
+        "address": "0x6186F21c1fc1EefC48a0C51ab2E3F12F81808A0A"
+      }
+    }
+  }
+}
