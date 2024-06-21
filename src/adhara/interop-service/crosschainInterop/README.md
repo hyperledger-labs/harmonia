@@ -4,7 +4,7 @@ WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
 
 # Crosschain Interoperability
 
-The PoC implemented here illustrates how a trade can be settled across two different DLT networks using the crosschain message protocol described in the [EEA DTL interoperability specification](https://entethalliance.github.io/crosschain-interoperability/draft_dlt-interop_techspec.html).
+The PoC implemented here illustrates how a trade can be settled across two different DLT networks using the crosschain message protocol described in the [EEA DLT interoperability specification](https://entethalliance.github.io/crosschain-interoperability/draft_dlt-interop_techspec.html).
 
 Payment versus Payment (PvP) crosschain interoperability involves payments taking place across two Ethereum networks.
 
