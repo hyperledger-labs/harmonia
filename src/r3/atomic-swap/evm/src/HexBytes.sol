@@ -16,7 +16,7 @@
  * limitations under the License.                                             *
  ******************************************************************************/
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.28;
 
 library HexBytes {
     function hexToBytes(string calldata hexString) internal pure returns (bytes memory) {

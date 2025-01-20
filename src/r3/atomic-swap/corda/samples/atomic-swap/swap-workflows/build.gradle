@@ -1,6 +1,9 @@
 apply plugin: 'kotlin'
 
-description 'Atomic Swap Cordapp - Workflows'
+apply plugin: 'net.corda.plugins.cordapp'
+apply plugin: 'net.corda.plugins.cordformation'
+apply plugin: 'net.corda.plugins.quasar-utils'
+//description 'Atomic Swap Cordapp - Workflows'
 
 cordapp {
     targetPlatformVersion corda_platform_version
@@ -8,18 +11,46 @@ cordapp {
     workflow {
         name "Atomic Swap Cordapp"
         versionId 1
+        licence "Apache License, Version 2.0"
         vendor "R3"
+    }
+    sealing.enabled false
+    signing.enabled false
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir rootProject.file("config/dev")
+        }
+    }
+    test {
+        resources {
+            srcDir rootProject.file("config/test")
+        }
+    }
+    integrationTest {
+        kotlin {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integrationTest/kotlin')
+        }
     }
 }
 
 dependencies {
-    cordaCompile "$corda_core_release_group:corda-core:$corda_core_release_version"
-    cordaRuntime "$corda_release_group:corda-node-api:$corda_release_version"
-    cordaRuntime "$corda_release_group:corda:$corda_release_version"
+    cordaProvided ("$corda_core_release_group:corda-core:$corda_core_release_version")
+    cordaBootstrapper ("$corda_release_group:corda-node-api:$corda_release_version") {
+        exclude group: "ch.qos.logback", module: "logback-classic"
+    }
+    cordaProvided "$corda_release_group:corda:$corda_release_version"
 
-    cordaCompile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
-    cordaCompile "org.apache.logging.log4j:log4j-web:${log4j_version}"
-    cordaCompile "org.slf4j:jul-to-slf4j:$slf4j_version"
+    cordaProvided "$corda_core_release_group:corda-core-test-utils:$corda_core_release_version"
+    cordaProvided "$corda_core_release_group:corda-test-utils:$corda_core_release_version"
+
+    cordaProvided "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
+    cordaProvided "org.apache.logging.log4j:log4j-web:${log4j_version}"
+    cordaProvided "org.slf4j:jul-to-slf4j:$slf4j_version"
 
     api project(':evm-interop-common')
     api ("org.web3j:core:$web3jVersion") { transitive = true }
@@ -28,8 +59,9 @@ dependencies {
     cordapp project(':evm-interop-workflows')
 
     // test dependencies
-    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
-    testCompile "junit:junit:$junit_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junit_version"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.mockito:mockito-inline:$mockitoVersion"
 
@@ -38,11 +70,55 @@ dependencies {
     testImplementation("org.web3j:crypto:$web3jVersion")
     testImplementation("org.web3j:rlp:$web3jVersion")
 
-    testImplementation "$corda_release_group:corda-node:$corda_release_version"
-    testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
-    testImplementation "$corda_release_group:corda-core-test-utils:$corda_release_version"
+    testImplementation("$corda_release_group:corda-node:$corda_release_version")
+    testImplementation("$corda_release_group:corda-node-driver:$corda_release_version")
+    testImplementation("$corda_release_group:corda-core-test-utils:$corda_release_version")
 }
 
-jar {
-    archiveBaseName = 'swap-workflows'
+
+quasar {
+    excludePackages.addAll(
+            "antlr**",
+            "com.codahale**",
+            "com.fasterxml.**",
+            "com.github.benmanes.caffeine.**",
+            "com.google.**",
+            "com.lmax.**",
+            "com.zaxxer.**",
+            "net.bytebuddy**",
+            "io.github.classgraph**",
+            "io.netty*",
+            "liquibase**",
+            "net.i2p.crypto.**",
+            "nonapi.io.github.classgraph.**",
+            "org.apiguardian.**",
+            "org.bouncycastle**",
+            "org.web3j**",
+            "org.codehaus.**",
+            "org.h2**",
+            "org.hibernate**",
+            "org.jboss.**",
+            "org.objenesis**",
+            "org.w3c.**",
+            "org.xml**",
+            "org.yaml**",
+            "rx**",
+            "kotlin**"
+    )
+}
+
+
+test {
+    jvmArgs '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.invoke=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util.concurrent=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.time=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.net=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.security.cert=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.security=ALL-UNNAMED',
+            '--add-opens', 'java.base/javax.net.ssl=ALL-UNNAMED',
+            '--add-opens', 'java.sql/java.sql=ALL-UNNAMED'
 }

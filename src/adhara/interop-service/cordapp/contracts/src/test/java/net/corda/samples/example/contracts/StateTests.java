@@ -12,6 +12,6 @@ public class StateTests {
         // Does the message field exist?
         DCRState.class.getDeclaredField("value");
         // Is the message field of the correct type?
-        assert(DCRState.class.getDeclaredField("value").getType().equals(Integer.class));
+        assert(DCRState.class.getDeclaredField("value").getType().equals(String.class));
     }
 }

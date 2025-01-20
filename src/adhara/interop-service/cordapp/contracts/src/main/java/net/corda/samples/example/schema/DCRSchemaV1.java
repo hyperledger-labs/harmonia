@@ -1,5 +1,6 @@
 package net.corda.samples.example.schema;
 
+import jakarta.annotation.Nullable;
 import net.corda.core.schemas.MappedSchema;
 import net.corda.core.schemas.PersistentState;
 
@@ -11,7 +12,6 @@ import java.util.Arrays;
 import java.util.UUID;
 //4.6 changes
 import org.hibernate.annotations.Type;
-import javax.annotation.Nullable;
 
 public class DCRSchemaV1 extends MappedSchema {
     public DCRSchemaV1() {

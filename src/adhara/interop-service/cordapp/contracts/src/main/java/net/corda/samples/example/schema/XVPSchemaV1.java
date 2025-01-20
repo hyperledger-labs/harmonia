@@ -1,5 +1,6 @@
 package net.corda.samples.example.schema;
 
+import jakarta.annotation.Nullable;
 import net.corda.core.schemas.MappedSchema;
 import net.corda.core.schemas.PersistentState;
 
@@ -10,7 +11,6 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import org.hibernate.annotations.Type;
-import javax.annotation.Nullable;
 
 public class XVPSchemaV1 extends MappedSchema {
     public XVPSchemaV1() {

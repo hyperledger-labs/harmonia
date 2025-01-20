@@ -25,18 +25,19 @@ public class DCRContract implements Contract {
         });
         for (final CommandWithParties<CommandData> command : dcrCommands) {
             final Commands commandData = (Commands) command.getValue();
-            if (commandData.equals(new Commands.Create())) {
+            if (commandData instanceof Commands.Create) {
                 requireThat(require -> {
                     require.using("No inputs should be present when issuing.", tx.getInputs().isEmpty());
                     require.using("Only one output states should be created when issuing.", tx.getOutputs().size() == 1);
                     final DCRState out = tx.outputsOfType(DCRState.class).get(0);
-                    require.using("The issuer and the owner must be the same entity.", out.getIssuer().equals(out.getOwner()));
                     require.using("The issuer must be a signer.", command.getSigners().contains(out.getIssuer().getOwningKey()));
                     require.using("The value must be non-negative.", new BigInteger(out.getValue(), 10).signum() > 0);
                     require.using("The currency must not be null.", !out.getCurrency().isEmpty());
+                    // This logic does alter some of the core-testing logic.
+                    require.using("The issuer and the owner must be the same entity.", out.getIssuer().equals(out.getOwner()));
                     return null;
                 });
-            } else if (commandData.equals(new Commands.Earmark())) {
+            } else if (commandData instanceof  Commands.Earmark) {
                 requireThat(require -> {
                     require.using("There should be inputs when earmarking.", !tx.getInputs().isEmpty());
                     require.using("Only one output states should be created when earmarking.", tx.getOutputs().size() == 1);
@@ -48,7 +49,7 @@ public class DCRContract implements Contract {
                     require.using("The proof must be cleared.", out.getProof() == null);
                     return null;
                 });
-            } else if (commandData.equals(new Commands.Confirm())) {
+            } else if (commandData instanceof Commands.Confirm) {
                 requireThat(require -> {
                     require.using("There should be inputs when confirming.", !tx.getInputs().isEmpty());
                     require.using("Only one output states should be created when confirming.", tx.getOutputs().size() == 1);
@@ -57,7 +58,7 @@ public class DCRContract implements Contract {
                     require.using("The proof must be present.", out.getProof() != null && !out.getProof().isEmpty());
                     return null;
                 });
-            } else if (commandData.equals(new Commands.Cancel())) {
+            } else if (commandData instanceof Commands.Cancel) {
                 requireThat(require -> {
                     // Generic constraints around the DCR transaction.
                     require.using("There should be inputs when cancelling.", !tx.getInputs().isEmpty());

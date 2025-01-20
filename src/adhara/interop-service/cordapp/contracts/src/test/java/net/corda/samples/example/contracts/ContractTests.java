@@ -27,7 +27,7 @@ public class ContractTests {
     public void transactionMustIncludeCreateCommand() {
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(),  tradeId, null, "AVAILABLE"));
+                tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, megaCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(),  tradeId, null, "AVAILABLE"));
                 tx.fails();
                 tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new DCRContract.Commands.Create());
                 tx.verifies();
@@ -44,7 +44,7 @@ public class ContractTests {
                 tx.input(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(),  tradeId, null, "AVAILABLE"));
                 tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(),  tradeId, null, "AVAILABLE"));
                 tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new DCRContract.Commands.Create());
-                tx.failsWith("No inputs should be consumed when issuing an DCR.");
+                tx.failsWith("No inputs should be present when issuing.");
                 return null;
             });
             return null;
@@ -58,7 +58,7 @@ public class ContractTests {
                 tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(),  tradeId,null, "AVAILABLE"));
                 tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(),  tradeId,null, "AVAILABLE"));
                 tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new DCRContract.Commands.Create());
-                tx.failsWith("Only one output states should be created.");
+                tx.failsWith("Only one output states should be created when issuing.");
                 return null;
             });
             return null;
@@ -71,7 +71,7 @@ public class ContractTests {
             ledger.transaction(tx -> {
                 tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(),  tradeId,null, "AVAILABLE"));
                 tx.command(miniCorp.getPublicKey(), new DCRContract.Commands.Create());
-                tx.failsWith("All of the participants must be signers.");
+                tx.failsWith("The issuer must be a signer.");
                 return null;
             });
             return null;
@@ -82,23 +82,9 @@ public class ContractTests {
     public void ownerMustSignTransaction() {
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(),  tradeId,null, "AVAILABLE"));
+                tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, miniCorp.getParty(), miniCorp.getParty(), new UniqueIdentifier(),  tradeId,null, "AVAILABLE"));
                 tx.command(megaCorp.getPublicKey(), new DCRContract.Commands.Create());
-                tx.failsWith("All of the participants must be signers.");
-                return null;
-            });
-            return null;
-        }));
-    }
-
-    @Test
-    public void issuerIsNotIssuer() {
-        final TestIdentity megaCorpDupe = new TestIdentity(megaCorp.getName(), megaCorp.getKeyPair());
-        ledger(ledgerServices, (ledger -> {
-            ledger.transaction(tx -> {
-                tx.output(DCRContract.ID, new DCRState(dcrValue, dcrCurrency, megaCorp.getParty(), megaCorpDupe.getParty(), new UniqueIdentifier(),  tradeId,null, "AVAILABLE"));
-                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new DCRContract.Commands.Create());
-                tx.failsWith("The owner and the issuer cannot be the same entity.");
+                tx.failsWith("The issuer must be a signer.");
                 return null;
             });
             return null;
@@ -111,7 +97,7 @@ public class ContractTests {
             ledger.transaction(tx -> {
                 tx.output(DCRContract.ID, new DCRState("-1", dcrCurrency, miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier(), tradeId,null, "AVAILABLE"));
                 tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new DCRContract.Commands.Create());
-                tx.failsWith("The DCR's value must be non-negative.");
+                tx.failsWith("The value must be non-negative.");
                 return null;
             });
             return null;

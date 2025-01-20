@@ -1,4 +1,4 @@
-FROM corda/community:4.9.6-zulu-openjdk8
+FROM corda/community:4.12-zulu-openjdk
 
 ARG CERTIFICATES
 ARG NETWORK_PARAMETERS
