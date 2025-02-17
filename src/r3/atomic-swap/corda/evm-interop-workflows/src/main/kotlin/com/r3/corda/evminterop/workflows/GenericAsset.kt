@@ -27,6 +27,10 @@ object GenericAssetSchemaV1 : MappedSchema(
     version = 1,
     mappedTypes = listOf(PersistentGenericAsset::class.java)
 ) {
+    override val migrationResource: String?
+        get() = "iou.changelog-master";
+
+
     @Entity
     @Table(name = "generic_asset_states")
     class PersistentGenericAsset(

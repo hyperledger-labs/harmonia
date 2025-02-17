@@ -29,7 +29,7 @@ class SignaturesThresholdTests : TestNetSetup() {
         // Create Corda asset owned by Bob
         val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
-        val draftTxHash = runFlow(bob, DemoDraftAssetSwapBaseFlow(assetTx.txhash, assetTx.index, alice.toParty(), charlie.toParty()))
+        val draftTxHash = runFlow(bob, DemoDraftAssetSwapBaseFlow(assetTx, alice.toParty(), charlie.toParty()))
 
         val stx = runFlow(bob, SignDraftTransactionByIDFlow(draftTxHash))
 
@@ -51,8 +51,7 @@ class SignaturesThresholdTests : TestNetSetup() {
         val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         val draftTxHash = runFlow(bob, DraftAssetSwapBaseFlow(
-            transactionId =  assetTx.txhash,
-            outputIndex = assetTx.index,
+            assetTx = assetTx,
             recipient = alice.toParty(),
             notary = alice.services.networkMapCache.notaryIdentities.first(),
             validators = listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),
@@ -80,8 +79,7 @@ class SignaturesThresholdTests : TestNetSetup() {
         val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         val draftTxHash = runFlow(bob, DraftAssetSwapBaseFlow(
-            transactionId =  assetTx.txhash,
-            outputIndex = assetTx.index,
+            assetTx = assetTx,
             recipient = alice.toParty(),
             notary = alice.services.networkMapCache.notaryIdentities.first(),
             validators = listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),

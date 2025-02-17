@@ -194,9 +194,10 @@ task deployNodes(type: Cordform, dependsOn: ['jar']) {
         projectCordapp { deploy = false }
         extraConfig = [ 'devMode' : true, quasarExcludePackages: ["okhttp3**"] ]
         rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
-
+        runSchemaMigration true
         cordapp project(':evm-interop-contracts')
         cordapp project(':evm-interop-workflows')
+
     }
 
     node {
@@ -214,6 +215,8 @@ task deployNodes(type: Cordform, dependsOn: ['jar']) {
             address("localhost:10011")
             adminAddress("localhost:10021")
         }
+        runSchemaMigration true
+
     }
     node {
         name "O=PartyA,L=London,C=GB"
@@ -229,6 +232,9 @@ task deployNodes(type: Cordform, dependsOn: ['jar']) {
             address("localhost:10012")
             adminAddress("localhost:10022")
         }
+        runSchemaMigration true
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+
     }
     node {
         name "O=PartyB,L=New York,C=US"
@@ -244,5 +250,8 @@ task deployNodes(type: Cordform, dependsOn: ['jar']) {
             address("localhost:10013")
             adminAddress("localhost:10023")
         }
+        runSchemaMigration true
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+
     }
 }

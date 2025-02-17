@@ -24,8 +24,9 @@ import net.corda.core.identity.AbstractParty
 @StartableByRPC
 @InitiatingFlow
 class DraftAssetSwapBaseFlow(
-    private val transactionId: SecureHash,
-    private val outputIndex: Int,
+    private val assetTx: StateRef,
+//    private val transactionId: SecureHash,
+//    private val outputIndex: Int,
     private val recipient: AbstractParty,
     private val notary: AbstractParty,
     private val validators: List<AbstractParty>,
@@ -34,6 +35,8 @@ class DraftAssetSwapBaseFlow(
 ) : FlowLogic<SecureHash>() {
     @Suspendable
     override fun call(): SecureHash {
+        val transactionId = assetTx.txhash
+        val outputIndex = assetTx.index
         require(signaturesThreshold <= validators.count() && signaturesThreshold > 0)
 
         val knownNotary = serviceHub.identityService.wellKnownPartyFromAnonymous(notary)
@@ -74,8 +77,9 @@ class DraftAssetSwapBaseFlow(
 @StartableByRPC
 @InitiatingFlow
 class DemoDraftAssetSwapBaseFlow(
-    private val transactionId: SecureHash,
-    private val outputIndex: Int,
+    private val assetTx: StateRef,
+//    private val transactionId: SecureHash,
+//    private val outputIndex: Int,
     private val recipient: AbstractParty,
     private val validator: AbstractParty
 ) : FlowLogic<SecureHash>() {
@@ -93,8 +97,7 @@ class DemoDraftAssetSwapBaseFlow(
 
         return subFlow(
             DraftAssetSwapBaseFlow(
-                transactionId,
-                outputIndex,
+                assetTx,
                 recipient,
                 notary,
                 listOf(validator),

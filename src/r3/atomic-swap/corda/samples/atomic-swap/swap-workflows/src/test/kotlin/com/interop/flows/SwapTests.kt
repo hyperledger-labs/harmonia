@@ -25,8 +25,7 @@ class SwapTests : TestNetSetup() {
         val assetTx = runFlow(bob, IssueGenericAssetFlow(assetName))
 
         val draftTxHash = runFlow(bob, DraftAssetSwapBaseFlow(
-            assetTx.txhash,
-            assetTx.index,
+            assetTx = assetTx,
             alice.toParty(),
             alice.services.networkMapCache.notaryIdentities.first(),
             listOf(charlie.toParty() as AbstractParty, bob.toParty() as AbstractParty),

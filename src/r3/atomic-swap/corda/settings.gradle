@@ -1,4 +1,10 @@
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
 include 'evm-interop-common'
 include 'evm-interop-contracts'
 include 'evm-interop-workflows'
 include 'samples:atomic-swap:swap-workflows'
+include 'client'
+include 'client'
+
