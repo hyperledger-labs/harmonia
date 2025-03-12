@@ -10,27 +10,27 @@ sourceSets {
 
 dependencies {
     // Corda dependencies.
-    compile "$corda_release_group:corda-rpc:$corda_release_version"
-    compile "net.corda:corda-jackson:$corda_release_version"
+    implementation "$corda_release_group:corda-rpc:$corda_release_version"
+    implementation "net.corda:corda-jackson:$corda_release_version"
 
     // CorDapp dependencies.
-    compile project(":contracts")
-    compile project(":workflows")
-    compile("org.springframework.boot:spring-boot-starter-websocket:$spring_boot_version") {
+    implementation project(":contracts")
+    implementation project(":workflows")
+    implementation ("org.springframework.boot:spring-boot-starter-websocket:$spring_boot_version") {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
-    compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
-    compile "org.apache.logging.log4j:log4j-web:${log4j_version}"
-    compile "org.slf4j:jul-to-slf4j:$slf4j_version"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
+    implementation "org.apache.logging.log4j:log4j-web:${log4j_version}"
+    implementation "org.slf4j:jul-to-slf4j:$slf4j_version"
 
-    compileOnly 'org.projectlombok:lombok:1.18.24'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
 
-    implementation 'org.web3j:core:4.9.3'
+    implementation 'org.web3j:core:4.12.1'
 }
 
 springBoot {
-    mainClassName = "net.corda.samples.example.webserver.Starter"
+    mainClassName = "net.corda.samples.example.Starter"
 }
 
 /* The Client is the communication channel between the external and the node. This task will help you immediately
@@ -39,7 +39,7 @@ springBoot {
  */
 task runTestClient(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
-    main = 'net.corda.samples.example.webserver.Client'
+    main = 'net.corda.samples.example.Client'
     args 'localhost:10006', 'user1', 'test'
 }
 
@@ -50,10 +50,18 @@ task runPartyAServer(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'net.corda.samples.example.webserver.Starter'
     args '--server.port=50005', '--config.rpc.host=localhost', '--config.rpc.port=10006', '--config.rpc.username=user1', '--config.rpc.password=test'
+    jvmArgs '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.invoke=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util.concurrent=ALL-UNNAMED'
 }
 
 task runPartyBServer(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'net.corda.samples.example.webserver.Starter'
     args '--server.port=50006', '--config.rpc.host=localhost', '--config.rpc.port=10009', '--config.rpc.username=user1', '--config.rpc.password=test'
+    jvmArgs '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.invoke=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util.concurrent=ALL-UNNAMED'
 }

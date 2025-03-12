@@ -6,7 +6,6 @@ import net.corda.core.crypto.CompositeKey
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
-import net.corda.core.node.services.vault.Builder.equal
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import net.corda.core.schemas.MappedSchema

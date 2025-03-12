@@ -22,7 +22,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
+		<java.version>17</java.version>
 	</properties>
 
 	<dependencies>
@@ -38,6 +38,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<version>1.18.36</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -62,6 +63,12 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
+					<argLine>
+						--add-opens java.base/java.util=ALL-UNNAMED
+						--add-opens java.base/java.lang.invoke=ALL-UNNAMED
+						--add-opens java.base/java.lang=ALL-UNNAMED
+						--add-opens java.base/java.util.concurrent=ALL-UNNAMED
+					</argLine>
 					<skipTests>false</skipTests>
 					<testFailureIgnore>true</testFailureIgnore>
 					<forkMode>once</forkMode>

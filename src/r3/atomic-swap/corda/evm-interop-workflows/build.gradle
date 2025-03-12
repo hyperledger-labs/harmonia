@@ -1,5 +1,6 @@
 apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'org.jetbrains.kotlin.jvm'
+apply plugin: 'net.corda.plugins.quasar-utils'
 apply plugin: 'kotlin'
 apply plugin: 'java'
 
@@ -23,24 +24,56 @@ cordapp {
     signing.enabled false
 }
 
+sourceSets {
+    main {
+        resources {
+            srcDir rootProject.file("config/dev")
+        }
+    }
+    test {
+        resources {
+            srcDir rootProject.file("config/test")
+        }
+    }
+    integrationTest {
+        kotlin {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integrationTest/kotlin')
+        }
+    }
+}
+
 dependencies {
     // Kotlin standard library
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    cordaBootstrapper ("$corda_release_group:corda-node-api:$corda_release_version") {
+        exclude group: "ch.qos.logback", module: "logback-classic"
+    }
+    cordaProvided "$corda_core_release_group:corda-core:$corda_core_release_version"
+    cordaProvided "$corda_release_group:corda-jackson:$corda_release_version"
+    cordaProvided "$corda_release_group:corda-rpc:$corda_release_version"
+    cordaProvided "$corda_release_group:corda:$corda_release_version"
 
-    // Corda dependencies
-    cordaCompile "$corda_core_release_group:corda-core:$corda_core_release_version"
+    testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
+
 
     // Web3j dependencies
-    api ("org.web3j:core:$web3jVersion") { transitive = true }
+    api("org.web3j:core:$web3jVersion") { transitive = true }
 
     // Project dependencies
     api project(':evm-interop-common')
     cordapp project(':evm-interop-contracts')
 
+    implementation "javax.persistence:javax.persistence-api:$persistence_version"
+    implementation "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+
     // test dependencies
-    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
-    testCompile "junit:junit:$junit_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junit_version"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
+
     testImplementation "org.mockito:mockito-inline:$mockitoVersion"
 
     testImplementation("org.web3j:core:$web3jVersion")
@@ -48,8 +81,55 @@ dependencies {
     testImplementation("org.web3j:crypto:$web3jVersion")
     testImplementation("org.web3j:rlp:$web3jVersion")
 
-    testImplementation "$corda_release_group:corda-node:$corda_release_version"
-    testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
-    testImplementation "$corda_release_group:corda-core-test-utils:$corda_release_version"
+    testImplementation "$corda_core_release_group:corda-test-utils:$corda_core_release_version"
+    testImplementation("$corda_release_group:corda-node:$corda_release_version")
+
 }
 
+
+quasar {
+    excludePackages.addAll(
+            "antlr**",
+            "com.codahale**",
+            "com.fasterxml.**",
+            "com.github.benmanes.caffeine.**",
+            "com.google.**",
+            "com.lmax.**",
+            "com.zaxxer.**",
+            "net.bytebuddy**",
+            "io.github.classgraph**",
+            "io.netty*",
+            "liquibase**",
+            "net.i2p.crypto.**",
+            "nonapi.io.github.classgraph.**",
+            "org.apiguardian.**",
+            "org.bouncycastle**",
+            "org.web3j**",
+            "org.codehaus.**",
+            "org.h2**",
+            "org.hibernate**",
+            "org.jboss.**",
+            "org.objenesis**",
+            "org.w3c.**",
+            "org.xml**",
+            "org.yaml**",
+            "rx**",
+            "kotlin**"
+    )
+}
+
+
+test {
+    jvmArgs '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.invoke=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util.concurrent=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.time=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.net=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.security.cert=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.security=ALL-UNNAMED',
+            '--add-opens', 'java.base/javax.net.ssl=ALL-UNNAMED',
+            '--add-opens', 'java.sql/java.sql=ALL-UNNAMED'
+}

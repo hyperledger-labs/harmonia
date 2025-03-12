@@ -1,7 +1,9 @@
 plugins {
     id 'java'
-    //id 'org.web3j' version '4.9.4' // REVIEW: 4.9.4 generates incompatible java wrappers
     id 'org.web3j' version '4.9.0'
+}
+node {
+    version = "20.0.0"
 }
 
 group 'org.web3j'
@@ -13,6 +15,7 @@ repositories {
     mavenCentral()
 }
 
+
 web3j {
     generatedPackageName = "org.web3j.generated.contracts"
     generatedFilesBaseDir = "$projectDir/src"    
@@ -20,11 +23,25 @@ web3j {
 }
 
 ext {
-    web3jVersion = '4.9.4'
+    web3jVersion = '4.12.1'
+}
+
+def findSolcPath() {
+    try {
+        def result = new ByteArrayOutputStream()
+        exec {
+            commandLine "which", "solc"
+            standardOutput = result
+        }
+        return result.toString().trim()
+    } catch (Exception e) {
+        println "Warning: Could not find solc executable. Defaulting to hardcoded path."
+        return null
+    }
 }
 
 solidity {
-    executable = "/usr/local/bin/solc"
+    executable = findSolcPath() ?: "/usr/local/bin/solc" // Fallback if solc isn't found
     version = "0.8.17" // NOTE: without version gradle fails with "Cannot invoke method split() on null object"
     pathRemappings = [ openzeppelin : "lib/openzeppelin-contracts/contracts" ]
     evmVersion = "ISTANBUL"
