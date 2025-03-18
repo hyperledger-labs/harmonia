@@ -20,8 +20,6 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.transactions.SignedTransaction
-import net.corda.core.utilities.ProgressTracker
-import net.corda.core.utilities.loggerFor
 import org.web3j.rlp.RlpEncoder
 import org.web3j.rlp.RlpString
 import org.web3j.utils.Numeric
